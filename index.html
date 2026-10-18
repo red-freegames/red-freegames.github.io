@@ -37,6 +37,10 @@ h1{font-size:clamp(40px,9vw,72px);font-weight:900;letter-spacing:.02em;line-heig
 .tags span{font-size:11px;font-weight:800;border:2px solid var(--line);border-radius:6px;padding:0 6px}
 .play{margin-top:4px;text-align:center;background:var(--red);color:#fff;font-weight:900;border-radius:12px;padding:10px;border:3px solid var(--line)}
 footer{margin-top:40px;text-align:center;font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:10px;align-items:center}
+.cardwrap{display:flex;flex-direction:column;gap:6px}
+.cardwrap .card{flex:1}
+.cardfb{text-align:center;font-size:12px;font-weight:800;color:var(--sub)}
+.fball{display:inline-block;background:var(--card);color:var(--ink);font-weight:900;border:3px solid var(--line);border-radius:99px;padding:8px 18px;text-decoration:none;box-shadow:0 4px 0 var(--line)}
 .coffee{display:inline-block;background:#ffdd57;color:#2a1a14;font-weight:900;border:3px solid #2a1a14;border-radius:99px;padding:8px 18px;text-decoration:none;box-shadow:0 4px 0 #2a1a14}
 </style>
 </head>
@@ -50,6 +54,7 @@ footer{margin-top:40px;text-align:center;font-size:13px;color:var(--sub);display
   <main class="grid" id="games"></main>
   <footer>
     <a class="coffee" href="https://buymeacoffee.com/red_freegames" target="_blank" rel="noopener">開発者にコーヒーを奢る☕</a>
+    <a class="fball" id="fbAll" target="_blank" rel="noopener">💬 要望・バグ報告フォーム</a>
     <p>すべてのゲームは配信・動画での利用大歓迎です（商用利用OK・連絡不要）。</p>
     <p>© RED FREE GAMES</p>
   </footer>
@@ -62,8 +67,9 @@ const GAMES = [
     sub: "実践的ヒス回避トレーニング",
     url: "https://red-freegames.github.io/hisu-kaihi-game/",
     image: "https://red-freegames.github.io/hisu-kaihi-game/og.png",
-    desc: "激怒するクレーマー、メンヘラ気味の彼女、ヒステリックな母親。正解を選んでもキレられる理不尽を、運と直感で生き延びろ。",
+    desc: "激怒するクレーマー、メンヘラ気味の彼女、ヒステリックな母親。文脈を読んで正解を選べ。……ただし正解でもキレられることがある。",
     tags: ["1プレイ1分", "理不尽", "スコアタ"],
+    fb: "ヒス回避ゲーム",      // 要望フォームの「対象のゲーム」の選択肢名（完全一致）
   },
   {
     title: "TRADER HISTORY",
@@ -72,10 +78,16 @@ const GAMES = [
     image: "https://red-freegames.github.io/trader-history/ogp.jpg",
     desc: "西暦30XX年、18歳・所持金10万円から。株でお金を育てながら進学・就職・結婚を選んで80歳へ。潔白さ×幸福度で全64種の称号。",
     tags: ["人生ゲーム", "株取引", "4言語対応"],
+    fb: "TRADER HISTORY",
   },
 ];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-document.getElementById("games").innerHTML = GAMES.map(g => `
+// 要望・バグ報告フォーム（RED FREE GAMES 共通）。ゲーム名を渡すと「対象のゲーム」を選んだ状態で開く
+// 新しいゲームを足す時は、Googleフォームの「対象のゲーム」にも同じ名前の選択肢を追加すること
+const FEEDBACK_VIEW = "https://docs.google.com/forms/d/e/1FAIpQLSfJ2DevI46AJiB_kUAmPGOvckFRqzzSP_iCVd5qiikxr9SIOg/viewform";
+const feedbackUrl = game => game ? `${FEEDBACK_VIEW}?usp=pp_url&entry.2056875219=${encodeURIComponent(game)}` : FEEDBACK_VIEW;
+document.getElementById("fbAll").href = feedbackUrl("");
+document.getElementById("games").innerHTML = GAMES.map(g => `<div class="cardwrap">
   <a class="card" href="${esc(g.url)}">
     <div class="thumb" style="background-image:url('${esc(g.image)}')" role="img" aria-label="${esc(g.title)}"></div>
     <div class="body">
@@ -84,7 +96,8 @@ document.getElementById("games").innerHTML = GAMES.map(g => `
       <div class="tags">${g.tags.map(t => `<span>${esc(t)}</span>`).join("")}</div>
       <div class="play">▶ 今すぐ遊ぶ</div>
     </div>
-  </a>`).join("");
+  </a>
+  <a class="cardfb" href="${esc(feedbackUrl(g.fb))}" target="_blank" rel="noopener">💬 このゲームへの要望・バグ報告</a></div>`).join("");
 </script>
 </body>
 </html>
