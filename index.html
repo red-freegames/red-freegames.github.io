@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RED FREE GAMES</title>
+<meta name="description" content="無料・登録不要・スマホで即プレイできるブラウザゲーム集。配信・動画利用大歓迎！商用利用OK。">
+<meta property="og:title" content="RED FREE GAMES">
+<meta property="og:description" content="無料・登録不要・スマホで即プレイできるブラウザゲーム集。配信・動画利用大歓迎！">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://red-freegames.github.io/">
+<meta property="og:image" content="https://red-freegames.github.io/hisu-kaihi-game/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://red-freegames.github.io/">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fff6ef;--ink:#2a1a14;--sub:#7a5a4e;--card:#fff;--red:#e8262b;--line:#2a1a14}
+@media (prefers-color-scheme:dark){:root{--bg:#1a0f0c;--ink:#ffeee6;--sub:#c9a397;--card:#2a1813;--line:#000}}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.6}
+a{color:inherit}
+.wrap{max-width:960px;margin:0 auto;padding:28px 16px 48px}
+header{text-align:center;margin-bottom:28px}
+h1{font-size:clamp(40px,9vw,72px);font-weight:900;letter-spacing:.02em;line-height:1.05;color:var(--red);text-shadow:4px 4px 0 #2a1a14}
+.lead{margin-top:12px;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}
+.chips span{font-size:12px;font-weight:800;background:#2a1a14;color:#fff;border-radius:99px;padding:3px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{display:flex;flex-direction:column;background:var(--card);border:3px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 5px 0 var(--line);text-decoration:none;transition:transform .08s}
+.card:hover{transform:translateY(-3px)}
+.card:active{transform:translateY(3px);box-shadow:0 2px 0 var(--line)}
+.thumb{aspect-ratio:1200/630;background:#ddd center/cover no-repeat;border-bottom:3px solid var(--line)}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.body h2{font-size:21px;font-weight:900;line-height:1.3}
+.body h2 small{display:block;font-size:12px;color:var(--sub);font-weight:700}
+.body p{font-size:13.5px;color:var(--sub);flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:11px;font-weight:800;border:2px solid var(--line);border-radius:6px;padding:0 6px}
+.play{margin-top:4px;text-align:center;background:var(--red);color:#fff;font-weight:900;border-radius:12px;padding:10px;border:3px solid var(--line)}
+footer{margin-top:40px;text-align:center;font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:10px;align-items:center}
+.coffee{display:inline-block;background:#ffdd57;color:#2a1a14;font-weight:900;border:3px solid #2a1a14;border-radius:99px;padding:8px 18px;text-decoration:none;box-shadow:0 4px 0 #2a1a14}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>RED FREE<br>GAMES</h1>
+    <p class="lead">無料・登録不要・スマホで即プレイ。ちょっと理不尽なブラウザゲーム集</p>
+    <div class="chips"><span>完全無料</span><span>インストール不要</span><span>スマホ / PC</span><span>配信・動画利用大歓迎</span><span>商用利用OK</span></div>
+  </header>
+  <main class="grid" id="games"></main>
+  <footer>
+    <a class="coffee" href="https://buymeacoffee.com/red_freegames" target="_blank" rel="noopener">開発者にコーヒーを奢る☕</a>
+    <p>すべてのゲームは配信・動画での利用大歓迎です（商用利用OK・連絡不要）。</p>
+    <p>© RED FREE GAMES</p>
+  </footer>
+</div>
+<script>
+/* ゲーム一覧：新しいゲームはこの配列の先頭に追加するだけで表示されます */
+const GAMES = [
+  {
+    title: "ヒス回避ゲーム",
+    sub: "実践的ヒス回避トレーニング",
+    url: "https://red-freegames.github.io/hisu-kaihi-game/",
+    image: "https://red-freegames.github.io/hisu-kaihi-game/og.png",
+    desc: "激怒するクレーマー、メンヘラ気味の彼女、ヒステリックな母親。正解を選んでもキレられる理不尽を、運と直感で生き延びろ。",
+    tags: ["1プレイ1分", "理不尽", "スコアタ"],
+  },
+  {
+    title: "TRADER HISTORY",
+    sub: "株取引を中心とした人生ゲーム",
+    url: "https://capital-and-soul.github.io/",
+    image: "https://capital-and-soul.github.io/ogp.jpg",
+    desc: "西暦30XX年、18歳・所持金10万円から。株でお金を育てながら進学・就職・結婚を選んで80歳へ。潔白さ×幸福度で全64種の称号。",
+    tags: ["人生ゲーム", "株取引", "4言語対応"],
+  },
+];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+document.getElementById("games").innerHTML = GAMES.map(g => `
+  <a class="card" href="${esc(g.url)}">
+    <div class="thumb" style="background-image:url('${esc(g.image)}')" role="img" aria-label="${esc(g.title)}"></div>
+    <div class="body">
+      <h2>${esc(g.title)}<small>${esc(g.sub)}</small></h2>
+      <p>${esc(g.desc)}</p>
+      <div class="tags">${g.tags.map(t => `<span>${esc(t)}</span>`).join("")}</div>
+      <div class="play">▶ 今すぐ遊ぶ</div>
+    </div>
+  </a>`).join("");
+</script>
+</body>
+</html>
