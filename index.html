@@ -56,10 +56,19 @@ footer{margin-top:40px;text-align:center;font-size:13px;color:var(--sub);display
     <a class="coffee" href="https://buymeacoffee.com/red_freegames" target="_blank" rel="noopener">開発者にコーヒーを奢る☕</a>
     <a class="fball" id="fbAll" target="_blank" rel="noopener">💬 要望・バグ報告フォーム</a>
     <p>すべてのゲームは配信・動画での利用大歓迎です（商用利用OK・連絡不要）。</p>
-    <p>© RED FREE GAMES</p>
+    <p>© RED FREE GAMES ・ <a href="privacy.html">プライバシー</a></p>
   </footer>
 </div>
 <script>
+/* アクセス解析（Googleアナリティクス4）。測定IDを入れると本番（github.io）でだけ計測する。画面には何も出さない */
+const GA_ID = "G-FC7LD0DJTQ";
+if (GA_ID && /\.github\.io$/.test(location.hostname)) {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { dataLayer.push(arguments); };
+  gtag("js", new Date()); gtag("config", GA_ID, { page_title: "RED FREE GAMES トップ" });
+  const s = document.createElement("script"); s.async = true;
+  s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_ID); document.head.appendChild(s);
+}
 /* ゲーム一覧：新しいゲームはこの配列の先頭に追加するだけで表示されます */
 const GAMES = [
   {
