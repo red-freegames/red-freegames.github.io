@@ -42,13 +42,20 @@ body.playing #hudTop{display:flex}
   background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:5px 12px;font-size:13px;text-align:center;line-height:1.45}
 @media (max-width:480px){#objective{font-size:12px}}
 #objective b{color:var(--gold)}
+#objective .mis{margin-top:3px;padding-top:3px;border-top:1px dashed rgba(255,255,255,.2);font-size:12px;color:#9fd0ff}
+#objective .mis.done{color:var(--green)}
+#gaze{pointer-events:none;display:none;align-self:flex-end;background:var(--panel);border:2px solid #e74c3c;border-radius:99px;padding:4px 12px;font-size:12px;font-weight:900;white-space:nowrap}
+#gaze.show{display:block}
+#gaze.away{border-color:var(--green);color:var(--green)}
+#gaze.soon{border-color:var(--gold);color:var(--gold);animation:blink .25s infinite alternate}
+@keyframes blink{to{opacity:.45}}
 body.playing #objective{display:block}
 #crosshair{left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.55);display:none}
 body.playing #crosshair{display:block}
 #prompt{left:50%;bottom:calc(150px + var(--sab));transform:translateX(-50%);display:none;background:var(--panel);border:2px solid var(--gold);
   border-radius:99px;padding:6px 16px;font-weight:900;font-size:14px;white-space:nowrap}
 body.touch #prompt{display:none!important}
-#toast{top:calc(124px + var(--sat));left:50%;transform:translateX(-50%);z-index:30;display:none;max-width:min(92vw,480px);
+#toast{top:calc(140px + var(--sat));left:50%;transform:translateX(-50%);z-index:30;display:none;max-width:min(92vw,480px);
   background:rgba(20,13,9,.92);border:2px solid #555;border-radius:12px;padding:8px 14px;font-size:14px;font-weight:700;line-height:1.55;text-align:center}
 #toast.good{border-color:var(--green)}#toast.bad{border-color:#e74c3c}
 #banner{top:38%;left:50%;transform:translate(-50%,-50%);z-index:30;display:none;max-width:94vw;background:var(--red);color:#fff;border:3px solid #000;
@@ -161,6 +168,7 @@ footer{text-align:center;font-size:11px;color:var(--sub);margin-top:14px;line-he
 <div id="joy"><div id="joyKnob"></div></div>
 <button id="btnBow" class="abtn" type="button">🙇 会釈する <span class="kbd">&nbsp;[B]</span></button>
 <div id="controls">
+  <div id="gaze"></div>
   <div class="row">
     <button id="btnPhone" class="abtn mini" type="button">📱<span>スマホ</span></button>
     <button id="btnCam" class="abtn mini" type="button">📷<span>撮影</span></button>
@@ -236,6 +244,21 @@ const SCORE = { CLEAR: 1000, CALM_PER_POINT: 10, PHOTO: 30, TITLE_TOTAL_IRA: 150
 
 /** ティッシュの裏ルールが有効になる店（0始まり） */
 const TISSUE_RULE_FROM_DAY = 3;
+
+/** 店主の湯切り（席にいる間、ときどき厨房を向く。その間はスマホ・撮影がバレない） */
+const GAZE = { WATCH_MIN: 5, WATCH_RAND: 3.5, AWAY: 2.8, WARN: 0.7, TURN_SPEED: 7, PHASES: ['enter', 'waitCall', 'eating', 'cleanup'] };
+/** 店主を撮ったと判定する角度（ラジアン） */
+const MASTER_AIM = 0.3;
+
+/** 裏ミッション（各店1つ。食事が始まるとスマホに届く。退店までに達成で加点） */
+const MISSION_BONUS = 300;
+const MISSIONS = [
+  { type: 'photoRamen', from: 'グルメ友達', title: 'ラーメンの写真を送れ', notify: '📱 グルメ友達「一文字行ってるんでしょ？ ラーメンの写真送って！」' },
+  { type: 'phone', from: '上司', title: '店主にバレずに仕事の連絡を返せ', notify: '📱 ブブッ…上司「至急！ 例の資料どこ？ 今すぐ返信して」' },
+  { type: 'photoMaster', from: 'フォロワー', title: '店主にバレずに店主の写真を撮れ', notify: '📱 フォロワー「断固亭の店主の顔、見てみたいです！」' },
+  { type: 'phone', from: '恋人', title: '店主にバレずに「今どこ？」に返信しろ', notify: '📱 恋人「今どこ？」……うっかり既読をつけてしまった。' },
+  { type: 'photoMaster', from: 'ラーメン雑誌の編集者', title: '店主にバレずに総帥の写真を撮れ', notify: '📱 編集者「総帥の写真、1枚でいいので撮ってきてください！」' },
+];
 
 /** 配置（ワールド座標。z=0 が店の正面、z<0 が店内） */
 const POS = {
@@ -335,6 +358,7 @@ const Sound = (() => {
     mid() { beep(520, .1, 'square', .045); },
     bad() { beep(160, .22, 'sawtooth', .07); setTimeout(() => beep(110, .3, 'sawtooth', .07), 90); },
     shout() { beep(220, .15, 'sawtooth', .09); setTimeout(() => beep(180, .25, 'sawtooth', .09), 110); },
+    tick() { beep(660, .05, 'triangle', .03); },
     slurp() { beep(300 + Math.random() * 120, .06, 'triangle', .05); },
     clear() { seq([660, 880, 1100, 1320], 95, .12, 'square', .05); },
     dekin() { seq([400, 350, 300, 200], 160, .2, 'sawtooth', .07); },
@@ -427,7 +451,7 @@ let RUN = null, DAY = null, EAT = null;
 const P = { x: 0, z: 0, yaw: 0, pitch: 0, seated: false, bob: 0, moving: false };
 
 function newRun() {
-  return { day: 0, score: 0, violations: 0, totalIra: 0, cleared: 0, done: false, dayStartScore: 0, dayStartViolations: 0 };
+  return { missions: 0, dayStartMissions: 0, day: 0, score: 0, violations: 0, totalIra: 0, cleared: 0, done: false, dayStartScore: 0, dayStartViolations: 0 };
 }
 function newDay(shop) {
   return {
@@ -437,6 +461,8 @@ function newDay(shop) {
     friend: { state: 'none', t: 0 },          // none → approach → joined → leave → done
     waitT: 0, callLeft: 0,
     stare: null, stareNext: Infinity,
+    gaze: { away: false, t: GAZE.WATCH_MIN, hinted: false },
+    mission: { active: false, done: false },
     whisper: null, whisperDone: false,
     tissue: 0, photoTaken: false,
     bowlCarried: false, bowlPlaced: false, cleanT: 0, lastEat: null,
@@ -871,7 +897,7 @@ const el = {
   hudShop: $('hudShop'), hudScore: $('hudScore'), hudIra: $('hudIra'), hudFace: $('hudFace'),
   objective: $('objective'), prompt: $('prompt'), toast: $('toast'), banner: $('banner'),
   eatPanel: $('eatPanel'), eatRemain: $('eatRemain'), eatPress: $('eatPress'), eatTime: $('eatTime'), eatTimeTxt: $('eatTimeTxt'),
-  btnAct: $('btnAct'), btnSlurp: $('btnSlurp'), btnPhone: $('btnPhone'), btnCam: $('btnCam'), btnTissue: $('btnTissue'), btnBow: $('btnBow'),
+  btnAct: $('btnAct'), btnSlurp: $('btnSlurp'), btnPhone: $('btnPhone'), btnCam: $('btnCam'), btnTissue: $('btnTissue'), btnBow: $('btnBow'), gaze: $('gaze'),
   joy: $('joy'), joyKnob: $('joyKnob'), overlay: $('overlay'),
 };
 const setText = (e, s) => { if (e._t !== s) { e._t = s; e.textContent = s; } };
@@ -887,7 +913,16 @@ function updateHUD() {
   el.hudIra.className = 'lv' + faceLevel(DAY.ira);
   setText(el.hudFace, faceFor(DAY.ira));
 }
-function setObjective(html) { el.objective.innerHTML = html; }
+let objectiveBase = '';
+function setObjective(html) { objectiveBase = html; renderObjective(); }
+function renderObjective() {
+  let mis = '';
+  if (DAY && DAY.mission.active) {
+    const m = MISSIONS[RUN.day];
+    mis = DAY.mission.done ? `<div class="mis done">🎯 裏ミッション達成：${esc(m.title)}</div>` : `<div class="mis">🎯 裏ミッション：${esc(m.title)}</div>`;
+  }
+  el.objective.innerHTML = objectiveBase + mis;
+}
 let toastTimer = 0;
 function toast(msg, cls) {
   el.toast.textContent = msg; el.toast.className = 'hud ' + (cls || ''); el.toast.style.display = 'block';
@@ -1083,7 +1118,7 @@ function setPhase(ph, objectiveHtml) {
 function startDay() {
   const shop = curShop();
   DAY = newDay(shop); EAT = null;
-  RUN.dayStartViolations = RUN.violations; RUN.dayStartScore = RUN.score;
+  RUN.dayStartViolations = RUN.violations; RUN.dayStartScore = RUN.score; RUN.dayStartMissions = RUN.missions;
   hideOverlay();
   ui.attract = false;
   buildWorld(RUN.day);
@@ -1141,6 +1176,10 @@ function startEating() {
   setDisplay(el.eatPanel, true);
   setPhase(PH.EATING, '<b>すする</b>ボタンで食べ進めよう。止まると店主の圧が上がる');
   scheduleStare();
+  DAY.mission.active = true;
+  toast(MISSIONS[RUN.day].notify);
+  Sound.tick(); buzz([40, 60, 40]);
+  renderObjective();
 }
 function finishEat(complete) {
   if (!EAT || EAT.finished) return;
@@ -1206,9 +1245,41 @@ function pressBow() {
   RuleBook.discover('eye_bow'); Sound.good();
   toast('軽く会釈した。店主も小さく頷いた。', 'good');
 }
+/* ---- 湯切り（店主が背を向ける）と裏ミッション ---- */
+function masterWatching() { return !(DAY && DAY.gaze.away); }
+const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3();
+function aimedAtMaster() {
+  if (!W) return false;
+  camera.getWorldDirection(_v1);
+  _v2.set(W.master.position.x, 1.72, W.master.position.z).sub(camera.position).normalize();
+  return _v1.dot(_v2) > Math.cos(MASTER_AIM);
+}
+function missionPending(type) { return DAY.mission.active && !DAY.mission.done && MISSIONS[RUN.day].type === type; }
+function completeMission(msg) {
+  DAY.mission.done = true; RUN.missions++;
+  Sound.good(); buzz(30);
+  toast('🎯 ' + msg + '（裏ミッション達成 +' + MISSION_BONUS + '点）', 'good');
+  renderObjective();
+}
+function stepGaze(dt) {
+  const gz = DAY.gaze;
+  if (!GAZE.PHASES.includes(DAY.phase)) { gz.away = false; return; }
+  gz.t -= dt;
+  if (gz.t > 0) return;
+  if (gz.away) { gz.away = false; gz.t = GAZE.WATCH_MIN + Math.random() * GAZE.WATCH_RAND; }
+  else if (!DAY.stare) {        // 目が合っている最中は振り向かない
+    gz.away = true; gz.t = GAZE.AWAY; Sound.tick();
+    if (!gz.hinted && DAY.mission.active && !DAY.mission.done && MISSIONS[RUN.day].type !== 'photoRamen') {
+      gz.hinted = true; toast('店主が湯切りで背を向けた。……今なら見られていない。');
+    }
+  }
+}
 const PHONE_PHASES = [PH.QUEUE, PH.ENTER, PH.WAIT_CALL, PH.EATING, PH.CLEANUP];
 function pressPhone() {
   if (!isPlaying() || !PHONE_PHASES.includes(DAY.phase)) return;
+  const unseen = P.z < 0 && !masterWatching();
+  if (unseen && missionPending('phone')) { completeMission('店主が湯切りしている隙に、高速フリックで返信した。'); return; }
+  if (unseen) { toast('店主は背を向けている。今のうちにスマホを見た。'); return; }
   if (P.z < 0 && hasRule('no_phone')) applyIra(IRA.PHONE, 'no_phone', '店主「店内スマホ禁止だ！！」');
   else if (DAY.phase === PH.EATING && hasRule('no_phone')) applyIra(IRA.PHONE, 'no_phone', '店主「食べてる間はスマホ禁止だ！！」');
   else if (P.z < 0) toast('店主が一瞬こちらを見た気がした。スマホは仕舞っておこう。');
@@ -1224,6 +1295,10 @@ function pressCamera() {
   if (aimedBowl) {
     if (!DAY.photoTaken) { DAY.photoTaken = true; RUN.score += SCORE.PHOTO; updateHUD(); toast('ラーメンの写真を撮った（+30点）。許されるのはこれだけだ。', 'good'); }
     else toast('ラーメンの写真を撮った。');
+    if (missionPending('photoRamen')) completeMission('写真を友達に送った。「うまそう！」と即レスが来た。');
+  } else if (!masterWatching()) {
+    if (missionPending('photoMaster') && aimedAtMaster()) completeMission('シャッター音を袖で殺して、店主の横顔を撮った。');
+    else toast('店主は背を向けていた。バレずに撮れた……が、何を撮ったんだ。');
   } else if (hasRule('no_photo')) applyIra(IRA.PHOTO_RULE, 'no_photo', '店主「撮っていいのはラーメンだけだ！！」');
   else applyIra(IRA.PHOTO_SOFT, null, '店主「店内を撮るな」');
 }
@@ -1301,7 +1376,9 @@ function stepActors(dt) {
     return true;
   });
   // 店主は常に客を見る
-  W.master.rotation.y = Math.atan2(P.x - W.master.position.x, P.z - W.master.position.z);
+  const faceP = Math.atan2(P.x - W.master.position.x, P.z - W.master.position.z);
+  const targetYaw = DAY.gaze.away ? Math.PI : faceP;
+  W.master.rotation.y += (targetYaw - W.master.rotation.y) * Math.min(1, dt * GAZE.TURN_SPEED);
   // ドアと暖簾
   W.doorT += ((DAY.doorOpen ? 1 : 0) - W.doorT) * Math.min(1, dt * 5);
   W.door.position.x = W.doorT * 1.62;
@@ -1365,7 +1442,7 @@ function stepWaitCall(dt) {
   if (DAY.waitT <= 0) { if (curShop().call >= 0) openCall(); else startEating(); }
 }
 function stepStare(dt) {
-  if ((DAY.phase === PH.WAIT_CALL || DAY.phase === PH.EATING) && !DAY.stare) {
+  if ((DAY.phase === PH.WAIT_CALL || DAY.phase === PH.EATING) && !DAY.stare && masterWatching()) {
     DAY.stareNext -= dt;
     if (DAY.stareNext <= 0) { DAY.stare = { t: TIME.STARE_WINDOW }; toast('店主と目が合った！ 会釈ボタンで返そう。'); buzz(30); scheduleStare(); }
   }
@@ -1392,7 +1469,7 @@ function stepCleanup(dt) {
 }
 const GAME_STEPS = [
   (dt) => movePlayer(dt), stepJoinQueue, (dt) => stepActors(dt), stepQueue, stepLoiter,
-  stepFriend, stepWaitCall, stepStare, eatTick, stepCleanup,
+  stepFriend, stepWaitCall, stepGaze, stepStare, eatTick, stepCleanup,
 ];
 function updateGame(dt) {
   for (const step of GAME_STEPS) { step(dt); if (!isPlaying()) return; }
@@ -1411,6 +1488,14 @@ function refreshControls() {
   setShow(el.btnCam, ph === PH.EATING || ph === PH.WAIT_CALL);
   setShow(el.btnTissue, ph === PH.EATING);
   setShow(el.btnBow, !!DAY.stare);
+  const gzOn = GAZE.PHASES.includes(ph) && P.z < 0;
+  setShow(el.gaze, gzOn);
+  if (gzOn) {
+    const gz = DAY.gaze, soon = gz.away && gz.t < GAZE.WARN;
+    const cls = soon ? 'soon' : gz.away ? 'away' : '';
+    if (el.gaze._c !== cls) { el.gaze._c = cls; el.gaze.classList.toggle('away', cls === 'away'); el.gaze.classList.toggle('soon', cls === 'soon'); }
+    setText(el.gaze, soon ? '⚠ 振り返りそう！' : gz.away ? '🍜 湯切り中（見られていない）' : '👁 店主が見ている');
+  }
   document.body.classList.toggle('can-walk', !P.seated);
 }
 
@@ -1472,7 +1557,7 @@ const OVERLAY_ACTIONS = {
   close: () => hideOverlay(),
   dayNext: () => { RUN.day++; renderDayIntro(); },
   final: () => renderFinal(),
-  retryDay: () => { RUN.violations = RUN.dayStartViolations; RUN.score = RUN.dayStartScore; startDay(); },
+  retryDay: () => { RUN.violations = RUN.dayStartViolations; RUN.score = RUN.dayStartScore; RUN.missions = RUN.dayStartMissions; startDay(); },
   share: () => shareResult(),
   dlCert: () => downloadCert(),
 };
@@ -1544,6 +1629,7 @@ function renderDayIntro() {
     <ul class="rulelist">${ruleHtml}</ul>
     <p class="small" style="margin-top:8px">※ 張り紙にない「裏ルール」も存在する。店内の張り紙を近づいて読むことでも確認できる。</p>
     <div class="mission">今日のミッション<br>食券：<b>${esc(shop.ticketLabel)}</b>${shop.call >= 0 ? `<br>好み：<b>${esc(shop.callText)}</b>` : ''}<br>手順：券売機で食券 → 道路の向こうの列に並ぶ → 呼ばれたら入店して指定席へ</div>
+    <div class="mission" style="background:#1f3a52">🎯 裏ミッション（食事中にスマホに届く）<br>${esc(MISSIONS[RUN.day].from)}から：<b>${esc(MISSIONS[RUN.day].title)}</b><br><span style="font-size:12px;opacity:.85">店主が<b>湯切りで背を向けている間</b>なら、スマホも撮影もバレない。退店までに達成で +${MISSION_BONUS}点</span></div>
     <button class="btn primary" data-act="dayStart">店に向かう</button>
   </div>${footerHtml()}`);
 }
@@ -1621,7 +1707,8 @@ function renderDayResult() {
   const shop = curShop();
   const eatBonus = (DAY.lastEat && DAY.lastEat.bonus) || 0;
   const calm = (IRA.MAX - DAY.ira) * SCORE.CALM_PER_POINT;
-  const dayScore = SCORE.CLEAR + calm + eatBonus;
+  const missionBonus = DAY.mission.done ? MISSION_BONUS : 0;
+  const dayScore = SCORE.CLEAR + calm + eatBonus + missionBonus;
   RUN.score += dayScore; RUN.totalIra += DAY.ira; RUN.cleared++;
   updateHUD();
   const comment = DAY.ira <= 15 ? '店主が小さく頷いた。ほぼ完璧な客だった。' : DAY.ira <= 40 ? '無事完食。だが店主の視線はまだ少し痛い。' : DAY.ira <= 70 ? 'ヒヤヒヤの完食だった。作法の復習が必要だ。' : '出禁寸前。次はないと思え。';
@@ -1631,7 +1718,7 @@ function renderDayResult() {
   <div class="card center">
     <div class="face">${faceFor(DAY.ira)}</div>
     <p class="txt" style="margin-top:6px">${esc(comment)}</p>
-    <p class="txt" style="margin-top:8px">この店のスコア：<b>${dayScore}</b>点<br><span class="small">（完食1,000 ＋ 静穏ボーナス ${calm} ＋ 速度ボーナス ${eatBonus}）</span></p>
+    <p class="txt" style="margin-top:8px">この店のスコア：<b>${dayScore}</b>点<br><span class="small">（完食1,000 ＋ 静穏ボーナス ${calm} ＋ 速度ボーナス ${eatBonus} ＋ 裏ミッション ${missionBonus}）</span><br><span class="small">🎯 ${esc(MISSIONS[RUN.day].title)}：${DAY.mission.done ? '<b style="color:#2e7d32">達成</b>' : '未達成'}</span></p>
     <p class="small" style="margin-top:6px">累計スコア： ${RUN.score}点 ／ 違反 ${RUN.violations}回</p>
     ${isLast ? '<button class="btn primary" data-act="final">最終結果へ</button>' : `<button class="btn primary" data-act="dayNext">次の店へ（${RUN.day + 2}軒目）</button>`}
   </div>${footerHtml()}`);
@@ -1645,7 +1732,7 @@ function renderFinal() {
   showOverlay('final', `
   <div class="noren"><div class="t1" style="font-size:26px">全5軒 制覇</div><div class="t2">おつかれさまでした</div></div>
   <div class="cert"><div class="ct">${esc(finalTitle)}証</div>
-    <div class="cb">スコア：<b>${RUN.score}</b>点<br>違反回数：${RUN.violations}回 ／ 累計イラつき：${RUN.totalIra}<br>ルール図鑑：${RuleBook.count} / ${RULE_IDS.length} 件発見<br>右の者は、厳格なる5軒のラーメン店において<br>一度も出禁となることなく完食したことを証する。</div>
+    <div class="cb">スコア：<b>${RUN.score}</b>点<br>違反回数：${RUN.violations}回 ／ 累計イラつき：${RUN.totalIra}<br>ルール図鑑：${RuleBook.count} / ${RULE_IDS.length} 件発見 ／ 裏ミッション：${RUN.missions} / ${SHOPS.length}<br>右の者は、厳格なる5軒のラーメン店において<br>一度も出禁となることなく完食したことを証する。</div>
     <div class="stamp">${RUN.violations === 0 ? '常連' : '完食'}</div></div>
   <div class="card">
     <button class="btn gold" data-act="share">𝕏 に結果をポストする</button>
@@ -1691,7 +1778,7 @@ function drawCert() {
   g.font = `30px ${SANS}`;
   g.fillText(`スコア ${RUN.score}点 ／ 違反 ${RUN.violations}回`, 600, 348);
   g.fillText(finalKind === 'dekin' ? `${RUN.day + 1}軒目で出禁` : '全5軒を完食', 600, 402);
-  g.fillText(`ルール図鑑 ${RuleBook.count} / ${RULE_IDS.length} 件発見`, 600, 456);
+  g.fillText(`ルール図鑑 ${RuleBook.count} / ${RULE_IDS.length} ／ 裏ミッション ${RUN.missions} / ${SHOPS.length}`, 600, 456);
   // 印
   g.save(); g.translate(960, 420); g.rotate(-0.25); g.strokeStyle = 'rgba(192,57,43,.85)'; g.lineWidth = 6;
   g.beginPath(); g.arc(0, 0, 54, 0, 7); g.stroke(); g.fillStyle = 'rgba(192,57,43,.85)'; g.font = `900 30px ${SERIF}`; g.textBaseline = 'middle';
@@ -1702,7 +1789,7 @@ function drawCert() {
 }
 function shareText() {
   if (finalKind === 'dekin') return `🍜『出禁ラーメン3D』${RUN.day + 1}軒目「${SHOPS[RUN.day].name}」で出禁になりました……。スコア${RUN.score}点／違反${RUN.violations}回。3Dで歩ける厳格ラーメン屋、あなたは完食できますか？ #出禁ラーメン3D`;
-  return `🍜『出禁ラーメン3D』全5軒を完食！「${finalTitle}」スコア${RUN.score}点／違反${RUN.violations}回／図鑑${RuleBook.count}件発見。3Dで歩ける厳格ラーメン屋、あなたは怒られずに食べ切れますか？ #出禁ラーメン3D`;
+  return `🍜『出禁ラーメン3D』全5軒を完食！「${finalTitle}」スコア${RUN.score}点／違反${RUN.violations}回／図鑑${RuleBook.count}件発見／裏ミッション${RUN.missions}/${SHOPS.length}。3Dで歩ける厳格ラーメン屋、あなたは怒られずに食べ切れますか？ #出禁ラーメン3D`;
 }
 function shareResult() { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText()), '_blank', 'noopener'); }
 function downloadCert() {
