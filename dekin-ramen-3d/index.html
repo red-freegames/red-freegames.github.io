@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>出禁ラーメン3D</title>
+<meta name="description" content="ルールが厳しすぎるラーメン屋を一人称3Dで体験する客側サバイバル。全5軒、怒られずに食べ切れ。">
+<meta name="theme-color" content="#17110c">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#17110c;--ink:#f7ead1;--sub:#c9b18c;--panel:rgba(20,13,9,.84);--line:#000;
+  --red:#9e2a1c;--red2:#ff6b4a;--gold:#e8b64c;--green:#7bc47f;
+  --paper:#f7ead1;--paper-ink:#2a1a10;--paper-sub:#6b5640;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#c3d{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+
+/* ---------- エラー ---------- */
+#err3d{position:fixed;inset:0;z-index:99;display:none;place-items:center;text-align:center;padding:24px;background:var(--bg);font-weight:700;line-height:1.8}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;z-index:5;pointer-events:none}
+#hudTop{top:calc(8px + var(--sat));left:calc(8px + var(--sal));right:calc(8px + var(--sar));display:none;align-items:center;gap:10px;
+  background:var(--panel);border:2px solid #000;border-radius:12px;padding:6px 10px}
+body.playing #hudTop{display:flex}
+#hudShop{font-weight:900;font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hudScore{font-weight:900;font-size:13px;color:var(--gold);white-space:nowrap}
+.ira{display:flex;align-items:center;gap:6px}
+.ira small{font-size:10px;color:var(--sub);font-weight:700}
+#hudFace{font-size:20px;line-height:1}
+.gauge{height:10px;background:rgba(0,0,0,.55);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.15)}
+.gauge>div{height:100%;width:100%;transform-origin:left center;transform:scaleX(0)}
+#hudIraWrap{width:min(26vw,140px)}
+#hudIra{background:var(--green)}
+#hudIra.lv1{background:var(--gold)}#hudIra.lv2{background:#e67e22}#hudIra.lv3{background:#e74c3c}
+#objective{top:calc(58px + var(--sat));left:50%;transform:translateX(-50%);display:none;max-width:min(92vw,520px);
+  background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:5px 12px;font-size:13px;text-align:center;line-height:1.45}
+@media (max-width:480px){#objective{font-size:12px}}
+#objective b{color:var(--gold)}
+body.playing #objective{display:block}
+#crosshair{left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.55);display:none}
+body.playing #crosshair{display:block}
+#prompt{left:50%;bottom:calc(150px + var(--sab));transform:translateX(-50%);display:none;background:var(--panel);border:2px solid var(--gold);
+  border-radius:99px;padding:6px 16px;font-weight:900;font-size:14px;white-space:nowrap}
+body.touch #prompt{display:none!important}
+#toast{top:calc(124px + var(--sat));left:50%;transform:translateX(-50%);z-index:30;display:none;max-width:min(92vw,480px);
+  background:rgba(20,13,9,.92);border:2px solid #555;border-radius:12px;padding:8px 14px;font-size:14px;font-weight:700;line-height:1.55;text-align:center}
+#toast.good{border-color:var(--green)}#toast.bad{border-color:#e74c3c}
+#banner{top:38%;left:50%;transform:translate(-50%,-50%);z-index:30;display:none;max-width:94vw;background:var(--red);color:#fff;border:3px solid #000;
+  border-radius:10px;padding:12px 18px;font-size:clamp(18px,5.4vw,28px);font-weight:900;text-align:center;box-shadow:0 6px 0 #000;animation:shake .35s}
+@keyframes shake{0%,100%{transform:translate(-50%,-50%)}25%{transform:translate(calc(-50% - 6px),-50%) rotate(-1deg)}75%{transform:translate(calc(-50% + 6px),-50%) rotate(1deg)}}
+
+/* ---------- 食事パネル ---------- */
+#eatPanel{left:calc(10px + var(--sal));bottom:calc(16px + var(--sab));width:min(56vw,300px);display:none;background:var(--panel);
+  border:2px solid #000;border-radius:12px;padding:8px 10px}
+#eatPanel .row{display:grid;grid-template-columns:4.6em 1fr auto;white-space:nowrap;align-items:center;gap:6px;margin:3px 0;font-size:11px;font-weight:900}
+#eatPanel .gauge{height:12px}
+#eatRemain{background:#e6a33c}#eatPress{background:#e74c3c}#eatTime{background:#5dade2}
+#eatTimeTxt{min-width:2.6em;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- 操作ボタン ---------- */
+#controls{position:fixed;z-index:6;right:calc(12px + var(--sar));bottom:calc(14px + var(--sab));display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+#controls .row{display:flex;gap:10px}
+.abtn{pointer-events:auto;display:none;align-items:center;justify-content:center;border:3px solid #000;color:#fff;font-weight:900;cursor:pointer;
+  font-family:inherit;touch-action:none;box-shadow:0 5px 0 #000;transition:transform .05s}
+.abtn.show{display:flex}
+.abtn:active,.abtn.press{transform:translateY(4px);box-shadow:0 1px 0 #000}
+.abtn.mini{width:60px;height:60px;border-radius:50%;background:#37474f;font-size:24px;flex-direction:column}
+.abtn.mini span{font-size:9px;line-height:1;margin-top:1px}
+#btnAct{min-height:64px;min-width:150px;max-width:min(62vw,300px);padding:8px 18px;border-radius:18px;background:var(--gold);color:#2a1a10;font-size:16px;line-height:1.3;text-align:center}
+#btnSlurp{width:112px;height:112px;border-radius:50%;background:var(--red);font-size:24px;flex-direction:column}
+#btnSlurp span{font-size:11px;opacity:.8}
+#btnBow{position:fixed;z-index:7;left:50%;top:60%;transform:translate(-50%,-50%);padding:14px 30px;border-radius:99px;background:var(--gold);color:#2a1a10;font-size:22px;animation:pulse .5s infinite alternate}
+#btnBow:active{transform:translate(-50%,calc(-50% + 4px))}
+@keyframes pulse{from{box-shadow:0 5px 0 #000,0 0 0 0 rgba(232,182,76,.7)}to{box-shadow:0 5px 0 #000,0 0 0 14px rgba(232,182,76,0)}}
+.kbd{display:none;font-size:10px;opacity:.75;font-weight:700}
+body:not(.touch) .kbd{display:inline}
+
+/* ---------- 仮想スティック ---------- */
+#joy{position:fixed;z-index:4;left:0;top:0;width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.28);pointer-events:none;display:none;opacity:.55;will-change:transform}
+#joy.active{opacity:1}
+#joyKnob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.55);border:2px solid rgba(0,0,0,.4);will-change:transform}
+body.touch.playing.can-walk #joy{display:block}
+body.ui-open #controls,body.ui-open #joy,body.ui-open #prompt,body.ui-open #crosshair,body.ui-open #btnBow{display:none!important}
+
+/* ---------- オーバーレイ ---------- */
+#overlay{position:fixed;inset:0;z-index:20;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(10,6,4,.74);
+  padding:calc(12px + var(--sat)) calc(10px + var(--sar)) calc(16px + var(--sab)) calc(10px + var(--sal));-webkit-user-select:text;user-select:text}
+.sheet{max-width:520px;margin:0 auto;padding:6px 0 20px}
+.noren{background:var(--red);color:#fff;text-align:center;padding:16px 12px 26px;border-radius:6px 6px 0 0;border-top:8px solid #3a2414;
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 14px) no-repeat,repeating-linear-gradient(90deg,#000 0 calc(25% - 3px),transparent calc(25% - 3px) 25%) bottom/100% 14px no-repeat;
+  mask:linear-gradient(#000 0 0) top/100% calc(100% - 14px) no-repeat,repeating-linear-gradient(90deg,#000 0 calc(25% - 3px),transparent calc(25% - 3px) 25%) bottom/100% 14px no-repeat}
+.noren .t1{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:34px;font-weight:900;letter-spacing:.06em;line-height:1.2;text-shadow:2px 2px 0 rgba(0,0,0,.35)}
+.noren .t2{font-size:13px;font-weight:700;margin-top:4px;opacity:.92}
+.card{background:var(--paper);color:var(--paper-ink);border-radius:12px;padding:14px;margin-top:10px}
+.noren+.card{margin-top:6px}
+.card h3{font-size:14px;font-weight:900}
+.txt{font-size:14px;line-height:1.75}
+.small{font-size:12px;line-height:1.6;color:var(--paper-sub)}
+.center{text-align:center}
+.btn{display:block;width:100%;margin-top:10px;padding:14px 14px;min-height:52px;font:inherit;font-size:16px;font-weight:900;border-radius:12px;border:2px solid var(--paper-ink);
+  background:#fff;color:var(--paper-ink);box-shadow:0 4px 0 var(--paper-ink);cursor:pointer;text-align:left;touch-action:manipulation}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--paper-ink)}
+.btn.primary{background:var(--red);color:#fff;text-align:center}
+.btn.ghost{background:transparent;text-align:center}
+.btn.gold{background:var(--gold);text-align:center}
+.rulelist{list-style:none;margin-top:8px}
+.rulelist li{padding:8px 2px;border-bottom:1px dashed #c9b18c;font-size:14px;line-height:1.55}
+.rulelist li.locked{opacity:.55}
+.tag{display:inline-block;font-size:10px;font-weight:900;padding:1px 6px;border-radius:4px;margin-right:6px;color:#fff;vertical-align:2px}
+.tag-omote{background:var(--red)}.tag-ura{background:#4a235a}
+.mission{margin-top:12px;background:var(--paper-ink);color:var(--paper);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.75}
+.mission b{color:var(--gold)}
+.say{margin-top:10px;background:#fff;border:2px solid var(--paper-ink);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;line-height:1.6}
+.card .gauge{height:12px;border-color:rgba(0,0,0,.25)}
+#callBar{background:linear-gradient(90deg,#e74c3c,#e8b64c 40%,#7bc47f);transform:scaleX(1)}
+.ticket-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ticket{background:#263238;color:#fff;border-radius:10px;padding:16px 8px;text-align:center;cursor:pointer;border:2px solid #000;box-shadow:inset 0 -5px 0 rgba(0,0,0,.4);touch-action:manipulation}
+.ticket:active{transform:translateY(2px)}
+.ticket .nm{font-size:14px;font-weight:900;line-height:1.35}
+.ticket .pr{font-size:13px;color:var(--gold);font-weight:900;margin-top:4px}
+.cert{position:relative;margin-top:10px;background:var(--paper);color:#3a2a12;border:5px double #8a6d2f;border-radius:6px;padding:18px 14px 22px;text-align:center}
+.cert .ct{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:26px;font-weight:900}
+.cert .cb{font-size:13px;line-height:1.9;margin-top:8px}
+.stamp{position:absolute;right:12px;bottom:12px;width:64px;height:64px;border-radius:50%;border:3px solid #c0392b;color:#c0392b;display:grid;place-items:center;
+  font-weight:900;font-size:16px;transform:rotate(-14deg);opacity:.85}
+.face{font-size:64px;line-height:1.1}
+.sens{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;font-weight:700;color:var(--paper-sub)}
+.sens input{flex:1;accent-color:var(--red)}
+footer{text-align:center;font-size:11px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media (max-height:520px){#btnSlurp{width:92px;height:92px}.abtn.mini{width:52px;height:52px}#prompt{bottom:calc(110px + var(--sab))}}
+</style>
+</head>
+<body>
+<canvas id="c3d" tabindex="-1"></canvas>
+<div id="err3d">3D表示の読み込みに失敗しました。<br>通信環境を確認して、ページを再読み込みしてください。</div>
+
+<div id="hudTop" class="hud">
+  <div id="hudShop"></div>
+  <div id="hudScore"></div>
+  <div class="ira"><small>イラつき</small><div id="hudIraWrap" class="gauge"><div id="hudIra"></div></div><span id="hudFace">😐</span></div>
+</div>
+<div id="objective" class="hud"></div>
+<div id="crosshair" class="hud"></div>
+<div id="prompt" class="hud"></div>
+<div id="toast" class="hud"></div>
+<div id="banner" class="hud"></div>
+
+<div id="eatPanel" class="hud">
+  <div class="row"><span>残り</span><div class="gauge"><div id="eatRemain"></div></div><span></span></div>
+  <div class="row"><span>店主の圧</span><div class="gauge"><div id="eatPress"></div></div><span></span></div>
+  <div class="row"><span>制限時間</span><div class="gauge"><div id="eatTime"></div></div><span id="eatTimeTxt"></span></div>
+</div>
+
+<div id="joy"><div id="joyKnob"></div></div>
+<button id="btnBow" class="abtn" type="button">🙇 会釈する <span class="kbd">&nbsp;[B]</span></button>
+<div id="controls">
+  <div class="row">
+    <button id="btnPhone" class="abtn mini" type="button">📱<span>スマホ</span></button>
+    <button id="btnCam" class="abtn mini" type="button">📷<span>撮影</span></button>
+    <button id="btnTissue" class="abtn mini" type="button">🧻<span>ティッシュ</span></button>
+  </div>
+  <button id="btnAct" class="abtn" type="button"></button>
+  <button id="btnSlurp" class="abtn" type="button">すする<span class="kbd">[Space]</span></button>
+</div>
+
+<div id="overlay"></div>
+
+<!-- Three.js r128（ライブラリ本体はCDNから読み込み） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+if (typeof THREE === 'undefined') { document.getElementById('err3d').style.display = 'grid'; throw new Error('three.js not loaded'); }
+
+/* =====================================================================
+ * 1. 定数（ゲームバランスの数値は現行版と同一）
+ * ===================================================================== */
+const SAVE_KEY = { RULES: 'dekin3d_rules', BEST: 'dekin3d_best', SENS: 'dekin3d_sens' };
+
+/** フェイズ（1軒の中の進行段階） */
+const PH = Object.freeze({
+  ARRIVE: 'arrive',     // 到着。食券を買って列へ
+  QUEUE: 'queue',       // 列に並んでいる
+  ENTER: 'enter',       // 呼ばれた。指定席へ
+  WAIT_CALL: 'waitCall',// 着席。店主の声待ち
+  CALL: 'call',         // 好みのコール（オーバーレイ）
+  EATING: 'eating',     // 食事中
+  CLEANUP: 'cleanup',   // 丼上げ〜退店
+  LEFT: 'left',         // 退店済み（結果表示）
+});
+
+/** イラつき上昇量（店の倍率を掛ける前） */
+const IRA = {
+  MAX: 100,
+  TICKET_WRONG: 12, NO_TICKET_AT_CALL: 20,
+  STRAY: 6, LOITER: 8, FRIEND_JOINED: 24,
+  CALL_TIMEOUT: 16, CALL_WRONG: 12,
+  CHOKE: 8, PRESSURE_MAX: 12, LEFTOVER_DIV: 4,
+  WHISPER_REPLY: 14, PHONE: 20, PHOTO_RULE: 20, PHOTO_SOFT: 6,
+  TISSUE_FIRST: 14, TISSUE_MORE: 6, STARE_MISS: 6,
+  LINGER: 5, BOWL_FORGOT: 12,
+};
+/** 店主の顔の段階のしきい値 */
+const FACE_STEPS = [25, 50, 75];
+
+/** 時間（秒） */
+const TIME = {
+  STRAY_GRACE: 2.5, STRAY_COOLDOWN: 4,
+  LOITER_GRACE: 2.5, LOITER_COOLDOWN: 5,
+  FRIEND_SPAWN_AFTER: 6, FRIEND_JOIN_LIMIT: 5,
+  WAIT_CALL: 2.2,
+  STARE_MIN: 8, STARE_RAND: 7, STARE_WINDOW: 2.5,
+  WHISPER: 4,
+  LINGER: 8, LINGER_REPEAT_AT: 4,
+  TOAST: 3.4, BANNER: 2.2, BANNER_CALL_IN: 2.0,
+  MAX_DT: 0.05, MAX_DT_REALTIME: 0.25,
+};
+
+/** 食事 */
+const EAT_CFG = {
+  BITE: 6, CHOKE_BACK: 4,
+  RAPID_GAP_MS: 170, RAPID_COUNT: 3,
+  IDLE_MS: 1200, PRESS_RATE: 22 /* 2.2 × 10 / 秒 × 店の圧倍率 */, PRESS_RELIEF: 40, PRESS_AFTER_SHOUT: 45,
+  WHISPER_AT: 55,
+  BONUS_BASE: 200, BONUS_PER_SEC: 10,
+};
+
+/** スコア */
+const SCORE = { CLEAR: 1000, CALM_PER_POINT: 10, PHOTO: 30, TITLE_TOTAL_IRA: 150 };
+
+/** ティッシュの裏ルールが有効になる店（0始まり） */
+const TISSUE_RULE_FROM_DAY = 3;
+
+/** 配置（ワールド座標。z=0 が店の正面、z<0 が店内） */
+const POS = {
+  PLAYER_START: { x: 7.5, z: 10.8, yaw: 0.35 },
+  SEAT: { x: 0.7, z: -4.1 }, SEATED_EYE: { x: 0.7, z: -3.82 }, AFTER_EAT: { x: 0.7, z: -3.5 },
+  BOWL: { x: 0.7, y: 1.14, z: -5.0 }, BOWL_DROP: { x: 0.7, z: -4.4 },
+  QUEUE_Z: 8.6, QUEUE_GAP: 1.8,
+  TICKET: { x: 2.6, z: 1.2 }, WATER: { x: -5.3, z: -1.4 },
+  POSTERS: [{ x: -3.4, z: -7.2 }, { x: 3.4, z: -7.2 }],
+  MASTER: { x: 0.4, z: -6.5 },
+  QUEUE_EXIT: { x: 0, z: 1.8 },
+  FRIEND_SPAWN: { x: 13, z: 11.5 }, FRIEND_GONE: { x: 14, z: 12.5 }, FRIEND_OFFSET: { x: 0.85, z: 0.3 },
+  STREET_LAMPS: [{ x: -5.5, z: 12.0 }, { x: 4.6, z: 12.0 }],
+};
+
+/** 距離（m） */
+const RANGE = {
+  JOIN_QUEUE: 1.6, STRAY: 2.1,
+  LOITER_Z: 2.2, LOITER_TICKET_FREE: 2.4,
+  FRIEND_REFUSE: 2.4, FRIEND_JOIN: 1.15, FRIEND_GONE: 0.4,
+  TICKET: 2.0, POSTER: 1.9, WATER: 1.7, SEAT: 1.5, BOWL_DROP: 1.5,
+  EXIT_Z: 0.6,
+};
+
+/** 移動・衝突 */
+const MOVE = {
+  SPEED: 3.3, NPC_SPEED: 2.2, FRIEND_SPEED: 2.6,
+  BOUNDS: { xMin: -9.5, xMax: 9.5, zMin: -7.5, zMax: 11.6 }, INSIDE_X: 6.8,
+  DOOR_HALF: 0.85, COUNTER_Z: -4.5,
+  TICKET_R: 0.62, NPC_R: 0.45, LAMP_R: 0.3,
+  EYE: 1.62, EYE_SEATED: 1.4, BOB: 0.035, BOB_FREQ: 9,
+};
+
+/** 視点 */
+const VIEW = {
+  PITCH_LIMIT: 1.15, SEAT_YAW: 0.85, SEAT_PITCH_MIN: -0.95, SEAT_PITCH_MAX: 0.3,
+  SEAT_START_PITCH: -0.3,
+  PHOTO_PITCH: -0.22, PHOTO_YAW: 0.55,   // この範囲で座って下を向いて撮ると「ラーメンの写真」
+  FOV: 66,
+};
+
+/** スマホ操作 */
+const CTRL = {
+  JOY_ZONE: 0.45,        // 画面左45%のタッチは移動スティック
+  JOY_RADIUS: 52, JOY_DEADZONE: 0.12,
+  LOOK_MOUSE: 0.0045, LOOK_TOUCH: 0.0062, LOOK_MAX_STEP: 140,
+  SENS_MIN: 0.5, SENS_MAX: 2.0,
+};
+
+/** 湯気 */
+const STEAM = { POOL: 32, LIFE: 2.2, RISE: 0.42, SIZE0: 0.22, SIZE1: 0.8, ALPHA: 0.3 };
+
+const NPC_COLORS = [0x546e7a, 0x6d4c41, 0x33691e, 0xad1457, 0x4527a0, 0xef6c00];
+
+/* =====================================================================
+ * 2. ユーティリティ・保存・音
+ * ===================================================================== */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist2d = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
+const nowMs = () => performance.now();
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const IS_TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || ('ontouchstart' in window);
+if (IS_TOUCH) document.body.classList.add('touch');
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
+};
+
+/** 固定シードの乱数（テクスチャの模様を毎回同じにする） */
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+const Sound = (() => {
+  let ac = null;
+  function ctx() {
+    try {
+      if (!ac) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ac = new C(); }
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { return null; }
+    return ac;
+  }
+  function beep(freq, dur = 0.09, type = 'square', vol = 0.05) {
+    const a = ctx(); if (!a) return;
+    try {
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+    } catch (e) { }
+  }
+  const seq = (notes, step, dur, type, vol) => notes.forEach((f, i) => setTimeout(() => beep(f, dur, type, vol), i * step));
+  return {
+    unlock: ctx,
+    good() { beep(880, .09, 'square', .05); setTimeout(() => beep(1320, .12, 'square', .05), 80); },
+    mid() { beep(520, .1, 'square', .045); },
+    bad() { beep(160, .22, 'sawtooth', .07); setTimeout(() => beep(110, .3, 'sawtooth', .07), 90); },
+    shout() { beep(220, .15, 'sawtooth', .09); setTimeout(() => beep(180, .25, 'sawtooth', .09), 110); },
+    slurp() { beep(300 + Math.random() * 120, .06, 'triangle', .05); },
+    clear() { seq([660, 880, 1100, 1320], 95, .12, 'square', .05); },
+    dekin() { seq([400, 350, 300, 200], 160, .2, 'sawtooth', .07); },
+  };
+})();
+function buzz(ms) { if (IS_TOUCH && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { } } }
+
+/* =====================================================================
+ * 3. ゲームデータ（現行版の内容そのまま）
+ * ===================================================================== */
+const RULES = {
+  ticket_first: { name: "食券は先に買う", desc: "並ぶ前に券売機で食券を買う。順番が来てから買うのは論外。", ura: false },
+  queue_across: { name: "列は道路の向こう側", desc: "店の前に並んではいけない。列は道路を挟んだ向こう側。店先でうろつくのも同罪。", ura: false },
+  no_daihyo: { name: "代表待ち禁止", desc: "代表者だけが並んで後から合流するのは厳禁。友達は追い返すのが作法。", ura: false },
+  no_phone: { name: "店内スマホ禁止", desc: "店内ではスマホを見ない。食事中も同じ。着信音は論外。", ura: false },
+  no_photo: { name: "撮影はラーメンのみ", desc: "撮っていいのは自分のラーメンだけ。店内や店主を撮ると即アウト。", ura: false },
+  no_talk: { name: "私語禁止", desc: "店内では喋らない。隣の客に返事をするのも「私語」にカウントされる。無視が正解。", ura: false },
+  call_once: { name: "好みは一度で答える", desc: "店主に好みを聞かれたら、間を置かず一度で正確に答える。", ura: false },
+  bowl_up: { name: "食べたら丼をカウンターへ", desc: "食べ終わったら丼をカウンターの上に上げてから退店する。置きっぱなしは粗相。", ura: false },
+  self_water: { name: "水はセルフ", desc: "水は給水器から自分で汲む。店主は給仕ではない。", ura: true },
+  eye_bow: { name: "目が合ったら会釈", desc: "店主と目が合ったら軽く会釈する。逸らすのも、ガン見も、微笑み返すのも違う。", ura: true },
+  tissue2: { name: "ティッシュは2枚まで", desc: "卓上ティッシュの使用は2枚まで。3枚目に手を伸ばした時点で見られている。", ura: true },
+  no_linger: { name: "食べ終わったらすぐ出る", desc: "完食後の余韻は禁止。席は次に並ぶ人のもの。", ura: true }
+};
+const SHOPS = [
+  { name: "頑固ラーメン「一文字」", master: "店主・一文字 厳", genre: "醤油ラーメン", noren: 0x96281b,
+    intro: "近所にできた頑固店主の店。カウンター8席。今日は基本作法を叩き込まれる日だ。",
+    rules: ["ticket_first", "queue_across", "bowl_up"], iraMul: 1, queueN: 3, queueSec: 6, eatTime: 30, press: 1.0, callSec: 0,
+    ticket: "ramen_nami", ticketLabel: "ラーメン（並）", call: 0, callText: "全部ふつう" },
+  { name: "家系ラーメン「武蔵堂」", master: "店主・武蔵", genre: "家系ラーメン", noren: 0x1f4e79,
+    intro: "キレの強い醤油豚骨の家系。スマホと代表待ちにうるさい店だ。友達が合流したがるかもしれない。",
+    rules: ["no_phone", "no_daihyo"], iraMul: 1, queueN: 4, queueSec: 6, eatTime: 27, press: 1.15, callSec: 7,
+    ticket: "chashu_nami", ticketLabel: "チャーシューメン（並）", call: 1, callText: "麺かため・あとはふつう" },
+  { name: "つけ麺「断固亭」", master: "店主・断固", genre: "濃厚つけ麺", noren: 0x4a235a,
+    intro: "私語厳禁で有名なつけ麺の店。隣の客が話しかけてきても、返事をしてはいけない。",
+    rules: ["no_talk", "call_once"], iraMul: 1, queueN: 4, queueSec: 5.5, eatTime: 24, press: 1.3, callSec: 6,
+    ticket: "tsuke_chu", ticketLabel: "つけ麺（中盛）", call: 0, callText: "ニンニク抜き" },
+  { name: "塩ラーメン「静寂」", master: "店主・静", genre: "塩ラーメン", noren: 0x2e5e4e,
+    intro: "静けさそのものが売りの塩ラーメン店。細かい作法まで見られている。",
+    rules: [], iraMul: 1, queueN: 5, queueSec: 5.5, eatTime: 22, press: 1.45, callSec: 0,
+    ticket: "tokusei_shio", ticketLabel: "特製塩ラーメン（味玉入り）", call: -1, callText: "" },
+  { name: "総本山「頑固家 本店」", master: "総帥・頑固家", genre: "家系ラーメン総本山", noren: 0x7d1f14,
+    intro: "すべての厳格店の頂点。ルールは累計すべて適用、店主のイラつきは1.5倍。生きて帰れるか。",
+    rules: ["no_photo"], iraMul: 1.5, queueN: 5, queueSec: 5, eatTime: 20, press: 1.7, callSec: 5,
+    ticket: "tokusei", ticketLabel: "特製ラーメン", call: 2, callText: "麺かため・味濃いめ・あとはふつう" }
+];
+const TICKETS = [
+  [{ id: "ramen_nami", nm: "ラーメン（並）", pr: 900 }, { id: "chashu", nm: "チャーシューメン", pr: 1150 }, { id: "ramen_dai", nm: "ラーメン（大）", pr: 1200 }, { id: "ajitama", nm: "味玉（単品）", pr: 100 }],
+  [{ id: "ramen_nami", nm: "ラーメン（並）", pr: 900 }, { id: "chashu_nami", nm: "チャーシューメン（並）", pr: 1150 }, { id: "chashu_dai", nm: "チャーシューメン（大）", pr: 1400 }, { id: "nori", nm: "のり（単品）", pr: 200 }],
+  [{ id: "tsuke_nami", nm: "つけ麺（並盛）", pr: 1050 }, { id: "tsuke_chu", nm: "つけ麺（中盛）", pr: 1050 }, { id: "tsuke_dai", nm: "つけ麺（大盛）", pr: 1050 }, { id: "tsuke_toku", nm: "特製つけ麺", pr: 1300 }],
+  [{ id: "shio", nm: "塩ラーメン", pr: 950 }, { id: "tokusei_shio", nm: "特製塩ラーメン", pr: 1150 }, { id: "shoyu", nm: "醤油ラーメン", pr: 950 }, { id: "ajitama", nm: "味玉（単品）", pr: 120 }],
+  [{ id: "ramen", nm: "ラーメン", pr: 900 }, { id: "tokusei", nm: "特製ラーメン", pr: 1250 }, { id: "chashu", nm: "チャーシューメン", pr: 1150 }, { id: "tokusei_tsuke", nm: "特製つけ麺", pr: 1250 }]
+];
+const CALLS = [
+  ["全部ふつうで", "かため・濃いめ・油多めで", "……（無言）"],
+  ["全部ふつうで", "かため・あとはふつうで", "やわめ・薄め・少なめで"],
+  ["ニンニク抜きで", "ニンニクマシマシで！", "……（無言でうつむく）"],
+  null,
+  ["全部ふつうで", "かため・あとはふつうで", "かため・濃いめ・あとはふつうで"]
+];
+const RULE_IDS = Object.keys(RULES);
+/** 各店までの累計ルール */
+const CUM_RULES = SHOPS.map((_, idx) => {
+  const out = [];
+  for (let i = 0; i <= idx; i++) SHOPS[i].rules.forEach(r => { if (!out.includes(r)) out.push(r); });
+  return out;
+});
+const shopRules = idx => CUM_RULES[idx];
+
+/* ---------- ルール図鑑 ---------- */
+const RuleBook = {
+  found: new Set(store.get(SAVE_KEY.RULES, [])),
+  get count() { return this.found.size; },
+  has(id) { return this.found.has(id); },
+  discover(id) {
+    if (!id || !RULES[id] || this.found.has(id)) return false;
+    this.found.add(id);
+    store.set(SAVE_KEY.RULES, Array.from(this.found));
+    toast('📖 ルール図鑑に記録：「' + RULES[id].name + '」', 'good');
+    return true;
+  },
+};
+
+/* =====================================================================
+ * 4. 状態
+ *  RUN … 5軒通しの記録 / DAY … 1軒ぶんの状態（startDayで作り直す）
+ *  P   … プレイヤーの位置と視点 / EAT … 食事ミニゲーム
+ * ===================================================================== */
+let RUN = null, DAY = null, EAT = null;
+const P = { x: 0, z: 0, yaw: 0, pitch: 0, seated: false, bob: 0, moving: false };
+
+function newRun() {
+  return { day: 0, score: 0, violations: 0, totalIra: 0, cleared: 0, done: false, dayStartScore: 0, dayStartViolations: 0 };
+}
+function newDay(shop) {
+  return {
+    phase: PH.ARRIVE, ira: 0, over: false,
+    hasTicket: false, qPos: shop.queueN, queueTime: 0, queueTimer: shop.queueSec,
+    doorOpen: false, strayT: 0, loiterT: 0,
+    friend: { state: 'none', t: 0 },          // none → approach → joined → leave → done
+    waitT: 0, callLeft: 0,
+    stare: null, stareNext: Infinity,
+    whisper: null, whisperDone: false,
+    tissue: 0, photoTaken: false,
+    bowlCarried: false, bowlPlaced: false, cleanT: 0, lastEat: null,
+  };
+}
+const curShop = () => SHOPS[RUN.day];
+const hasRule = id => !!RUN && CUM_RULES[RUN.day].includes(id);
+const faceLevel = ira => FACE_STEPS.filter(s => ira >= s).length;
+const faceFor = ira => ["😐", "😠", "😡", "👹"][faceLevel(ira)];
+const isPlaying = () => !!(RUN && DAY && !DAY.over && !ui.overlay);
+
+/* =====================================================================
+ * 5. Three.js 基本・共有リソース
+ * ===================================================================== */
+const canvas = $('c3d');
+const DPR = window.devicePixelRatio || 1;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: DPR < 2, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(DPR, IS_TOUCH ? 1.5 : 2));
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+let scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(VIEW.FOV, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.rotation.order = 'YXZ';
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+}
+window.addEventListener('resize', onResize);
+
+// マテリアルとジオメトリは使い回す（ドローコールは同じでもメモリとGCが軽くなる）
+const _mat = new Map(), _geo = new Map();
+function lambert(color) { let m = _mat.get(color); if (!m) { m = new THREE.MeshLambertMaterial({ color }); _mat.set(color, m); } return m; }
+function basic(color) { const k = 'b' + color; let m = _mat.get(k); if (!m) { m = new THREE.MeshBasicMaterial({ color }); _mat.set(k, m); } return m; }
+function geo(key, make) { let g = _geo.get(key); if (!g) { g = make(); _geo.set(key, g); } return g; }
+const boxGeo = (w, h, d) => geo(`box${w},${h},${d}`, () => new THREE.BoxGeometry(w, h, d));
+const cylGeo = (rt, rb, h, s = 12, open = false) => geo(`cyl${rt},${rb},${h},${s},${open}`, () => new THREE.CylinderGeometry(rt, rb, h, s, 1, open));
+const planeGeo = (w, h) => geo(`pl${w},${h}`, () => new THREE.PlaneGeometry(w, h));
+
+function makeCanvasTex(w, h, draw, repeat) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(cv);
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  return t;
+}
+const hex = c => '#' + c.toString(16).padStart(6, '0');
+const SERIF = '"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
+const SANS = '"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif';
+
+/* ---- 店をまたいで共有するテクスチャ ---- */
+const TEX = (() => {
+  const woodDraw = (base, dark, light, seed) => (g, w, h) => {
+    const r = seeded(seed); g.fillStyle = base; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 46; i++) {
+      g.strokeStyle = r() < 0.5 ? dark : light; g.globalAlpha = 0.18 + r() * 0.25; g.lineWidth = 1 + r() * 2.5;
+      const y = r() * h; g.beginPath(); g.moveTo(0, y);
+      for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x * 0.02 + i) * (2 + r() * 3));
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  };
+  return {
+    counterTop: makeCanvasTex(256, 64, woodDraw('#b98a57', '#7a5330', '#d9ab74', 3), [5, 1]),
+    backWood: makeCanvasTex(256, 64, woodDraw('#6e5638', '#4a3622', '#8a6d4a', 7), [4, 1]),
+    slats: makeCanvasTex(128, 128, (g, w, h) => {
+      g.fillStyle = '#7c5c3b'; g.fillRect(0, 0, w, h);
+      for (let x = 0; x < w; x += 16) { g.fillStyle = (x / 16) % 2 ? '#6e5033' : '#86643f'; g.fillRect(x, 0, 14, h); g.fillStyle = '#3d2a18'; g.fillRect(x + 14, 0, 2, h); }
+    }, [14, 1]),
+    facade: makeCanvasTex(128, 128, (g, w, h) => {
+      g.fillStyle = '#9a7b5a'; g.fillRect(0, 0, w, h);
+      for (let x = 0; x < w; x += 21) { g.fillStyle = '#5a4128'; g.fillRect(x, 0, 3, h); }
+      g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, h - 22, w, 22);
+    }, [6, 2]),
+    tile: makeCanvasTex(128, 128, (g, w, h) => {
+      for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) { g.fillStyle = (x + y) % 2 ? '#5d4630' : '#6f5639'; g.fillRect(x * 64, y * 64, 64, 64); }
+      g.strokeStyle = '#3a2a1a'; g.lineWidth = 3; g.strokeRect(0, 0, 64, 64); g.strokeRect(64, 64, 64, 64); g.strokeRect(64, 0, 64, 64); g.strokeRect(0, 64, 64, 64);
+    }, [14, 8]),
+    pave: makeCanvasTex(128, 128, (g, w, h) => {
+      const r = seeded(11); g.fillStyle = '#8d8578'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 300; i++) { g.fillStyle = r() < .5 ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.05)'; g.fillRect(r() * w, r() * h, 2, 2); }
+      g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.strokeRect(0, 0, w, h); g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.stroke();
+    }, [15, 2]),
+    road: makeCanvasTex(128, 128, (g, w, h) => {
+      const r = seeded(5); g.fillStyle = '#3c3f45'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 500; i++) { g.fillStyle = r() < .5 ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.05)'; g.fillRect(r() * w, r() * h, 1.5, 1.5); }
+    }, [12, 2]),
+    windows: makeCanvasTex(128, 128, (g, w, h) => {
+      const r = seeded(21); g.fillStyle = '#232a36'; g.fillRect(0, 0, w, h);
+      for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) { g.fillStyle = r() < .55 ? '#f5c86a' : '#2e3646'; g.fillRect(8 + x * 40, 14 + y * 60, 28, 38); }
+    }, [8, 2]),
+    steam: makeCanvasTex(64, 64, (g, w, h) => {
+      const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    }),
+    lantern: makeCanvasTex(256, 128, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#8e1b10'); gr.addColorStop(0.5, '#ff4a2a'); gr.addColorStop(1, '#8e1b10');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(80,10,5,.45)'; g.lineWidth = 2; for (let y = 8; y < h; y += 12) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      g.fillStyle = '#1a0a05'; g.font = `900 70px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('麺', w * 0.25, h / 2 + 4); g.fillText('麺', w * 0.75, h / 2 + 4);
+    }),
+    soup: makeCanvasTex(128, 128, (g, w, h) => {
+      g.fillStyle = '#d88f3a'; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill();
+      g.strokeStyle = '#f2d27a'; g.lineWidth = 3; for (let i = 0; i < 9; i++) { g.beginPath(); g.arc(64, 70 + i * 2, 18 + i * 4, 3.4, 5.9); g.stroke(); }
+      g.fillStyle = '#c98a72'; g.beginPath(); g.arc(40, 50, 20, 0, 7); g.fill(); g.fillStyle = '#e8b7a0'; g.beginPath(); g.arc(40, 50, 13, 0, 7); g.fill();
+      g.fillStyle = '#1d2a1d'; g.fillRect(78, 18, 26, 40);
+      g.fillStyle = '#fff'; g.beginPath(); g.ellipse(84, 88, 15, 12, 0, 0, 7); g.fill(); g.fillStyle = '#f0a020'; g.beginPath(); g.arc(84, 88, 7, 0, 7); g.fill();
+      g.fillStyle = '#5fae4a'; const r = seeded(9); for (let i = 0; i < 18; i++) { g.fillRect(48 + r() * 30, 70 + r() * 30, 4, 4); }
+    }),
+  };
+})();
+
+/* ---- 人物 ---- */
+const PERSON_GEO = {
+  body: new THREE.CylinderGeometry(0.21, 0.26, 0.95, 10),
+  head: new THREE.SphereGeometry(0.21, 12, 10),
+  hair: new THREE.SphereGeometry(0.218, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.5),
+  legs: new THREE.BoxGeometry(0.34, 0.42, 0.2),
+};
+function makePerson(bodyColor, skinColor = 0xf0c8a0) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(PERSON_GEO.body, lambert(bodyColor)); body.position.y = 0.85; g.add(body);
+  const head = new THREE.Mesh(PERSON_GEO.head, lambert(skinColor)); head.position.y = 1.55; g.add(head);
+  const hair = new THREE.Mesh(PERSON_GEO.hair, lambert(0x1e1a18)); hair.position.y = 1.57; g.add(hair);
+  const legs = new THREE.Mesh(PERSON_GEO.legs, lambert(0x2b2b33)); legs.position.y = 0.21; g.add(legs);
+  return g;
+}
+
+/* =====================================================================
+ * 6. ワールド構築
+ * ===================================================================== */
+let W = null;   // 現在の店のワールド参照
+const queueSpot = i => ({ x: i * POS.QUEUE_GAP, z: POS.QUEUE_Z });
+
+function disposeWorld() {
+  if (!W) return;
+  W.owned.forEach(r => r.dispose());
+  W = null;
+}
+
+function buildWorld(dayIdx) {
+  disposeWorld();
+  const shop = SHOPS[dayIdx];
+  const owned = [];                          // この店専用のテクスチャ等（作り直し時に破棄）
+  const own = r => { owned.push(r); return r; };
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x141c2c);
+  scene.fog = new THREE.Fog(0x141c2c, 25, 60);
+  const statics = new THREE.Group(); scene.add(statics);   // 動かない物（行列を固定して毎フレームの計算を省く）
+  const box = (w, h, d, mat, x, y, z, parent = statics) => {
+    const m = new THREE.Mesh(boxGeo(w, h, d), typeof mat === 'number' ? lambert(mat) : mat);
+    m.position.set(x, y, z); parent.add(m); return m;
+  };
+  const texMat = (tex, opts = {}) => own(new THREE.MeshLambertMaterial(Object.assign({ map: tex }, opts)));
+  const texBasic = (tex, opts = {}) => own(new THREE.MeshBasicMaterial(Object.assign({ map: tex }, opts)));
+  const plane = (w, h, mat, x, y, z, rx = 0, ry = 0, parent = statics) => {
+    const m = new THREE.Mesh(planeGeo(w, h), mat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); parent.add(m); return m;
+  };
+
+  /* ---- 光 ---- */
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a2c1c, 0.75));
+  const sun = new THREE.DirectionalLight(0xfff2d9, 0.5); sun.position.set(6, 12, 8); scene.add(sun);
+  const warm = new THREE.PointLight(0xffc37a, 0.95, 18); warm.position.set(0, 2.8, -4); scene.add(warm);
+  const lanternLight = new THREE.PointLight(0xff7a45, 0.7, 7); lanternLight.position.set(0, 2.2, 1.2); scene.add(lanternLight);
+
+  /* ---- 地面 ---- */
+  const ground = (w, d, mat, x, z) => plane(w, d, mat, x, 0, z, -Math.PI / 2);
+  ground(30, 2.6, texMat(TEX.pave), 0, 1.3);           // 店側の歩道
+  ground(30, 5.2, texMat(TEX.road), 0, 5.1);           // 道路
+  ground(30, 4.6, texMat(TEX.pave), 0, 9.9);           // 向かい側の歩道
+  ground(14.6, 8.2, texMat(TEX.tile), 0, -4);          // 店内床
+  for (let i = -3; i <= 3; i++) box(1.4, 0.01, 0.18, 0xd8d8d8, i * 3.4, 0.01, 5.1);   // 中央線
+  // 向かいのビル・街灯
+  box(30, 7, 0.6, texMat(TEX.windows), 0, 3.5, 12.6);
+  POS.STREET_LAMPS.forEach(l => {
+    box(0.12, 3.6, 0.12, 0x2f3540, l.x, 1.8, l.z);
+    box(0.12, 0.08, 0.7, 0x2f3540, l.x, 3.6, l.z - 0.3);
+    const bulb = new THREE.Mesh(cylGeo(0.16, 0.22, 0.14, 10), basic(0xfff1c4)); bulb.position.set(l.x, 3.52, l.z - 0.6); statics.add(bulb);
+  });
+
+  /* ---- 店の正面（壁 z=0、ドア x∈[-0.9,0.9]） ---- */
+  const facadeMat = texMat(TEX.facade);
+  box(6.1, 3.2, 0.3, facadeMat, -3.95, 1.6, 0); box(6.1, 3.2, 0.3, facadeMat, 3.95, 1.6, 0);
+  box(1.8, 1.0, 0.3, facadeMat, 0, 2.7, 0);
+  box(14.6, 0.14, 1.1, 0x2b1d12, 0, 3.32, 0.5);               // 庇
+  box(5.9, 1.14, 0.08, 0x2b1d12, 0, 2.75, 0.17);               // 看板の枠
+  const signTex = own(makeCanvasTex(768, 136, (g, w, h) => {
+    g.fillStyle = '#efe2c4'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#1a0f08'; g.font = `900 66px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(shop.name, w / 2, h / 2 + 4);
+  }));
+  plane(5.6, 1.0, texBasic(signTex), 0, 2.75, 0.22);
+  const door = box(1.7, 2.15, 0.08, texMat(TEX.slats), 0, 1.08, -0.05, scene);
+
+  // 暖簾（4枚の布。開くと左右に分かれ、風で少し揺れる）
+  const NOREN_W = 0.42, NOREN_H = 0.95, NOREN_TOP = 2.18, NOREN_N = 4;
+  const norenChars = (shop.name.match(/「(.+)」/) || [, shop.name])[1].replace(/\s/g, '');
+  const norenTex = own(makeCanvasTex(512, 280, (g, w, h) => {
+    g.fillStyle = hex(shop.noren); g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, w, 26);
+    g.fillStyle = '#fff'; g.font = `900 ${norenChars.length > 4 ? 92 : 118}px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    [...norenChars].forEach((c, i, a) => g.fillText(c, (i + 0.5) / a.length * w, h * 0.56));
+  }));
+  const norenMat = own(new THREE.MeshLambertMaterial({ map: norenTex, side: THREE.DoubleSide }));
+  box(2.0, 0.05, 0.05, 0x2b1d12, 0, NOREN_TOP + 0.02, 0.22);   // 暖簾棒
+  const noren = [];
+  for (let i = 0; i < NOREN_N; i++) {
+    const g = own(new THREE.PlaneGeometry(NOREN_W - 0.02, NOREN_H)); g.translate(0, -NOREN_H / 2, 0);
+    const uv = g.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setX(k, (i + uv.getX(k)) / NOREN_N);
+    const m = new THREE.Mesh(g, norenMat);
+    const baseX = (i - (NOREN_N - 1) / 2) * NOREN_W;
+    m.position.set(baseX, NOREN_TOP, 0.2); scene.add(m);
+    noren.push({ m, baseX, dir: i < NOREN_N / 2 ? -1 : 1 });
+  }
+  // 提灯
+  const lanternMat = texBasic(TEX.lantern);
+  const lanterns = [-1.5, 1.5].map(x => {
+    const g = new THREE.Group(); g.position.set(x, 2.95, 0.55); g.scale.setScalar(1.25); scene.add(g);
+    const body = new THREE.Mesh(geo('lantern', () => new THREE.SphereGeometry(0.24, 16, 12)), lanternMat); body.scale.set(1, 1.3, 1); body.position.y = -0.55; g.add(body);
+    const cap1 = new THREE.Mesh(cylGeo(0.13, 0.13, 0.06, 12), lambert(0x111111)); cap1.position.y = -0.22; g.add(cap1);
+    const cap2 = cap1.clone(); cap2.position.y = -0.88; g.add(cap2);
+    const cord = new THREE.Mesh(boxGeo(0.02, 0.2, 0.02), lambert(0x111111)); cord.position.y = -0.1; g.add(cord);
+    return g;
+  });
+
+  /* ---- 店内 ---- */
+  const wallMat = lambert(0x7a5f43);
+  box(14.6, 3.2, 0.3, wallMat, 0, 1.6, -8.1);
+  box(0.3, 3.2, 8.2, wallMat, -7.15, 1.6, -4); box(0.3, 3.2, 8.2, wallMat, 7.15, 1.6, -4);
+  box(14.6, 0.9, 0.06, 0x4a3420, 0, 0.45, -7.92);                       // 腰板
+  box(14.6, 0.2, 8.2, 0x3e2e1d, 0, 3.25, -4);                           // 天井
+  // カウンター（木目の天板・格子の腰）
+  const counterFront = TEX.slats.clone(); counterFront.needsUpdate = true; counterFront.repeat.set(10, 1); own(counterFront);
+  box(11, 1.05, 0.95, texMat(counterFront), 0, 0.53, -5.2);
+  box(11.1, 0.07, 1.08, texMat(TEX.counterTop), 0, 1.085, -5.2);
+  box(11, 0.9, 0.5, texMat(TEX.backWood), 0, 0.45, -7.6);               // 厨房台
+  box(6.4, 0.3, 0.8, 0x9aa3a8, -1.2, 3.0, -7.6);                        // 換気フード
+  [-2.2, -1.1].forEach(x => {                                           // 寸胴鍋
+    box(0.06, 0.06, 0.06, 0x333333, x, 0.93, -7.6);
+    const pot = new THREE.Mesh(cylGeo(0.34, 0.32, 0.55, 16), lambert(0xb8c0c4)); pot.position.set(x, 1.18, -7.6); statics.add(pot);
+  });
+  for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(cylGeo(0.16, 0.11, 0.11, 12), lambert(0xf5f0e6)); b.position.set(2.4, 0.96 + i * 0.1, -7.6); statics.add(b); }
+  // 丸椅子
+  for (let i = 0; i < 8; i++) {
+    const sx = -4.9 + i * 1.4;
+    const leg = new THREE.Mesh(cylGeo(0.05, 0.08, 0.5, 8), lambert(0x9da3a6)); leg.position.set(sx, 0.25, POS.SEAT.z); statics.add(leg);
+    const cush = new THREE.Mesh(cylGeo(0.26, 0.26, 0.1, 14), lambert(0x7d1f14)); cush.position.set(sx, 0.52, POS.SEAT.z); statics.add(cush);
+  }
+  // 吊り照明
+  [-3.5, 0, 3.5].forEach(x => {
+    box(0.02, 0.5, 0.02, 0x111111, x, 2.9, -5.2);
+    const shade = new THREE.Mesh(geo('shade', () => new THREE.ConeGeometry(0.3, 0.24, 14, 1, true)), lambert(0x2b2b2b)); shade.position.set(x, 2.55, -5.2); statics.add(shade);
+    const bulb = new THREE.Mesh(geo('bulb', () => new THREE.SphereGeometry(0.09, 8, 6)), basic(0xffe2a8)); bulb.position.set(x, 2.45, -5.2); statics.add(bulb);
+  });
+  // 指定席マーカー
+  const ring = new THREE.Mesh(geo('seatRing', () => new THREE.RingGeometry(0.34, 0.44, 24)), own(new THREE.MeshBasicMaterial({ color: 0xe8b64c, side: THREE.DoubleSide })));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(POS.SEAT.x, 0.02, POS.SEAT.z); scene.add(ring);
+  // 張り紙（奥の壁）
+  const posterTex = own(makeCanvasTex(512, 384, (g, w, h) => {
+    g.fillStyle = '#f3e7d3'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#7d1f14'; g.font = `900 40px ${SERIF}`; g.textAlign = 'center'; g.fillText('当店のルール', w / 2, 58);
+    g.fillStyle = '#3a2a12'; g.font = `26px ${SERIF}`;
+    shopRules(dayIdx).slice(0, 6).forEach((r, i) => g.fillText('・' + RULES[r].name, w / 2, 118 + i * 42));
+    g.font = `20px ${SANS}`; g.fillStyle = '#8a6d2f'; g.fillText('（近づいて調べると読める）', w / 2, h - 24);
+  }));
+  const posterMat = texBasic(posterTex);
+  POS.POSTERS.forEach(p => plane(2.4, 1.8, posterMat, p.x, 1.8, -7.92));
+  // 品書きの木札
+  TICKETS[dayIdx].forEach((t, i) => {
+    const tex = own(makeCanvasTex(96, 320, (g, w, h) => {
+      g.fillStyle = '#d9b77f'; g.fillRect(0, 0, w, h); g.strokeStyle = '#6e4a22'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
+      const chars = [...t.nm.replace(/[（）()]/g, '')]; const fs = Math.min(40, 236 / chars.length);
+      g.fillStyle = '#1a0f08'; g.font = `900 ${fs}px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'top';
+      chars.forEach((c, k) => g.fillText(c === 'ー' ? '｜' : c, w / 2, 14 + k * fs));
+      g.fillStyle = '#7d1f14'; g.font = `900 20px ${SANS}`; g.textBaseline = 'bottom'; g.fillText(t.pr + '円', w / 2, h - 10);
+    }));
+    plane(0.3, 1.0, texBasic(tex), -0.9 + i * 0.6, 2.35, -7.93);
+  });
+  /* ---- 券売機（店先・右） ---- */
+  const tm = new THREE.Group(); tm.position.set(POS.TICKET.x, 0, POS.TICKET.z); statics.add(tm);
+  box(0.9, 1.5, 0.5, 0x37474f, 0, 0.75, 0, tm);
+  const tmScrTex = own(makeCanvasTex(256, 200, (g, w, h) => {
+    g.fillStyle = '#0d1a24'; g.fillRect(0, 0, w, h);
+    TICKETS[dayIdx].forEach((t, i) => {
+      const x = 8 + (i % 2) * 124, y = 8 + Math.floor(i / 2) * 96;
+      g.fillStyle = t.id === shop.ticket ? '#ffd54f' : '#9fd0ff'; g.fillRect(x, y, 116, 88);
+      g.fillStyle = '#102030'; g.font = `900 17px ${SANS}`; g.textAlign = 'center';
+      const nm = t.nm.length > 7 ? [t.nm.slice(0, 7), t.nm.slice(7)] : [t.nm];
+      nm.forEach((s, k) => g.fillText(s, x + 58, y + 32 + k * 20));
+      g.font = `700 15px ${SANS}`; g.fillText('¥' + t.pr, x + 58, y + 78);
+    });
+  }));
+  plane(0.7, 0.55, texBasic(tmScrTex), 0, 1.05, 0.26, 0, 0, tm);
+  const tmTex = own(makeCanvasTex(256, 64, (g, w, h) => { g.fillStyle = '#263238'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd54f'; g.font = `900 34px ${SANS}`; g.textAlign = 'center'; g.fillText('食券', w / 2, 44); }));
+  plane(0.9, 0.24, texBasic(tmTex), 0, 1.68, 0.1, 0, 0, tm);
+  /* ---- 給水器・ティッシュ ---- */
+  box(0.5, 1.25, 0.5, 0xb0bec5, POS.WATER.x, 0.63, POS.WATER.z);
+  box(0.4, 0.3, 0.4, 0x78909c, POS.WATER.x, 1.4, POS.WATER.z);
+  for (let i = 0; i < 3; i++) { const c = new THREE.Mesh(cylGeo(0.04, 0.035, 0.1, 8), lambert(0xdfe9ee)); c.position.set(POS.WATER.x - 0.12 + i * 0.12, 1.3, POS.WATER.z + 0.3); statics.add(c); }
+  box(0.34, 0.11, 0.14, 0xf5f5f5, POS.SEAT.x + 0.55, 1.16, -5.0);
+  /* ---- 店主（腕組み） ---- */
+  const master = new THREE.Group(); master.position.set(POS.MASTER.x, 0, POS.MASTER.z); scene.add(master);
+  box(0.62, 1.0, 0.34, 0xf0ead8, 0, 0.95, 0, master);         // 白衣
+  box(0.64, 0.5, 0.36, 0x37474f, 0, 0.55, 0, master);         // 前掛け
+  box(0.5, 0.62, 0.02, 0x1f2a30, 0, 0.88, 0.18, master);
+  box(0.74, 0.16, 0.18, 0xf0ead8, 0, 1.18, 0.2, master);      // 組んだ腕
+  const faceCv = document.createElement('canvas'); faceCv.width = 256; faceCv.height = 256;
+  const faceTex = own(new THREE.CanvasTexture(faceCv));
+  const mHead = new THREE.Mesh(boxGeo(0.44, 0.46, 0.4), lambert(0xf0c8a0)); mHead.position.y = 1.72; master.add(mHead);
+  const face = new THREE.Mesh(planeGeo(0.4, 0.42), texBasic(faceTex)); face.position.set(0, 1.72, 0.21); master.add(face);
+  box(0.47, 0.09, 0.43, 0xffffff, 0, 1.88, 0, master);        // 手ぬぐい
+  box(0.46, 0.1, 0.42, 0x263238, 0, 1.98, 0, master);
+  /* ---- 行列NPC ---- */
+  const qnpcs = [];
+  for (let i = 0; i < shop.queueN; i++) qnpcs.push(spawnQueueNpc(i));
+  /* ---- 店内の先客（2人） ---- */
+  const seatedNpcs = [];
+  [[-3.5, 0x546e7a], [3.5, 0x6d4c41]].forEach(([sx, c]) => {
+    const n = makePerson(c); n.position.set(sx, 0.12, POS.SEAT.z + 0.05); n.rotation.y = Math.PI; scene.add(n); seatedNpcs.push(n);
+    const b = makeBowl(); b.position.set(sx, POS.BOWL.y, POS.BOWL.z); statics.add(b);
+  });
+  /* ---- 丼（プレイヤー用） ---- */
+  const bowl = makeBowl(); bowl.position.set(POS.BOWL.x, POS.BOWL.y, POS.BOWL.z); bowl.visible = false; scene.add(bowl);
+  function makeBowl() {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(cylGeo(0.19, 0.12, 0.13, 16), lambert(0xc0392b)));
+    const rim = new THREE.Mesh(cylGeo(0.195, 0.19, 0.02, 16), lambert(0xf5f0e6)); rim.position.y = 0.06; g.add(rim);
+    const soup = new THREE.Mesh(geo('soup', () => new THREE.CircleGeometry(0.17, 18)), soupMat); soup.rotation.x = -Math.PI / 2; soup.position.y = 0.071; g.add(soup);
+    return g;
+  }
+  /* ---- 列の目印リング ---- */
+  const qRing = new THREE.Mesh(geo('qRing', () => new THREE.RingGeometry(0.4, 0.52, 24)), own(new THREE.MeshBasicMaterial({ color: 0xe8b64c, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })));
+  qRing.rotation.x = -Math.PI / 2; qRing.position.set(0, 0.02, POS.QUEUE_Z); scene.add(qRing);
+  // コーン
+  [[-1, 7.6], [2, 7.6], [-1, 9.6], [2, 9.6]].forEach(([x, z]) => { const c = new THREE.Mesh(geo('cone', () => new THREE.ConeGeometry(0.16, 0.5, 10)), lambert(0xe65100)); c.position.set(x, 0.25, z); statics.add(c); });
+  /* ---- 友達NPC（最初は非表示） ---- */
+  const friend = makePerson(0x00838f); friend.position.set(POS.FRIEND_SPAWN.x, 0, POS.FRIEND_SPAWN.z); friend.visible = false; scene.add(friend);
+  /* ---- 湯気 ---- */
+  const steam = createSteam(own);
+  steam.add(-2.2, 1.5, -7.6, 3, 1.3, () => true);
+  steam.add(-1.1, 1.5, -7.6, 3, 1.3, () => true);
+  steam.add(-3.5, 1.24, -5.0, 1.1, 0.6, () => true);
+  steam.add(3.5, 1.24, -5.0, 1.1, 0.6, () => true);
+  steam.add(POS.BOWL.x, 1.24, POS.BOWL.z, 4, 0.75, () => DAY && DAY.phase === PH.EATING);
+
+  statics.traverse(o => { o.updateMatrix(); o.matrixAutoUpdate = false; });
+  statics.updateMatrixWorld(true);
+
+  W = { door, noren, lanterns, master, faceCv, faceTex, faceLv: -1, qnpcs, leavers: [], seatedNpcs, bowl, qRing, friend, ring, steam, owned, doorT: 0 };
+  drawMasterFace(0);
+  return W;
+}
+// soupMat は丼で共有
+const soupMat = new THREE.MeshLambertMaterial({ map: TEX.soup });
+
+function spawnQueueNpc(i) {
+  const n = makePerson(NPC_COLORS[i % NPC_COLORS.length]);
+  const sp = queueSpot(i); n.position.set(sp.x, 0, sp.z); n.rotation.y = Math.PI;
+  scene.add(n);
+  return { g: n, tx: sp.x, tz: sp.z };
+}
+
+/** 湯気パーティクル（スプライトを使い回すプール方式） */
+function createSteam(own) {
+  const parts = [];
+  for (let i = 0; i < STEAM.POOL; i++) {
+    const mat = own(new THREE.SpriteMaterial({ map: TEX.steam, transparent: true, depthWrite: false, opacity: 0, fog: true }));
+    const sp = new THREE.Sprite(mat); sp.visible = false; scene.add(sp);
+    parts.push({ sp, mat, age: 0, life: 0, vx: 0, size: 1 });
+  }
+  const emitters = [];
+  return {
+    add(x, y, z, rate, size, active) { emitters.push({ x, y, z, rate, size, active, acc: Math.random() }); },
+    update(dt) {
+      for (const e of emitters) {
+        if (!e.active()) continue;
+        e.acc += e.rate * dt;
+        while (e.acc >= 1) {
+          e.acc -= 1;
+          const p = parts.find(q => q.life <= 0); if (!p) break;
+          p.age = 0; p.life = STEAM.LIFE * (0.8 + Math.random() * 0.4); p.vx = (Math.random() - 0.5) * 0.12; p.size = e.size;
+          p.sp.position.set(e.x + (Math.random() - 0.5) * 0.1, e.y, e.z + (Math.random() - 0.5) * 0.1); p.sp.visible = true;
+        }
+      }
+      for (const p of parts) {
+        if (p.life <= 0) continue;
+        p.age += dt; const t = p.age / p.life;
+        if (t >= 1) { p.life = 0; p.sp.visible = false; continue; }
+        p.sp.position.y += STEAM.RISE * dt; p.sp.position.x += p.vx * dt;
+        const s = p.size * (STEAM.SIZE0 + (STEAM.SIZE1 - STEAM.SIZE0) * t); p.sp.scale.set(s, s, s);
+        p.mat.opacity = STEAM.ALPHA * Math.sin(Math.PI * t);
+      }
+    },
+  };
+}
+
+function drawMasterFace(ira) {
+  if (!W) return;
+  const lv = faceLevel(ira);
+  if (lv === W.faceLv) return;          // 段階が変わった時だけ描き直す
+  W.faceLv = lv;
+  const g = W.faceCv.getContext('2d');
+  g.fillStyle = '#f0c8a0'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#263238'; g.lineWidth = 9; g.lineCap = 'round';
+  g.beginPath();   // 眉
+  if (lv === 0) { g.moveTo(52, 92); g.lineTo(102, 88); g.moveTo(154, 88); g.lineTo(204, 92); }
+  else { const d = lv * 9; g.moveTo(52, 84 + d); g.lineTo(102, 102); g.moveTo(154, 102); g.lineTo(204, 84 + d); }
+  g.stroke();
+  g.fillStyle = lv >= 3 ? '#c0392b' : '#263238';   // 目
+  g.beginPath(); g.arc(77, 128, lv >= 2 ? 9 : 12, 0, 7); g.fill();
+  g.beginPath(); g.arc(179, 128, lv >= 2 ? 9 : 12, 0, 7); g.fill();
+  g.strokeStyle = '#263238'; g.lineWidth = 8; g.beginPath();   // 口
+  if (lv === 0) { g.moveTo(98, 196); g.lineTo(158, 196); }
+  else if (lv === 1) { g.moveTo(102, 200); g.lineTo(154, 192); }
+  else { g.arc(128, 216, 26, Math.PI * 1.15, Math.PI * 1.85); }
+  g.stroke();
+  if (lv >= 3) { g.fillStyle = 'rgba(192,57,43,.25)'; g.fillRect(0, 0, 256, 256); }
+  W.faceTex.needsUpdate = true;
+}
+
+function updateQueueRing() {
+  if (!W || !DAY) return;
+  const sp = queueSpot(DAY.qPos);
+  W.qRing.position.set(sp.x, 0.02, sp.z);
+  W.qRing.visible = (DAY.phase === PH.ARRIVE || DAY.phase === PH.QUEUE);
+}
+
+/* =====================================================================
+ * 7. HUD（DOM書き込みは値が変わった時だけ）
+ * ===================================================================== */
+const el = {
+  hudShop: $('hudShop'), hudScore: $('hudScore'), hudIra: $('hudIra'), hudFace: $('hudFace'),
+  objective: $('objective'), prompt: $('prompt'), toast: $('toast'), banner: $('banner'),
+  eatPanel: $('eatPanel'), eatRemain: $('eatRemain'), eatPress: $('eatPress'), eatTime: $('eatTime'), eatTimeTxt: $('eatTimeTxt'),
+  btnAct: $('btnAct'), btnSlurp: $('btnSlurp'), btnPhone: $('btnPhone'), btnCam: $('btnCam'), btnTissue: $('btnTissue'), btnBow: $('btnBow'),
+  joy: $('joy'), joyKnob: $('joyKnob'), overlay: $('overlay'),
+};
+const setText = (e, s) => { if (e._t !== s) { e._t = s; e.textContent = s; } };
+const setShow = (e, on) => { if (e._on !== on) { e._on = on; e.classList.toggle('show', on); } };
+const setBar = (e, pct) => { const v = Math.round(clamp(pct, 0, 100) * 2) / 2; if (e._w !== v) { e._w = v; e.style.transform = `scaleX(${v / 100})`; } };
+const setDisplay = (e, on) => { const v = on ? 'block' : 'none'; if (e._d !== v) { e._d = v; e.style.display = v; } };
+
+function updateHUD() {
+  if (!RUN || !DAY) return;
+  setText(el.hudShop, (RUN.day + 1) + '軒目：' + curShop().name);
+  setText(el.hudScore, RUN.score + '点');
+  setBar(el.hudIra, Math.min(IRA.MAX, DAY.ira));
+  el.hudIra.className = 'lv' + faceLevel(DAY.ira);
+  setText(el.hudFace, faceFor(DAY.ira));
+}
+function setObjective(html) { el.objective.innerHTML = html; }
+let toastTimer = 0;
+function toast(msg, cls) {
+  el.toast.textContent = msg; el.toast.className = 'hud ' + (cls || ''); el.toast.style.display = 'block';
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.toast.style.display = 'none'; }, TIME.TOAST * 1000);
+}
+let bannerTimer = 0;
+function banner(msg, sec = TIME.BANNER) {
+  const b = el.banner; b.innerHTML = msg; b.style.display = 'none'; void b.offsetWidth; b.style.display = 'block';
+  Sound.shout();
+  clearTimeout(bannerTimer); bannerTimer = setTimeout(() => { b.style.display = 'none'; }, sec * 1000);
+}
+
+/* =====================================================================
+ * 8. イラつき・違反
+ * ===================================================================== */
+function applyIra(delta, ruleId, shout) {
+  if (!DAY || DAY.over) return 0;
+  const v = Math.round(delta * (curShop().iraMul || 1));
+  if (v > 0) { DAY.ira += v; RUN.violations++; buzz(60); }
+  if (ruleId) RuleBook.discover(ruleId);
+  if (shout) banner(shout);
+  else if (v > 0) Sound.bad();
+  drawMasterFace(DAY.ira); updateHUD();
+  if (DAY.ira >= IRA.MAX) { DAY.over = true; renderDekin(); }
+  return v;
+}
+
+/* =====================================================================
+ * 9. 入力（キーボード／仮想スティック／視点ドラッグ／ボタン）
+ * ===================================================================== */
+const keys = Object.create(null);
+const input = {
+  joy: { id: null, cx: 0, cy: 0, x: 0, y: 0 },
+  look: { id: null, x: 0, y: 0 },
+  sens: clamp(+store.get(SAVE_KEY.SENS, 1) || 1, CTRL.SENS_MIN, CTRL.SENS_MAX),
+};
+const KEY_ACTIONS = {
+  Space: () => eatTap(), KeyE: () => doInteract(), KeyB: () => pressBow(),
+  KeyC: () => pressCamera(), KeyP: () => pressPhone(), KeyT: () => pressTissue(),
+};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') e.preventDefault();
+  if (e.repeat || ui.overlay) return;
+  Sound.unlock();
+  const fn = KEY_ACTIONS[e.code]; if (fn) fn();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; resetJoy(); input.look.id = null; });
+
+function placeJoy(x, y) { el.joy.style.transform = `translate(${x}px,${y}px)`; }
+function resetJoy() {
+  const j = input.joy; j.id = null; j.x = 0; j.y = 0;
+  el.joyKnob.style.transform = ''; el.joy.classList.remove('active');
+  placeJoy(84 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sal')) || 0), window.innerHeight - 110);
+}
+function moveJoy(e) {
+  const j = input.joy;
+  let dx = e.clientX - j.cx, dy = e.clientY - j.cy;
+  const len = Math.hypot(dx, dy), R = CTRL.JOY_RADIUS;
+  if (len > R) { dx *= R / len; dy *= R / len; }
+  el.joyKnob.style.transform = `translate(${dx}px,${dy}px)`;
+  // デッドゾーン後に 0〜1 へ再マップ（指を少し置いただけで滑らない）
+  const r = Math.min(len, R), dz = CTRL.JOY_DEADZONE, m = r / R;
+  const mag = m <= dz ? 0 : (m - dz) / (1 - dz);
+  j.x = r > 1e-6 ? dx / r * mag : 0;
+  j.y = r > 1e-6 ? dy / r * mag : 0;
+}
+canvas.addEventListener('pointerdown', e => {
+  Sound.unlock();
+  if (ui.overlay) return;
+  const touchLike = e.pointerType !== 'mouse';
+  if (touchLike && input.joy.id === null && !P.seated && e.clientX < window.innerWidth * CTRL.JOY_ZONE) {
+    const j = input.joy; j.id = e.pointerId; j.cx = e.clientX; j.cy = e.clientY;
+    placeJoy(j.cx, j.cy); el.joy.classList.add('active'); moveJoy(e);
+  } else if (input.look.id === null) {
+    input.look.id = e.pointerId; input.look.x = e.clientX; input.look.y = e.clientY;
+  } else return;
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) { }
+  e.preventDefault();
+});
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerId === input.joy.id) { moveJoy(e); return; }
+  const l = input.look;
+  if (e.pointerId !== l.id) return;
+  const dx = e.clientX - l.x, dy = e.clientY - l.y; l.x = e.clientX; l.y = e.clientY;
+  if (Math.abs(dx) > CTRL.LOOK_MAX_STEP || Math.abs(dy) > CTRL.LOOK_MAX_STEP) return;   // 指の飛びを無視
+  const s = (e.pointerType === 'mouse' ? CTRL.LOOK_MOUSE : CTRL.LOOK_TOUCH) * input.sens;
+  P.yaw -= dx * s;
+  P.pitch = clamp(P.pitch - dy * s, -VIEW.PITCH_LIMIT, VIEW.PITCH_LIMIT);
+});
+const pointerEnd = e => {
+  if (e.pointerId === input.joy.id) resetJoy();
+  if (e.pointerId === input.look.id) input.look.id = null;
+};
+canvas.addEventListener('pointerup', pointerEnd);
+canvas.addEventListener('pointercancel', pointerEnd);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function bindBtn(btn, fn) {
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Sound.unlock(); fn(); });
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+}
+bindBtn(el.btnAct, () => doInteract());
+bindBtn(el.btnSlurp, () => eatTap());
+bindBtn(el.btnPhone, () => pressPhone());
+bindBtn(el.btnCam, () => pressCamera());
+bindBtn(el.btnTissue, () => pressTissue());
+bindBtn(el.btnBow, () => pressBow());
+document.addEventListener('gesturestart', e => e.preventDefault());   // iOSのピンチズーム抑止
+
+/* =====================================================================
+ * 10. 移動と衝突
+ * ===================================================================== */
+function pushOut(nx, nz, cx, cz, r) {
+  const d = dist2d(nx, nz, cx, cz);
+  if (d < r && d > 0.001) { const a = Math.atan2(nz - cz, nx - cx); return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]; }
+  return [nx, nz];
+}
+function collide(nx, nz) {
+  const B = MOVE.BOUNDS;
+  nx = clamp(nx, B.xMin, B.xMax); nz = clamp(nz, B.zMin, B.zMax);
+  // 店正面の壁（z=0）はドアが開いている時だけ、ドアの幅でのみ通れる
+  const crossing = (P.z > 0 && nz <= 0) || (P.z < 0 && nz >= 0);
+  if (crossing && !(DAY && DAY.doorOpen && Math.abs(nx) < MOVE.DOOR_HALF)) nz = P.z;
+  if (nz < 0) nx = clamp(nx, -MOVE.INSIDE_X, MOVE.INSIDE_X);          // 店内の左右の壁
+  if (nz < MOVE.COUNTER_Z && P.z >= MOVE.COUNTER_Z) nz = MOVE.COUNTER_Z; // カウンター
+  [nx, nz] = pushOut(nx, nz, POS.TICKET.x, POS.TICKET.z, MOVE.TICKET_R);
+  for (const l of POS.STREET_LAMPS) [nx, nz] = pushOut(nx, nz, l.x, l.z, MOVE.LAMP_R);
+  if (W) for (const n of W.qnpcs) [nx, nz] = pushOut(nx, nz, n.g.position.x, n.g.position.z, MOVE.NPC_R);
+  return { x: nx, z: nz };
+}
+function movePlayer(dt) {
+  P.moving = false;
+  if (P.seated) return;
+  let f = 0, s = 0;
+  if (keys.KeyW || keys.ArrowUp) f += 1;
+  if (keys.KeyS || keys.ArrowDown) f -= 1;
+  if (keys.KeyA || keys.ArrowLeft) s -= 1;
+  if (keys.KeyD || keys.ArrowRight) s += 1;
+  f += -input.joy.y; s += input.joy.x;
+  const len = Math.hypot(f, s); if (len < 0.05) return;
+  f /= Math.max(1, len); s /= Math.max(1, len);
+  const sin = Math.sin(P.yaw), cos = Math.cos(P.yaw);
+  const sp = MOVE.SPEED * dt;
+  const c = collide(P.x + (-sin * f + cos * s) * sp, P.z + (-cos * f - sin * s) * sp);
+  P.x = c.x; P.z = c.z;
+  P.moving = true; P.bob += dt * MOVE.BOB_FREQ * Math.min(1, len);
+}
+const near = (x, z, r) => dist2d(P.x, P.z, x, z) < r;
+
+/* =====================================================================
+ * 11. インタラクト（上から順に優先）
+ * ===================================================================== */
+const INTERACTIONS = [
+  { label: () => '友達を追い返す',
+    when: () => (DAY.friend.state === 'approach' || DAY.friend.state === 'joined') && W.friend.visible && near(W.friend.position.x, W.friend.position.z, RANGE.FRIEND_REFUSE),
+    run: () => refuseFriend() },
+  { label: () => '隣の客に返事する',
+    when: () => DAY.whisper && DAY.whisper.active && DAY.phase === PH.EATING,
+    run: () => replyWhisper() },
+  { label: () => DAY.hasTicket ? '券売機（購入済み）' : '食券を買う',
+    when: () => (DAY.phase === PH.ARRIVE || DAY.phase === PH.QUEUE) && near(POS.TICKET.x, POS.TICKET.z, RANGE.TICKET),
+    run: () => { if (!DAY.hasTicket) openTicket(); else toast('食券はもう買ってある。'); } },
+  { label: () => '張り紙を読む',
+    when: () => P.z < 0 && POS.POSTERS.some(p => near(p.x, p.z, RANGE.POSTER)),
+    run: () => openPoster() },
+  { label: () => '水を汲む',
+    when: () => P.z < 0 && near(POS.WATER.x, POS.WATER.z, RANGE.WATER),
+    run: () => { RuleBook.discover('self_water'); Sound.good(); toast('給水器で水を汲んだ。セルフサービスがこの世界の作法だ。', 'good'); } },
+  { label: () => '指定席に座る',
+    when: () => DAY.phase === PH.ENTER && near(POS.SEAT.x, POS.SEAT.z, RANGE.SEAT),
+    run: () => sitDown() },
+  { label: () => '丼をカウンターに上げる',
+    when: () => DAY.phase === PH.CLEANUP && DAY.bowlCarried && !DAY.bowlPlaced && near(POS.BOWL_DROP.x, POS.BOWL_DROP.z, RANGE.BOWL_DROP),
+    run: () => placeBowl() },
+];
+function computeInteract() {
+  if (!isPlaying() || !W) return null;
+  return INTERACTIONS.find(it => it.when()) || null;
+}
+function doInteract() { const it = computeInteract(); if (it) it.run(); }
+
+/* =====================================================================
+ * 12. フェイズ遷移
+ * ===================================================================== */
+function setPhase(ph, objectiveHtml) {
+  DAY.phase = ph;
+  if (objectiveHtml) setObjective(objectiveHtml);
+  updateQueueRing();
+}
+
+function startDay() {
+  const shop = curShop();
+  DAY = newDay(shop); EAT = null;
+  RUN.dayStartViolations = RUN.violations; RUN.dayStartScore = RUN.score;
+  hideOverlay();
+  ui.attract = false;
+  buildWorld(RUN.day);
+  Object.assign(P, { x: POS.PLAYER_START.x, z: POS.PLAYER_START.z, yaw: POS.PLAYER_START.yaw, pitch: 0, seated: false, bob: 0 });
+  document.body.classList.add('playing');
+  setDisplay(el.eatPanel, false);
+  updateHUD();
+  setPhase(PH.ARRIVE, 'まず<b>券売機で食券</b>を買い、<b>道路の向こうの列</b>に並ぼう');
+  toast(shop.name + 'に着いた。', 'good');
+}
+
+function joinQueue() {
+  DAY.queueTime = 0;
+  toast('列に並んだ。あとは順番を待つだけだ。', 'good'); Sound.good();
+  setPhase(PH.QUEUE, '列で待とう。前の人が進んだら<b>金の輪</b>も進む');
+}
+function advanceQueue() {
+  if (!W || W.qnpcs.length === 0) return;
+  const front = W.qnpcs.shift();
+  front.tx = POS.QUEUE_EXIT.x; front.tz = POS.QUEUE_EXIT.z;
+  W.leavers.push(front);                                   // 店に入っていく
+  W.qnpcs.forEach((n, i) => { const sp = queueSpot(i); n.tx = sp.x; n.tz = sp.z; });
+  DAY.qPos = Math.max(0, DAY.qPos - 1);
+  updateQueueRing();
+}
+function resetQueue() {   // 食券なしで順番が来た：列の最後尾からやり直し
+  W.qnpcs.forEach(n => scene.remove(n.g));
+  W.qnpcs = [];
+  for (let i = 0; i < curShop().queueN; i++) W.qnpcs.push(spawnQueueNpc(i));
+  DAY.qPos = curShop().queueN;
+  updateQueueRing();
+}
+function callPlayer() {
+  if (!DAY.hasTicket) {
+    applyIra(IRA.NO_TICKET_AT_CALL, 'ticket_first', '店主「食券買ってから並べ！！」');
+    toast('食券を持っていなかった。列の最後尾から並び直しだ。', 'bad');
+    resetQueue();
+    return;
+  }
+  DAY.doorOpen = true;
+  banner('店主「そこの客、入れ！」', TIME.BANNER_CALL_IN); Sound.good();
+  setPhase(PH.ENTER, '店に入って<b>金の輪の指定席</b>に座ろう');
+}
+function sitDown() {
+  P.seated = true; P.x = POS.SEATED_EYE.x; P.z = POS.SEATED_EYE.z; P.yaw = 0; P.pitch = VIEW.SEAT_START_PITCH;
+  resetJoy();
+  DAY.waitT = TIME.WAIT_CALL;
+  setPhase(PH.WAIT_CALL, '店主の声を待とう');
+  toast('指定席に座った。背筋が伸びる。', 'good');
+}
+function startEating() {
+  const shop = curShop();
+  W.bowl.visible = true;
+  EAT = { remaining: 100, pressure: 0, timeLeft: shop.eatTime, total: shop.eatTime, lastTap: 0, rapid: 0, finished: false, tissueWarned: false };
+  setDisplay(el.eatPanel, true);
+  setPhase(PH.EATING, '<b>すする</b>ボタンで食べ進めよう。止まると店主の圧が上がる');
+  scheduleStare();
+}
+function finishEat(complete) {
+  if (!EAT || EAT.finished) return;
+  EAT.finished = true;
+  if (DAY.whisper && DAY.whisper.active) DAY.whisperDone = true;
+  DAY.whisper = null;
+  setDisplay(el.eatPanel, false);
+  let bonus = 0;
+  if (complete) {
+    bonus = EAT_CFG.BONUS_BASE + Math.round(EAT.timeLeft * EAT_CFG.BONUS_PER_SEC);
+    Sound.clear(); toast('完食！ 速度ボーナス +' + bonus + '点', 'good');
+  } else {
+    const left = Math.max(0, Math.ceil(EAT.remaining));
+    toast('時間切れで' + left + '%残してしまった。', 'bad');
+    applyIra(Math.ceil(left / IRA.LEFTOVER_DIV), null, '店主「残すな！！」');
+    if (DAY.over) return;
+  }
+  DAY.lastEat = { complete, bonus };
+  DAY.cleanT = 0; DAY.bowlCarried = true; DAY.bowlPlaced = false; DAY.doorOpen = true;
+  P.seated = false; P.x = POS.AFTER_EAT.x; P.z = POS.AFTER_EAT.z; P.yaw = 0;
+  setPhase(PH.CLEANUP, '丼を持って<b>カウンターの上</b>に上げ、店を出よう');
+}
+function placeBowl() {
+  DAY.bowlPlaced = true; DAY.bowlCarried = false;
+  W.bowl.position.set(POS.BOWL.x, POS.BOWL.y, POS.BOWL.z); W.bowl.visible = true;
+  Sound.good(); toast('丼をカウンターに上げた。あとは静かに出るだけだ。', 'good');
+  setObjective('店を出よう');
+}
+function exitShop() {
+  if (!DAY.bowlPlaced) {
+    applyIra(IRA.BOWL_FORGOT, 'bowl_up', null);
+    toast('丼をカウンターに上げ忘れた。背中に視線が刺さる。', 'bad');
+    if (DAY.over) return;
+  }
+  setPhase(PH.LEFT);
+  renderDayResult();
+}
+
+/* =====================================================================
+ * 13. イベント（友達・ささやき・視線・スマホ・撮影・ティッシュ）
+ * ===================================================================== */
+function spawnFriend() {
+  DAY.friend = { state: 'approach', t: 0 };
+  W.friend.visible = true; W.friend.position.set(POS.FRIEND_SPAWN.x, 0, POS.FRIEND_SPAWN.z);
+  toast('友達がこっちに来る……「並んどいてって言ったじゃん」という顔だ。', 'bad');
+}
+function refuseFriend() {
+  const st = DAY.friend.state;
+  if (st !== 'approach' && st !== 'joined') return;
+  DAY.friend.state = 'leave'; Sound.good();
+  toast('「代表待ち禁止の店なんだ」と追い返した。英断だ。', 'good');
+}
+function replyWhisper() {
+  if (!DAY.whisper || !DAY.whisper.active) return;
+  DAY.whisper.active = false; DAY.whisperDone = true;
+  applyIra(IRA.WHISPER_REPLY, 'no_talk', '店主「私語禁止！！」');
+  toast('返事をしてしまった。この店では無視が正解だった。', 'bad');
+}
+function scheduleStare() { DAY.stareNext = TIME.STARE_MIN + Math.random() * TIME.STARE_RAND; }
+function pressBow() {
+  if (!isPlaying() || !DAY.stare) return;
+  DAY.stare = null;
+  RuleBook.discover('eye_bow'); Sound.good();
+  toast('軽く会釈した。店主も小さく頷いた。', 'good');
+}
+const PHONE_PHASES = [PH.QUEUE, PH.ENTER, PH.WAIT_CALL, PH.EATING, PH.CLEANUP];
+function pressPhone() {
+  if (!isPlaying() || !PHONE_PHASES.includes(DAY.phase)) return;
+  if (P.z < 0 && hasRule('no_phone')) applyIra(IRA.PHONE, 'no_phone', '店主「店内スマホ禁止だ！！」');
+  else if (DAY.phase === PH.EATING && hasRule('no_phone')) applyIra(IRA.PHONE, 'no_phone', '店主「食べてる間はスマホ禁止だ！！」');
+  else if (P.z < 0) toast('店主が一瞬こちらを見た気がした。スマホは仕舞っておこう。');
+  else toast('LINEの通知が3件溜まっている。……今はラーメンが先だ。');
+}
+let flashDiv = null;
+function pressCamera() {
+  if (!isPlaying() || !(DAY.phase === PH.EATING || DAY.phase === PH.WAIT_CALL)) return;
+  if (!flashDiv) { flashDiv = document.createElement('div'); flashDiv.style.cssText = 'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:15;transition:opacity .35s;'; document.body.appendChild(flashDiv); }
+  flashDiv.style.opacity = '0.9'; setTimeout(() => { flashDiv.style.opacity = '0'; }, 60);
+  Sound.mid();
+  const aimedBowl = P.seated && P.pitch < VIEW.PHOTO_PITCH && Math.abs(P.yaw) < VIEW.PHOTO_YAW;
+  if (aimedBowl) {
+    if (!DAY.photoTaken) { DAY.photoTaken = true; RUN.score += SCORE.PHOTO; updateHUD(); toast('ラーメンの写真を撮った（+30点）。許されるのはこれだけだ。', 'good'); }
+    else toast('ラーメンの写真を撮った。');
+  } else if (hasRule('no_photo')) applyIra(IRA.PHOTO_RULE, 'no_photo', '店主「撮っていいのはラーメンだけだ！！」');
+  else applyIra(IRA.PHOTO_SOFT, null, '店主「店内を撮るな」');
+}
+function pressTissue() {
+  if (!isPlaying() || DAY.phase !== PH.EATING) return;
+  DAY.tissue++;
+  if (RUN.day >= TISSUE_RULE_FROM_DAY && DAY.tissue > 2) {
+    if (!EAT.tissueWarned) { EAT.tissueWarned = true; applyIra(IRA.TISSUE_FIRST, 'tissue2', '店主「ティッシュは2枚までだ」'); }
+    else applyIra(IRA.TISSUE_MORE, 'tissue2', null);
+    toast('ティッシュ' + DAY.tissue + '枚目。店主が見ている。', 'bad');
+  } else {
+    Sound.mid(); toast('ティッシュを使った（' + DAY.tissue + '枚目）。');
+  }
+}
+
+/* =====================================================================
+ * 14. 食事ミニゲーム
+ * ===================================================================== */
+function eatTap() {
+  if (!isPlaying() || !EAT || EAT.finished || DAY.phase !== PH.EATING) return;
+  const t = nowMs();
+  if (EAT.lastTap && t - EAT.lastTap < EAT_CFG.RAPID_GAP_MS) EAT.rapid++; else EAT.rapid = 0;
+  EAT.lastTap = t;
+  if (EAT.rapid >= EAT_CFG.RAPID_COUNT) {
+    EAT.rapid = 0; EAT.remaining = Math.min(100, EAT.remaining + EAT_CFG.CHOKE_BACK);
+    applyIra(IRA.CHOKE, null, null);
+    toast('むせた。スープが跳ね、店主の眉が動く。', 'bad');
+    if (DAY.over) return;
+  } else { EAT.remaining -= EAT_CFG.BITE; Sound.slurp(); }
+  if (EAT.remaining <= 0) { EAT.remaining = 0; finishEat(true); }
+}
+function eatTick(dt) {
+  if (!EAT || EAT.finished || DAY.phase !== PH.EATING) return;
+  const shop = curShop();
+  EAT.timeLeft = Math.max(0, EAT.timeLeft - dt);
+  const idle = nowMs() - EAT.lastTap > EAT_CFG.IDLE_MS;
+  if (idle) EAT.pressure += EAT_CFG.PRESS_RATE * shop.press * dt;
+  else EAT.pressure = Math.max(0, EAT.pressure - EAT_CFG.PRESS_RELIEF * dt);
+  EAT.pressure = clamp(EAT.pressure, 0, 100);
+  if (EAT.pressure >= 100) {
+    EAT.pressure = EAT_CFG.PRESS_AFTER_SHOUT;
+    applyIra(IRA.PRESSURE_MAX, null, '店主「早く食え！！」');
+    if (DAY.over) return;
+  }
+  // 隣客のささやき（私語禁止の店）
+  if (hasRule('no_talk') && !DAY.whisperDone && !DAY.whisper && EAT.remaining <= EAT_CFG.WHISPER_AT && EAT.remaining > 0) {
+    DAY.whisper = { active: true, t: TIME.WHISPER };
+    toast('隣の客が小声で話しかけてきた。「……うまくない？」 返事をしたら私語になる。', 'bad');
+  }
+  if (DAY.whisper && DAY.whisper.active) {
+    DAY.whisper.t -= dt;
+    if (DAY.whisper.t <= 0) { DAY.whisper.active = false; DAY.whisperDone = true; toast('無視して食べ続けた。それが正解の店だ。', 'good'); Sound.good(); }
+  }
+  setBar(el.eatRemain, EAT.remaining);
+  setBar(el.eatPress, EAT.pressure);
+  setBar(el.eatTime, EAT.timeLeft / EAT.total * 100);
+  setText(el.eatTimeTxt, EAT.timeLeft.toFixed(1));
+  if (EAT.timeLeft <= 0) finishEat(false);
+}
+
+/* =====================================================================
+ * 15. 毎フレームの更新（順番に意味がある：現行版と同じ順）
+ * ===================================================================== */
+function stepActors(dt) {
+  const walk = (n, speed) => {
+    const p = n.g.position, dx = n.tx - p.x, dz = n.tz - p.z, d = Math.hypot(dx, dz);
+    if (d > 0.03) { const v = Math.min(d, speed * dt); p.x += dx / d * v; p.z += dz / d * v; n.g.rotation.y = Math.atan2(dx, dz); }
+    else n.g.rotation.y = Math.PI;
+    return d;
+  };
+  W.qnpcs.forEach(n => walk(n, MOVE.NPC_SPEED));
+  W.leavers = W.leavers.filter(n => {
+    const d = walk(n, MOVE.NPC_SPEED);
+    if (d < 0.2) { scene.remove(n.g); return false; }
+    return true;
+  });
+  // 店主は常に客を見る
+  W.master.rotation.y = Math.atan2(P.x - W.master.position.x, P.z - W.master.position.z);
+  // ドアと暖簾
+  W.doorT += ((DAY.doorOpen ? 1 : 0) - W.doorT) * Math.min(1, dt * 5);
+  W.door.position.x = W.doorT * 1.62;
+  W.ring.material.color.setHex(DAY.phase === PH.ENTER ? 0x7bc47f : 0xe8b64c);
+  // 丼を持ち運ぶ
+  if (DAY.bowlCarried) { W.bowl.visible = true; W.bowl.position.set(P.x - Math.sin(P.yaw) * 0.35, 1.05, P.z - Math.cos(P.yaw) * 0.35); }
+}
+function stepJoinQueue() {
+  if (DAY.phase !== PH.ARRIVE) return;
+  const sp = queueSpot(DAY.qPos);
+  if (near(sp.x, sp.z, RANGE.JOIN_QUEUE)) joinQueue();
+}
+function stepQueue(dt) {
+  if (DAY.phase !== PH.QUEUE) return;
+  DAY.queueTime += dt;
+  DAY.queueTimer -= dt;
+  if (DAY.queueTimer <= 0) {
+    DAY.queueTimer = curShop().queueSec;
+    if (DAY.qPos > 0) advanceQueue(); else callPlayer();
+  }
+  if (DAY.phase !== PH.QUEUE) return;
+  // 列から離れすぎ（食券を買いに行く間は対象外）
+  if (DAY.hasTicket) {
+    const sp = queueSpot(DAY.qPos);
+    if (!near(sp.x, sp.z, RANGE.STRAY)) {
+      DAY.strayT += dt;
+      if (DAY.strayT > TIME.STRAY_GRACE) { DAY.strayT = -TIME.STRAY_COOLDOWN; applyIra(IRA.STRAY, null, '店主「列に戻れ！」'); }
+    } else DAY.strayT = 0;
+  }
+  if (hasRule('no_daihyo') && DAY.friend.state === 'none' && DAY.queueTime > TIME.FRIEND_SPAWN_AFTER) spawnFriend();
+}
+function stepLoiter(dt) {
+  if (DAY.phase !== PH.ARRIVE && DAY.phase !== PH.QUEUE) return;
+  if (P.z < RANGE.LOITER_Z && !near(POS.TICKET.x, POS.TICKET.z, RANGE.LOITER_TICKET_FREE)) {
+    DAY.loiterT += dt;
+    if (DAY.loiterT > TIME.LOITER_GRACE) { DAY.loiterT = -TIME.LOITER_COOLDOWN; applyIra(IRA.LOITER, 'queue_across', '店主「列は向こうだ！ 店先でうろつくな！」'); }
+  } else DAY.loiterT = 0;
+}
+function stepFriend(dt) {
+  const fr = DAY.friend;
+  if (fr.state !== 'approach' && fr.state !== 'joined' && fr.state !== 'leave') return;
+  const f = W.friend;
+  let tx, tz;
+  if (fr.state === 'leave') {
+    tx = POS.FRIEND_GONE.x; tz = POS.FRIEND_GONE.z;
+    if (dist2d(f.position.x, f.position.z, tx, tz) < RANGE.FRIEND_GONE) { f.visible = false; fr.state = 'done'; }
+  } else { tx = P.x + POS.FRIEND_OFFSET.x; tz = P.z + POS.FRIEND_OFFSET.z; }
+  const dx = tx - f.position.x, dz = tz - f.position.z, d = Math.hypot(dx, dz);
+  if (d > 0.05) { const v = Math.min(d, MOVE.FRIEND_SPEED * dt); f.position.x += dx / d * v; f.position.z += dz / d * v; f.rotation.y = Math.atan2(dx, dz); }
+  if (fr.state === 'approach' && d < RANGE.FRIEND_JOIN) {
+    fr.state = 'joined'; fr.t = 0;
+    toast('友達が列に合流してしまった！ 早く追い返さないと代表待ちになる。', 'bad');
+  } else if (fr.state === 'joined') {
+    fr.t += dt;
+    if (fr.t > TIME.FRIEND_JOIN_LIMIT) { fr.state = 'leave'; applyIra(IRA.FRIEND_JOINED, 'no_daihyo', '店主「代表待ちは出てけ！！」'); }
+  }
+}
+function stepWaitCall(dt) {
+  if (DAY.phase !== PH.WAIT_CALL) return;
+  DAY.waitT -= dt;
+  if (DAY.waitT <= 0) { if (curShop().call >= 0) openCall(); else startEating(); }
+}
+function stepStare(dt) {
+  if ((DAY.phase === PH.WAIT_CALL || DAY.phase === PH.EATING) && !DAY.stare) {
+    DAY.stareNext -= dt;
+    if (DAY.stareNext <= 0) { DAY.stare = { t: TIME.STARE_WINDOW }; toast('店主と目が合った！ 会釈ボタンで返そう。'); buzz(30); scheduleStare(); }
+  }
+  if (DAY.stare) {
+    DAY.stare.t -= dt;
+    if (DAY.stare.t <= 0) {
+      DAY.stare = null;
+      RuleBook.discover('eye_bow');
+      applyIra(IRA.STARE_MISS, 'eye_bow', null);
+      toast('会釈のタイミングを逃した。目が合ったら会釈。それが裏ルールだ。', 'bad');
+    }
+  }
+}
+function stepCleanup(dt) {
+  if (DAY.phase !== PH.CLEANUP) return;
+  DAY.cleanT += dt;
+  if (DAY.cleanT > TIME.LINGER && P.z < 0) {
+    DAY.cleanT = TIME.LINGER_REPEAT_AT;
+    RuleBook.discover('no_linger');
+    applyIra(IRA.LINGER, 'no_linger', '店主「早く出ろ」');
+    if (DAY.over) return;
+  }
+  if (P.z > RANGE.EXIT_Z) exitShop();
+}
+const GAME_STEPS = [
+  (dt) => movePlayer(dt), stepJoinQueue, (dt) => stepActors(dt), stepQueue, stepLoiter,
+  stepFriend, stepWaitCall, stepStare, eatTick, stepCleanup,
+];
+function updateGame(dt) {
+  for (const step of GAME_STEPS) { step(dt); if (!isPlaying()) return; }
+  refreshControls();
+}
+function refreshControls() {
+  const it = computeInteract();
+  if (it) {
+    const label = it.label();
+    setText(el.prompt, '[E] ' + label); setDisplay(el.prompt, true);
+    setText(el.btnAct, label); setShow(el.btnAct, true);
+  } else { setDisplay(el.prompt, false); setShow(el.btnAct, false); }
+  const ph = DAY.phase;
+  setShow(el.btnSlurp, ph === PH.EATING);
+  setShow(el.btnPhone, PHONE_PHASES.includes(ph));
+  setShow(el.btnCam, ph === PH.EATING || ph === PH.WAIT_CALL);
+  setShow(el.btnTissue, ph === PH.EATING);
+  setShow(el.btnBow, !!DAY.stare);
+  document.body.classList.toggle('can-walk', !P.seated);
+}
+
+/* ---- 見た目だけの動き（オーバーレイ中も動かす） ---- */
+function updateCosmetics(dt, t) {
+  W.steam.update(dt);
+  W.lanterns.forEach((l, i) => { l.rotation.z = Math.sin(t * 1.3 + i * 1.7) * 0.05; });
+  W.noren.forEach((n, i) => {
+    n.m.position.x = n.baseX + n.dir * W.doorT * 0.55;
+    n.m.rotation.x = Math.sin(t * 1.6 + i * 0.7) * 0.05 - W.doorT * 0.15;
+  });
+  W.seatedNpcs.forEach((n, i) => { n.position.y = 0.12 + Math.sin(t * 2.08 + i * 2) * 0.012; });
+  if (W.qRing.visible) W.qRing.material.opacity = 0.65 + Math.sin(t * 4) * 0.25;
+}
+
+function updateCamera(t) {
+  if (ui.attract || !DAY) {   // タイトル画面：店の前をゆっくり眺める
+    camera.position.set(6.2 + Math.sin(t * 0.12) * 1.4, 1.75, 10.4);
+    camera.lookAt(0.3 + Math.sin(t * 0.09) * 0.8, 1.75, 0);
+    return;
+  }
+  if (P.seated) {
+    P.yaw = clamp(P.yaw, -VIEW.SEAT_YAW, VIEW.SEAT_YAW);
+    P.pitch = clamp(P.pitch, VIEW.SEAT_PITCH_MIN, VIEW.SEAT_PITCH_MAX);
+    camera.position.set(POS.SEATED_EYE.x, MOVE.EYE_SEATED, POS.SEATED_EYE.z);
+  } else {
+    camera.position.set(P.x, MOVE.EYE + (P.moving ? Math.sin(P.bob) * MOVE.BOB : 0), P.z);
+  }
+  camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
+}
+
+/* =====================================================================
+ * 16. メインループ
+ * ===================================================================== */
+let lastTs = 0, clock = 0;
+function frame(ts) {
+  requestAnimationFrame(frame);
+  const raw = lastTs ? (ts - lastTs) / 1000 : 1 / 60; lastTs = ts;
+  const dt = Math.min(TIME.MAX_DT, raw);
+  clock += dt;
+  if (isPlaying()) updateGame(dt);
+  if (ui.overlay === 'call') tickCallTimer(Math.min(TIME.MAX_DT_REALTIME, raw));
+  if (W) updateCosmetics(dt, clock);
+  updateCamera(clock);
+  renderer.render(scene, camera);
+}
+
+/* =====================================================================
+ * 17. オーバーレイ画面
+ * ===================================================================== */
+const ui = { overlay: null, attract: true };
+const OVERLAY_ACTIONS = {
+  start: () => { RUN = newRun(); renderDayIntro(); },
+  dayStart: () => startDay(),
+  rules: () => renderRules(),
+  title: () => renderTitle(),
+  ticketBuy: i => buyTicket(i),
+  callPick: i => pickCall(parseInt(i, 10)),
+  close: () => hideOverlay(),
+  dayNext: () => { RUN.day++; renderDayIntro(); },
+  final: () => renderFinal(),
+  retryDay: () => { RUN.violations = RUN.dayStartViolations; RUN.score = RUN.dayStartScore; startDay(); },
+  share: () => shareResult(),
+  dlCert: () => downloadCert(),
+};
+function showOverlay(name, html) {
+  ui.overlay = name;
+  document.body.classList.add('ui-open');
+  resetJoy(); input.look.id = null;
+  const o = el.overlay;
+  o.innerHTML = '<div class="sheet">' + html + '</div>';
+  o.style.display = 'block'; o.scrollTop = 0;
+  o.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
+    Sound.unlock();
+    const fn = OVERLAY_ACTIONS[b.dataset.act]; if (fn) fn(b.dataset.i);
+  }));
+}
+function hideOverlay() {
+  ui.overlay = null;
+  document.body.classList.remove('ui-open');
+  el.overlay.style.display = 'none'; el.overlay.innerHTML = '';
+}
+const footerHtml = () => '<footer>実況・配信・動画投稿・収益化OK<br>登場する店舗・人物はすべて架空です</footer>';
+const ruleTag = r => `<span class="tag ${r.ura ? 'tag-ura' : 'tag-omote'}">${r.ura ? '裏ルール' : '表ルール'}</span>`;
+
+function renderTitle() {
+  ui.attract = true;
+  document.body.classList.remove('playing');
+  setDisplay(el.eatPanel, false);
+  if (!W) buildWorld(0);
+  const best = store.get(SAVE_KEY.BEST, 0);
+  const howTo = IS_TOUCH
+    ? '画面の左側をなぞって移動／右側をなぞって視点／近づくと出る黄色いボタンで行動'
+    : 'WASDで移動／ドラッグで視点／Eキーで調べる・行動、食事中はSpaceですする（B：会釈 C：撮影 P：スマホ T：ティッシュ）';
+  showOverlay('title', `
+  <div class="noren"><div class="t1">出禁ラーメン3D</div><div class="t2">〜 怒られずに食べ切れ 〜</div></div>
+  <div class="card">
+    <p class="txt">ルールが厳しすぎるラーメン屋を<b>3Dで歩いて</b>体験する、客側サバイバルゲーム。</p>
+    <p class="txt" style="margin-top:8px">選択肢は出ない。食券を買うのも、列に並ぶのも、丼を上げるのも、全部自分の足と手でやる。ルールを破れば店主が怒り、イラつき100でその場で<b style="color:#c0392b">出禁</b>。全5軒を完食できるか？</p>
+    <p class="small" style="margin-top:10px">操作：${howTo}</p>
+    ${best ? `<p class="small" style="margin-top:6px">ベストスコア： ${best}点</p>` : ''}
+    <p class="small" style="margin-top:4px">ルール図鑑： ${RuleBook.count} / ${RULE_IDS.length} 件 発見済み</p>
+    <label class="sens">視点感度 <input id="sensInput" type="range" min="${CTRL.SENS_MIN}" max="${CTRL.SENS_MAX}" step="0.1" value="${input.sens}"><span id="sensVal">${input.sens.toFixed(1)}</span></label>
+    <button class="btn primary" data-act="start">入店する</button>
+    <button class="btn ghost" data-act="rules">ルール図鑑を見る</button>
+  </div>${footerHtml()}`);
+  const si = $('sensInput');
+  si.addEventListener('input', () => { input.sens = clamp(+si.value, CTRL.SENS_MIN, CTRL.SENS_MAX); $('sensVal').textContent = input.sens.toFixed(1); store.set(SAVE_KEY.SENS, input.sens); });
+}
+function renderRules() {
+  const items = RULE_IDS.map(id => {
+    const r = RULES[id];
+    if (RuleBook.has(id)) return `<li>${ruleTag(r)}<b>${esc(r.name)}</b><br><span class="small">${esc(r.desc)}</span></li>`;
+    return `<li class="locked">${ruleTag(r)}？？？（未発見）</li>`;
+  }).join('');
+  showOverlay('rules', `
+  <div class="noren"><div class="t1" style="font-size:24px">ルール図鑑</div><div class="t2">${RuleBook.count} / ${RULE_IDS.length} 件発見</div></div>
+  <div class="card"><ul class="rulelist">${items}</ul>
+  <button class="btn ghost" data-act="title">タイトルへ戻る</button></div>${footerHtml()}`);
+}
+function renderDayIntro() {
+  const shop = curShop();
+  shop.rules.forEach(id => RuleBook.discover(id));
+  const ruleHtml = shopRules(RUN.day).map(id => `<li><span class="tag tag-omote">張り紙</span><b>${esc(RULES[id].name)}</b></li>`).join('');
+  showOverlay('dayIntro', `
+  <div class="noren"><div class="t1" style="font-size:24px">${RUN.day + 1}軒目</div><div class="t2">${esc(shop.name)}</div></div>
+  <div class="card">
+    <p class="small">${esc(shop.genre)} ／ ${esc(shop.master)}</p>
+    <p class="txt" style="margin-top:6px">${esc(shop.intro)}</p>
+    <h3 style="margin-top:12px">この店までの累計ルール</h3>
+    <ul class="rulelist">${ruleHtml}</ul>
+    <p class="small" style="margin-top:8px">※ 張り紙にない「裏ルール」も存在する。店内の張り紙を近づいて読むことでも確認できる。</p>
+    <div class="mission">今日のミッション<br>食券：<b>${esc(shop.ticketLabel)}</b>${shop.call >= 0 ? `<br>好み：<b>${esc(shop.callText)}</b>` : ''}<br>手順：券売機で食券 → 道路の向こうの列に並ぶ → 呼ばれたら入店して指定席へ</div>
+    <button class="btn primary" data-act="dayStart">店に向かう</button>
+  </div>${footerHtml()}`);
+}
+
+/* ---- 券売機 ---- */
+function openTicket() {
+  const shop = curShop();
+  showOverlay('ticket', `
+  <div class="noren"><div class="t1" style="font-size:24px">券売機</div><div class="t2">買うべき食券：${esc(shop.ticketLabel)}</div></div>
+  <div class="card">
+    <div class="ticket-grid">${TICKETS[RUN.day].map(it => `<div class="ticket" role="button" data-act="ticketBuy" data-i="${esc(it.id)}"><div class="nm">${esc(it.nm)}</div><div class="pr">¥${it.pr.toLocaleString()}</div></div>`).join('')}</div>
+    <div id="ticketMsg"></div>
+    <button class="btn ghost" data-act="close">やめる</button>
+  </div>${footerHtml()}`);
+}
+function buyTicket(id) {
+  const shop = curShop();
+  if (id === shop.ticket) {
+    DAY.hasTicket = true; Sound.good();
+    hideOverlay();
+    toast(shop.ticketLabel + 'の食券を買った。あとは列に並ぶだけだ。', 'good');
+    if (DAY.phase === PH.ARRIVE) setObjective('<b>道路の向こうの列</b>に並ぼう（金の輪が自分の場所）');
+  } else {
+    applyIra(IRA.TICKET_WRONG, 'ticket_first', null);
+    if (DAY.over) return;
+    const m = $('ticketMsg');
+    if (m) m.innerHTML = '<div class="say">違う食券を買ってしまった。店主の気配が痛い（イラつき上昇）。買い直そう。</div>';
+  }
+}
+/* ---- 張り紙 ---- */
+function openPoster() {
+  const ids = shopRules(RUN.day);
+  ids.forEach(id => RuleBook.discover(id));
+  const items = ids.map(id => `<li><span class="tag tag-omote">張り紙</span><b>${esc(RULES[id].name)}</b><br><span class="small">${esc(RULES[id].desc)}</span></li>`).join('');
+  showOverlay('poster', `
+  <div class="noren"><div class="t1" style="font-size:24px">当店のルール</div><div class="t2">達筆の張り紙</div></div>
+  <div class="card"><ul class="rulelist">${items}</ul>
+  <p class="small" style="margin-top:8px">……だが、これが全部ではない気がする。書かれていない作法は、身をもって学ぶしかない。</p>
+  <button class="btn primary" data-act="close">閉じる</button></div>${footerHtml()}`);
+}
+/* ---- コール（制限時間はメインループで進める） ---- */
+function openCall() {
+  const shop = curShop();
+  setPhase(PH.CALL);
+  DAY.callLeft = shop.callSec;
+  showOverlay('call', `
+  <div class="noren"><div class="t1" style="font-size:24px">${esc(shop.master)}</div><div class="t2">好みを聞かれている</div></div>
+  <div class="card">
+    <div class="say"><span class="small">${esc(shop.master)}</span><br>「${RUN.day === 2 ? 'ニンニク入れますか？' : 'お好みは？'}」</div>
+    <div class="mission">言うべき好み：<b>${esc(shop.callText)}</b>${shop.callSec ? `<br>制限時間：<b>${shop.callSec}秒</b>` : ''}</div>
+    <div class="gauge" style="margin-top:10px;${shop.callSec ? '' : 'display:none'}"><div id="callBar"></div></div>
+    ${CALLS[RUN.day].map((o, i) => `<button class="btn" data-act="callPick" data-i="${i}">${esc(o)}</button>`).join('')}
+  </div>${footerHtml()}`);
+}
+function tickCallTimer(dt) {
+  const shop = curShop();
+  if (!shop.callSec || DAY.phase !== PH.CALL) return;
+  DAY.callLeft -= dt;
+  const b = $('callBar'); if (b) b.style.transform = `scaleX(${Math.max(0, DAY.callLeft / shop.callSec)})`;
+  if (DAY.callLeft <= 0) pickCall(-1);
+}
+function pickCall(i) {
+  if (!DAY || DAY.phase !== PH.CALL || DAY.over) return;
+  const shop = curShop();
+  DAY.phase = PH.WAIT_CALL;      // 二重回答防止（すぐ食事へ移る）
+  if (i === shop.call) { Sound.good(); toast('一度で正確に言い切った。店主が無言で頷く。', 'good'); }
+  else if (i === -1) { applyIra(IRA.CALL_TIMEOUT, 'call_once', '店主「聞こえなかったのか」'); toast('言い淀んだ数秒がロットを止めた。', 'bad'); }
+  else { applyIra(IRA.CALL_WRONG, 'call_once', null); toast('ミッションと違う好みを言ってしまった。店主の眉が下がった。', 'bad'); }
+  if (DAY.over) return;
+  hideOverlay();
+  startEating();
+}
+/* ---- 結果 ---- */
+function renderDayResult() {
+  const shop = curShop();
+  const eatBonus = (DAY.lastEat && DAY.lastEat.bonus) || 0;
+  const calm = (IRA.MAX - DAY.ira) * SCORE.CALM_PER_POINT;
+  const dayScore = SCORE.CLEAR + calm + eatBonus;
+  RUN.score += dayScore; RUN.totalIra += DAY.ira; RUN.cleared++;
+  updateHUD();
+  const comment = DAY.ira <= 15 ? '店主が小さく頷いた。ほぼ完璧な客だった。' : DAY.ira <= 40 ? '無事完食。だが店主の視線はまだ少し痛い。' : DAY.ira <= 70 ? 'ヒヤヒヤの完食だった。作法の復習が必要だ。' : '出禁寸前。次はないと思え。';
+  const isLast = RUN.day >= SHOPS.length - 1;
+  showOverlay('dayResult', `
+  <div class="noren"><div class="t1" style="font-size:24px">${esc(shop.name)}</div><div class="t2">完食</div></div>
+  <div class="card center">
+    <div class="face">${faceFor(DAY.ira)}</div>
+    <p class="txt" style="margin-top:6px">${esc(comment)}</p>
+    <p class="txt" style="margin-top:8px">この店のスコア：<b>${dayScore}</b>点<br><span class="small">（完食1,000 ＋ 静穏ボーナス ${calm} ＋ 速度ボーナス ${eatBonus}）</span></p>
+    <p class="small" style="margin-top:6px">累計スコア： ${RUN.score}点 ／ 違反 ${RUN.violations}回</p>
+    ${isLast ? '<button class="btn primary" data-act="final">最終結果へ</button>' : `<button class="btn primary" data-act="dayNext">次の店へ（${RUN.day + 2}軒目）</button>`}
+  </div>${footerHtml()}`);
+}
+let certCanvas = null, finalTitle = '', finalKind = '';
+function renderFinal() {
+  RUN.done = true; finalKind = 'clear';
+  finalTitle = RUN.violations === 0 ? '常連認定' : (RUN.totalIra <= SCORE.TITLE_TOTAL_IRA ? '全店無事完食' : '出禁寸前の完食');
+  const best = store.get(SAVE_KEY.BEST, 0); if (RUN.score > best) store.set(SAVE_KEY.BEST, RUN.score);
+  document.body.classList.remove('playing');
+  showOverlay('final', `
+  <div class="noren"><div class="t1" style="font-size:26px">全5軒 制覇</div><div class="t2">おつかれさまでした</div></div>
+  <div class="cert"><div class="ct">${esc(finalTitle)}証</div>
+    <div class="cb">スコア：<b>${RUN.score}</b>点<br>違反回数：${RUN.violations}回 ／ 累計イラつき：${RUN.totalIra}<br>ルール図鑑：${RuleBook.count} / ${RULE_IDS.length} 件発見<br>右の者は、厳格なる5軒のラーメン店において<br>一度も出禁となることなく完食したことを証する。</div>
+    <div class="stamp">${RUN.violations === 0 ? '常連' : '完食'}</div></div>
+  <div class="card">
+    <button class="btn gold" data-act="share">𝕏 に結果をポストする</button>
+    <button class="btn" data-act="dlCert" style="text-align:center">証明書画像を保存する</button>
+    <button class="btn ghost" data-act="rules">ルール図鑑を見る</button>
+    <button class="btn ghost" data-act="title">タイトルへ戻る</button>
+  </div>${footerHtml()}`);
+  drawCert();
+}
+function renderDekin() {
+  finalKind = 'dekin'; finalTitle = '出禁'; Sound.dekin(); buzz([80, 60, 160]);
+  setDisplay(el.eatPanel, false);
+  const shop = curShop();
+  showOverlay('dekin', `
+  <div class="noren"><div class="t1" style="font-size:26px">出 禁</div><div class="t2">${esc(shop.name)} ― ${esc(shop.master)}</div></div>
+  <div class="cert"><div class="ct">出禁証明書</div>
+    <div class="cb">到達：${RUN.day + 1}軒目「${esc(shop.name)}」<br>スコア：<b>${RUN.score}</b>点 ／ 違反 ${RUN.violations}回<br>右の者は、店主のイラつきを限界まで高めたため<br>本日をもって出入り禁止とする。</div>
+    <div class="stamp">出禁</div></div>
+  <div class="card">
+    <button class="btn gold" data-act="share">𝕏 に結果をポストする</button>
+    <button class="btn" data-act="dlCert" style="text-align:center">証明書画像を保存する</button>
+    <button class="btn primary" data-act="retryDay">翌日、出直す（この店をやり直す）</button>
+    <button class="btn ghost" data-act="title">タイトルへ戻る</button>
+  </div>${footerHtml()}`);
+  drawCert();
+}
+
+/* =====================================================================
+ * 18. 証明書画像（1200×630）とシェア
+ * ===================================================================== */
+function drawCert() {
+  const cv = document.createElement('canvas'); cv.width = 1200; cv.height = 630;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#17110c'; g.fillRect(0, 0, 1200, 630);
+  g.fillStyle = '#7d1f14'; g.fillRect(0, 0, 1200, 110);
+  g.fillStyle = '#17110c'; for (let x = 300; x < 1200; x += 300) g.fillRect(x - 4, 80, 8, 30);   // 暖簾の切れ目
+  g.fillStyle = '#ffffff'; g.font = `900 54px ${SANS}`; g.textAlign = 'center';
+  g.fillText('出禁ラーメン3D', 600, 70);
+  g.fillStyle = '#f7ead1'; g.fillRect(140, 150, 920, 360);
+  g.strokeStyle = '#8a6d2f'; g.lineWidth = 4; g.strokeRect(160, 170, 880, 320);
+  g.fillStyle = '#3a2a12'; g.font = `900 64px ${SERIF}`;
+  g.fillText(finalKind === 'dekin' ? '出禁証明書' : finalTitle + '証', 600, 268);
+  g.font = `30px ${SANS}`;
+  g.fillText(`スコア ${RUN.score}点 ／ 違反 ${RUN.violations}回`, 600, 348);
+  g.fillText(finalKind === 'dekin' ? `${RUN.day + 1}軒目で出禁` : '全5軒を完食', 600, 402);
+  g.fillText(`ルール図鑑 ${RuleBook.count} / ${RULE_IDS.length} 件発見`, 600, 456);
+  // 印
+  g.save(); g.translate(960, 420); g.rotate(-0.25); g.strokeStyle = 'rgba(192,57,43,.85)'; g.lineWidth = 6;
+  g.beginPath(); g.arc(0, 0, 54, 0, 7); g.stroke(); g.fillStyle = 'rgba(192,57,43,.85)'; g.font = `900 30px ${SERIF}`; g.textBaseline = 'middle';
+  g.fillText(finalKind === 'dekin' ? '出禁' : (RUN.violations === 0 ? '常連' : '完食'), 0, 2); g.restore();
+  g.fillStyle = '#c9b18c'; g.font = `24px ${SANS}`; g.textBaseline = 'alphabetic';
+  g.fillText('〜怒られずに食べ切れ〜', 600, 566);
+  certCanvas = cv;
+}
+function shareText() {
+  if (finalKind === 'dekin') return `🍜『出禁ラーメン3D』${RUN.day + 1}軒目「${SHOPS[RUN.day].name}」で出禁になりました……。スコア${RUN.score}点／違反${RUN.violations}回。3Dで歩ける厳格ラーメン屋、あなたは完食できますか？ #出禁ラーメン3D`;
+  return `🍜『出禁ラーメン3D』全5軒を完食！「${finalTitle}」スコア${RUN.score}点／違反${RUN.violations}回／図鑑${RuleBook.count}件発見。3Dで歩ける厳格ラーメン屋、あなたは怒られずに食べ切れますか？ #出禁ラーメン3D`;
+}
+function shareResult() { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText()), '_blank', 'noopener'); }
+function downloadCert() {
+  if (!certCanvas) drawCert();
+  const a = document.createElement('a'); a.download = 'dekin-ramen-3d-result.png'; a.href = certCanvas.toDataURL('image/png'); a.click();
+}
+
+/* =====================================================================
+ * 19. 起動
+ * ===================================================================== */
+resetJoy();
+renderTitle();
+requestAnimationFrame(frame);
+
+// テスト・デバッグ用フック
+try {
+  globalThis.__G = {
+    get RUN() { return RUN; }, get DAY() { return DAY; }, get P() { return P; }, get EAT() { return EAT; }, get W() { return W; }, get ui() { return ui; },
+    PH, SHOPS, RULES, RuleBook, startDay, renderDayIntro, buildWorld, updateGame, eatTap, finishEat, sitDown, callPlayer, advanceQueue,
+    computeInteract, doInteract, pressPhone, pressCamera, pressTissue, pressBow, refuseFriend, replyWhisper, placeBowl, exitShop, buyTicket, pickCall, applyIra,
+    newRun: () => { RUN = newRun(); return RUN; },
+  };
+} catch (e) { }
+</script>
+</body>
+</html>
