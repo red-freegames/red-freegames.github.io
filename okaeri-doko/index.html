@@ -49,9 +49,6 @@
   .btn-sub { background:#223c5e; color:#cfe2f5; font-size:13.5px; padding:12px 14px; border:1px solid #3a5f8f; }
   .btn-guess { flex:1; min-width:120px; background:#1d6fb8; color:#fff; font-size:15px; padding:13px 10px; box-shadow:0 3px 0 #123f6e; }
   .btn-guess:active { transform:translateY(2px); box-shadow:none; }
-  #guessPanel { margin-top:12px; background:#122539; border:1px solid #2b4a73; border-radius:12px; padding:12px; display:none; }
-  #guessPanel.open { display:block; }
-  #guessPanel h3 { font-size:13px; color:#9db8d6; margin-bottom:8px; }
   .region { font-size:11px; color:#7e9cc0; margin:10px 0 5px; }
   .grid { display:flex; flex-wrap:wrap; gap:6px; }
   .grid button { background:#1c3555; color:#eef3f8; border:1px solid #33567f; font-size:14px; padding:9px 13px; border-radius:999px; }
@@ -75,6 +72,55 @@
   .hidden { display:none !important; }
   .card .btns + p { margin-top:14px; font-size:14px; line-height:1.7; }
   footer a { color:#9db8d6; }
+  /* --- UI改善 --- */
+  html { scroll-padding-bottom:180px; }
+  body.playing #app { padding-bottom:190px; }
+  body.playing header { padding:10px 16px 8px; }
+  body.playing header h1 { font-size:17px; }
+  body.playing header p { font-size:11px; margin-top:2px; }
+  body.noscroll { overflow:hidden; }
+  button small { display:block; font-size:11px; font-weight:600; opacity:.85; margin-top:2px; }
+  button:disabled { opacity:.4; cursor:default; }
+  #actionbar { position:fixed; left:0; right:0; bottom:0; z-index:20; max-width:520px; margin:0 auto; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(13,27,46,.94); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-top:1px solid #2b4a73; box-shadow:0 -6px 18px rgba(0,0,0,.35); }
+  #actionbar .btn-main, #actionbar .btn-guess { min-width:0; padding:11px 8px; }
+  .barinfo { font-size:12px; color:#9db8d6; text-align:center; margin-bottom:8px; }
+  .barinfo b { color:#ffd27a; }
+  .btn-giveup { display:block; width:100%; margin-top:8px; background:none; color:#7e9cc0; font-size:12.5px; padding:6px; text-decoration:underline; text-underline-offset:3px; }
+  #sheet { position:fixed; inset:0; z-index:40; background:rgba(4,10,20,.6); display:none; align-items:flex-end; justify-content:center; }
+  #sheet.open { display:flex; }
+  .sheet-box { width:100%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; background:#122539; border:1px solid #2b4a73; border-bottom:none; border-radius:18px 18px 0 0; animation:sheetup .18s ease-out; }
+  @keyframes sheetup { from { transform:translateY(40px); opacity:0; } to { transform:none; opacity:1; } }
+  .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #2b4a73; font-size:16px; }
+  .sheet-x { background:#223c5e; color:#cfe2f5; font-size:13px; padding:8px 12px; border:1px solid #3a5f8f; }
+  #sheetBody { overflow-y:auto; padding:10px 14px calc(18px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch; }
+  .heard { background:#0d1b2e; border:1px solid #2b4a73; border-radius:10px; padding:8px 10px; font-size:12.5px; line-height:1.6; color:#dbe7f3; }
+  .heard b { color:#ffd27a; font-size:11px; }
+  .heard-t { font-size:11px; color:#9db8d6; margin-bottom:2px; }
+  .sheet-note { font-size:12px; color:#9db8d6; margin:8px 0 2px; }
+  .sheet-note b { color:#ffd27a; }
+  .card.result { scroll-margin-top:8px; }
+  .verdict { font-size:22px; font-weight:800; text-align:center; padding:8px; border-radius:10px; margin-bottom:10px; }
+  .verdict.good { background:#dff5e6; color:#1d7a3f; }
+  .verdict.bad { background:#fbe3e3; color:#a33a3a; }
+  .verdict span { font-size:18px; }
+  .hint-title { font-size:12px; font-weight:700; color:#7a6a52; margin:4px 0 2px; }
+  .unseen-box { margin-top:6px; border-top:1px dashed #d8cdb4; padding-top:8px; }
+  .unseen-box summary { cursor:pointer; font-size:13px; font-weight:700; color:#1d6fb8; padding:4px 0; }
+  .final { text-align:center; }
+  .final-head { font-size:16px; font-weight:800; }
+  .final-score { font-size:44px; }
+  .final-score small { font-size:18px; margin-left:2px; }
+  .newbest { display:inline-block; background:#ffb340; color:#3a2400; font-weight:800; font-size:13px; border-radius:999px; padding:3px 12px; margin-bottom:6px; }
+  .nextrank { font-size:12.5px; color:#7a6a52; margin-bottom:10px; }
+  .recap { text-align:left; }
+  .recap-row { display:flex; gap:8px; align-items:baseline; }
+  .recap-row span:first-child { flex:1; }
+  .recap-row span:nth-child(2) { font-size:11.5px; color:#7a6a52; }
+  .recap-row b { min-width:52px; text-align:right; }
+  .legend { font-size:11px; color:#7a6a52; margin-top:6px; }
+  .howto { margin-top:14px; font-size:13.5px; line-height:1.7; }
+  .howto ol { padding-left:1.3em; margin-top:4px; }
+  .howto li + li { margin-top:4px; }
 </style>
 </head>
 <body>
@@ -85,13 +131,18 @@
   </header>
   <div class="hud">
     <div class="box"><div class="k">旅行者</div><div class="v" id="hudProg">-</div></div>
-    <div class="box"><div class="k">この人の得点</div><div class="v" id="hudScore">1000</div></div>
+    <div class="box"><div class="k">今当てたら</div><div class="v" id="hudScore">1000</div></div>
     <div class="box"><div class="k">合計</div><div class="v" id="hudTotal">0</div></div>
     <div class="box"><div class="k">ベスト</div><div class="v" id="hudBest">-</div></div>
   </div>
   <div id="chat"></div>
   <div id="panel"></div>
   <div id="explain"></div>
+  <div id="actionbar" class="hidden"></div>
+  <div id="sheet" role="dialog" aria-modal="true" aria-label="行き先を選ぶ"><div class="sheet-box">
+    <div class="sheet-head"><b>どこへ行ってきた？</b><button class="sheet-x" data-act="closeSheet" aria-label="閉じる">✕ 閉じる</button></div>
+    <div id="sheetBody"></div>
+  </div></div>
   <footer>実況・配信・動画投稿・収益化OK<br><a href="https://red-freegames.github.io/">RED FREE GAMES</a> の他のゲームで遊ぶ<br>登場する旅行者はすべて架空です。実在の空港・航空会社とは関係ありません。</footer>
 </div>
 
@@ -197,15 +248,28 @@ function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&l
 function best(){ try{ const v = localStorage.getItem(bestKey()); return v? parseInt(v,10): null; }catch(e){ return null; } }
 function saveBest(v){ try{ const b = best(); if(b===null || v>b) localStorage.setItem(bestKey(), String(v)); }catch(e){} }
 
-function render(){
-  const chat = $('chat'), panel = $('panel'), ex = $('explain');
+const SITE_URL = 'https://red-freegames.github.io/okaeri-doko/';
+const RANKS = [[4300,"伝説の到着ロビー係員"],[3600,"旅行の達人"],[2800,"聞き上手のベテラン係員"],[1800,"一人前スタッフ"],[0,"新人スタッフ"]];
+function nextRank(total){ for(let i=RANKS.length-1;i>=0;i--){ if(total < RANKS[i][0]) return {need:RANKS[i][0]-total, name:RANKS[i][1]}; } return null; }
+function resultMark(r){ if(r.pts<=0) return '⬛'; if(r.hints<=2) return '🟩'; if(r.hints<=4) return '🟨'; return '🟧'; }
+function resultWord(r){ if(r.gaveUp) return 'ギブアップ'; if(r.pts<=0) return '不正解'; return 'ヒント'+r.hints+'件'+(r.wrong?'・誤答'+r.wrong:''); }
+let giveupArmed = 0;
+
+function render(scrollMode){
+  const chat = $('chat'), panel = $('panel'), ex = $('explain'), bar = $('actionbar');
+  document.body.classList.toggle('playing', !!S);
+  let prevBest = null;
+  if(S && S.phase==='final' && !S._saved){ S._prevBest = best(); saveBest(S.total); S._saved = true; }
+  if(S && S.phase==='final') prevBest = S._prevBest;
+  chat.style.display = S && S.phase==='final' ? 'none' : '';
   $('hudProg').textContent = S ? Math.min(S.idx+1, TOTAL_TRAVELERS) + ' / ' + TOTAL_TRAVELERS + ' 人' : '-';
-  $('hudScore').textContent = S && S.phase==='ask' ? pointsFor(S.revealed, S.wrong, S.idx) : (S && S.results.length ? S.results[S.results.length-1].pts : 1000);
+  $('hudScore').textContent = S && S.phase==='ask' ? pointsFor(S.revealed, S.wrong, S.idx) : '-';
   $('hudTotal').textContent = S ? S.total : 0;
   const b = best(); $('hudBest').textContent = b===null? '-' : b;
-  chat.innerHTML = ''; panel.innerHTML=''; ex.innerHTML='';
-  if(!S) return;
-  S.log.forEach(m => {
+  chat.innerHTML = ''; panel.innerHTML=''; ex.innerHTML=''; bar.innerHTML='';
+  closeSheet();
+  if(!S){ bar.classList.add('hidden'); return; }
+  if(S.phase!=='final') S.log.forEach(m => {
     if(m.kind==='sys'){ const d=document.createElement('div'); d.className='sys '+(m.cls||''); d.textContent=m.text; chat.appendChild(d); return; }
     const row=document.createElement('div'); row.className='row '+(m.kind==='me'?'me':'guest');
     const av=document.createElement('div'); av.className='avatar'; av.textContent = m.kind==='me'? '🧑‍✈️' : S.persona.emoji;
@@ -213,40 +277,58 @@ function render(){
     bub.innerHTML = (m.cat? '<span class="cat">'+esc(m.cat)+'</span>':'') + esc(m.text);
     row.appendChild(av); row.appendChild(bub); chat.appendChild(row);
   });
+  bar.classList.remove('hidden');
   if(S.phase==='ask'){
-    const wrap=document.createElement('div'); wrap.className='btns';
-    const canMore = S.revealed < S.hints.length;
-    wrap.innerHTML =
-      '<button class="btn-main" data-act="hint" '+(canMore?'':'disabled style="opacity:.4"')+'>💬 もっと聞く（残り'+(S.hints.length - S.revealed)+'ヒント）</button>' +
-      '<button class="btn-guess" data-act="toggleGuess">🎯 当てる！</button>' +
-      '<button class="btn-sub" data-act="giveup">ギブアップ</button>';
-    const gp=document.createElement('div'); gp.id='guessPanel';
-    if(S.keepGuessOpen){ gp.classList.add('open'); S.keepGuessOpen=false; }
-    gp.innerHTML = '<h3>どこへ行ってきた？（' + ACTIVE.countLabel + 'から出題）</h3>' + guessGridHtml();
-    panel.appendChild(wrap); panel.appendChild(gp);
+    const left = S.hints.length - S.revealed, canMore = left > 0;
+    const now = pointsFor(S.revealed, S.wrong, S.idx);
+    const after = canMore ? pointsFor(S.revealed+1, S.wrong, S.idx) : now;
+    const missLeft = wrongLimit() - S.wrong;
+    bar.innerHTML =
+      '<div class="barinfo">今当てたら <b>'+now+'点</b> ／ あと<b>'+missLeft+'回</b>外すと終了</div>' +
+      '<div class="btns">' +
+      '<button class="btn-main" data-act="hint" '+(canMore?'':'disabled')+'>💬 もっと聞く<small>'+(canMore? '残り'+left+'件・当てたら'+after+'点に' : 'ヒントはもう無い')+'</small></button>' +
+      '<button class="btn-guess" data-act="openGuess">🎯 当てる！<small>'+esc(ACTIVE.countLabel)+'から選ぶ</small></button>' +
+      '</div>' +
+      '<button class="btn-giveup" data-act="giveup">'+(giveupArmed>Date.now()? '本当にギブアップする？（もう一度タップ）' : 'ギブアップ')+'</button>';
   } else if(S.phase==='explain'){
     const r = S.results[S.results.length-1];
     const t = S.traveler;
-    let rows = S.hints.map((h,i) => {
+    const ok = r.pts > 0;
+    const seenRows = [], unseenRows = [];
+    S.hints.forEach((h,i) => {
       const seen = i < r.hints;
-      return '<div class="hint-row'+(seen?'':' unseen')+'"><span class="hc">'+esc(h.cat)+(seen? (i===r.hints-1 && !r.gaveUp && r.pts>0 ? '<span class="tag">決め手</span>':'') : '<span class="tag gray">未公開</span>')+'</span>「'+esc(h.text)+'」<br><span class="why">'+esc(h.why)+'</span></div>';
-    }).join('');
-    ex.innerHTML = '<div class="card"><h2>答え：'+esc(t.name)+'</h2>' +
-      '<div class="sub">お土産：'+esc(t.souvenir)+' ／ ヒント'+r.hints+'件・誤答'+r.wrong+'回'+(r.gaveUp?' ／ ギブアップ':'')+'</div>' +
-      '<div class="pts">この人の得点：'+r.pts+'点</div>' + rows +
-      '<div class="btns" style="margin-top:12px"><button class="btn-main" data-act="next">'+(S.idx+1>=TOTAL_TRAVELERS? '結果を見る':'次の旅行者へ')+'</button></div></div>';
+      const html = '<div class="hint-row'+(seen?'':' unseen')+'"><span class="hc">'+esc(h.cat)+(seen && i===r.hints-1 && ok ? '<span class="tag">決め手</span>':'')+'</span>「'+esc(h.text)+'」<br><span class="why">'+esc(h.why)+'</span></div>';
+      (seen? seenRows : unseenRows).push(html);
+    });
+    ex.innerHTML = '<div class="card result" id="resultCard">' +
+      '<div class="verdict '+(ok?'good':'bad')+'">'+(ok? '🎉 正解！ <span>+'+r.pts+'点</span>' : (r.gaveUp? '🏳️ ギブアップ' : '😢 残念…'))+'</div>' +
+      '<h2>答え：'+esc(t.name)+'</h2>' +
+      '<div class="sub">お土産：'+esc(t.souvenir)+' ／ '+esc(resultWord(r))+' ／ 合計 '+S.total+'点</div>' +
+      '<div class="hint-title">聞いたヒントと解説</div>' + seenRows.join('') +
+      (unseenRows.length ? '<details class="unseen-box"><summary>聞かなかったヒント（'+unseenRows.length+'件）を見る</summary>'+unseenRows.join('')+'</details>' : '') +
+      '</div>';
+    bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="next">'+(S.idx+1>=TOTAL_TRAVELERS? '🏁 結果を見る':'次の旅行者へ ▶<small>'+(S.idx+2)+'人目／難易度：'+diffLabel(S.idx+1)+'</small>')+'</button></div>';
   } else if(S.phase==='final'){
-    saveBest(S.total);
-    const recap = S.results.map((r,i)=> (i+1)+'. '+esc(r.name)+'：'+r.pts+'点（ヒント'+r.hints+'件'+(r.gaveUp?'・ギブアップ':'')+'）').join('<br>');
-    const shareText = '✈️『おかえり、どこ行ってた？』【' + ACTIVE.label + '】で '+S.total+'点！ ランク「'+rankFor(S.total)+'」でした。旅行者の会話から行き先を当てる推理ゲーム #おかえりどこ行ってた';
-    ex.innerHTML = '<div class="card"><h2 style="text-align:center">勤務終了！</h2>' +
-      '<div class="final-score">'+S.total+'点</div><div class="rank">'+esc(rankFor(S.total))+'</div>' +
+    const isBest = prevBest===null || S.total > prevBest;
+    const nr = nextRank(S.total);
+    const recap = S.results.map((r,i)=> '<div class="recap-row"><span>'+resultMark(r)+' '+(i+1)+'. '+esc(r.name)+'</span><span>'+esc(resultWord(r))+'</span><b>'+r.pts+'点</b></div>').join('');
+    ex.innerHTML = '<div class="card final"><div class="final-head">勤務終了！ 【'+esc(ACTIVE.label)+'】</div>' +
+      '<div class="final-score">'+S.total+'<small>点</small></div>' +
+      (isBest && prevBest!==null ? '<div class="newbest">🎊 ベスト更新！（前回 '+prevBest+'点）</div>' : '') +
+      '<div class="rank">ランク「'+esc(rankFor(S.total))+'」</div>' +
+      (nr ? '<div class="nextrank">あと'+nr.need+'点で「'+esc(nr.name)+'」</div>' : '<div class="nextrank">最高ランク達成！</div>') +
       '<div class="recap">'+recap+'</div>' +
-      '<button class="share" data-act="share">𝕏 に結果を投稿する</button>' +
-      '<div class="btns" style="margin-top:10px"><button class="btn-main" data-act="restart">もう一度勤務する</button><button class="btn-sub" data-act="home">🏠 ホームに戻る</button></div></div>';
-    S._shareText = shareText;
+      '<div class="legend">🟩ヒント2件以内 🟨4件以内 🟧5件以上 ⬛不正解</div>' +
+      '<button class="share" data-act="share">𝕏 で結果をポストする</button>' +
+      '</div>';
+    S._shareText = '✈️おかえり、どこ行ってた？【' + ACTIVE.label + '】\n' + S.total + '点／ランク「' + rankFor(S.total) + '」\n' + S.results.map(resultMark).join('') + '\n#おかえりどこ行ってた';
+    bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="restart">もう一度【'+esc(ACTIVE.label)+'】</button><button class="btn-sub" data-act="home">🏠 勤務先を選ぶ</button></div>';
   }
-  window.scrollTo(0, document.body.scrollHeight);
+  requestAnimationFrame(() => {
+    if(S.phase==='ask'){ window.scrollTo({top: document.body.scrollHeight, behavior: scrollMode==='instant'?'auto':'smooth'}); }
+    else if(S.phase==='explain'){ const c=$('resultCard'); if(c) window.scrollTo({top: c.getBoundingClientRect().top + window.scrollY - 8, behavior:'smooth'}); }
+    else window.scrollTo(0,0);
+  });
 }
 function guessGridHtml(){
   const groups = {};
@@ -257,69 +339,85 @@ function guessGridHtml(){
     groups[g].map(n => '<button data-act="guess" data-name="'+esc(n)+'" '+(wrongNames.includes(n)?'disabled':'')+'>'+esc(n)+'</button>').join('') +
     '</div>').join('');
 }
+function openSheet(){
+  if(!S || S.phase!=='ask') return;
+  const heard = S.log.filter(m=>m.kind==='guest' && m.cat);
+  const missLeft = wrongLimit() - S.wrong;
+  $('sheetBody').innerHTML =
+    '<div class="heard"><div class="heard-t">これまでのヒント</div>' + heard.map(m=>'<div>・<b>'+esc(m.cat)+'</b> '+esc(m.text)+'</div>').join('') + '</div>' +
+    '<div class="sheet-note">今当てたら <b>'+pointsFor(S.revealed, S.wrong, S.idx)+'点</b> ／ 外すと -150点（あと'+missLeft+'回で終了）</div>' +
+    guessGridHtml();
+  $('sheet').classList.add('open');
+  document.body.classList.add('noscroll');
+  $('sheetBody').scrollTop = 0;
+}
+function closeSheet(){ const s=$('sheet'); if(s) s.classList.remove('open'); document.body.classList.remove('noscroll'); }
 function pushGuest(text, cat){ S.log.push({kind:'guest', text:text, cat:cat}); }
 function pushMe(text){ S.log.push({kind:'me', text:text}); }
 function pushSys(text, cls, wrongName){ S.log.push({kind:'sys', text:text, cls:cls, wrongName:wrongName}); }
+const MORE_QS = ['Q. 他には何かありました？','Q. もう少し聞かせてください','Q. 印象に残ったことは？','Q. ほかに覚えてることは？'];
+function questionFor(h){ return S.idx>=3 ? MORE_QS[Math.floor(Math.random()*MORE_QS.length)] : 'Q. ' + h.cat + 'はどうでした？'; }
 function askCurrentHint(){
   const h = S.hints[S.revealed-1];
-  if(S.idx>=3){ pushMe('Q. 旅の話、もう少し聞かせてください'); pushGuest(h.text, 'ヒント'); }
-  else { pushMe('Q. ' + h.cat + 'はどうでした？'); pushGuest(h.text, h.cat); }
+  pushMe(questionFor(h)); pushGuest(h.text, guestCat(h));
 }
 function guestCat(h){ return S.idx>=3 ? 'ヒント' : h.cat; }
+function arriveTraveler(first){
+  S.log = []; giveupArmed = 0;
+  pushSys((first?'到着ロビーに旅行者がやってきた':'次の旅行者がやってきた') + '（' + S.persona.label + '／難易度：' + diffLabel(S.idx) + '）');
+  pushGuest(INTROS[Math.floor(Math.random()*INTROS.length)]);
+  askCurrentHint();
+  render('instant');
+  window.scrollTo(0,0);
+}
 function startRunUI(){
   if(!ACTIVE){ renderHome(); return; }
   $('chat').style.display = '';
-  const sh = $('subhead'); if(sh) sh.textContent = '空港の到着ロビー係員になって、旅行者の会話から行き先を当てよう（' + ACTIVE.label + '／' + ACTIVE.countLabel + '・全5人）';
+  const sh = $('subhead'); if(sh) sh.textContent = ACTIVE.label + '／' + ACTIVE.countLabel + 'から出題・全5人';
   newRun();
-  S.log = [];
-  pushSys('到着ロビーに旅行者がやってきた（' + S.persona.label + '／難易度：' + diffLabel(S.idx) + '）');
-  pushGuest(INTROS[Math.floor(Math.random()*INTROS.length)]);
-  askCurrentHint();
-  render();
+  arriveTraveler(true);
 }
 function renderHome(){
   S = null;
   render();
+  window.scrollTo(0,0);
   $('chat').style.display = 'none';
   const sh = $('subhead'); if(sh) sh.textContent = '空港の到着ロビー係員になって、帰ってきた旅行者の会話から「どこへ行ってきたか」を当てる推理ゲーム。まずは勤務先を選ぼう！';
   const bd = bestOf(MODES.domestic.bestKey), bi = bestOf(MODES.intl.bestKey);
   const ready = modeReady(MODES.intl);
   $('panel').innerHTML = '<div class="card"><h2 style="text-align:center">勤務先を選んでください</h2>' +
     '<div class="btns">' +
-    '<button class="btn-main" data-act="mode-domestic">🛬 国内編<br><small>' + MODES.domestic.countLabel + 'から出題' + (bd!==null ? '／ベスト ' + bd + '点' : '') + '</small></button>' +
-    (ready ? '<button class="btn-main" data-act="mode-intl">🌍 国際編<br><small>' + MODES.intl.countLabel + 'から出題' + (bi!==null ? '／ベスト ' + bi + '点' : '') + '</small></button>' : '<button class="btn-main" disabled style="opacity:.4">🌍 国際編<br><small>準備中</small></button>') +
+    '<button class="btn-main" data-act="mode-domestic">🛬 国内編<small>' + MODES.domestic.countLabel + 'から出題' + (bd!==null ? '／ベスト ' + bd + '点' : '') + '</small></button>' +
+    (ready ? '<button class="btn-main" data-act="mode-intl">🌍 国際編<small>' + MODES.intl.countLabel + 'から出題' + (bi!==null ? '／ベスト ' + bi + '点' : '') + '</small></button>' : '<button class="btn-main" disabled>🌍 国際編<small>準備中</small></button>') +
     '</div>' +
-    '<p>遊び方：旅行者の会話ヒントは「第一印象→空気感→景色→お土産→移動→過ごし方→名所→食」の順に少しずつ具体的になります。早く当てるほど高得点。旅行者は全部で5人です。</p></div>';
+    '<div class="howto"><b>遊び方</b><ol><li>旅行者に話を聞くと、「第一印象→空気感→景色→お土産→移動→過ごし方→名所→食」の順にヒントが少しずつ具体的になります。</li><li>分かったら「🎯 当てる！」。早く当てるほど高得点（ヒント2件以内ならボーナス）。</li><li>外すと減点。4人目からはヒントの種類が伏せられ、5人目は2回外すと終了です。</li></ol></div></div>';
 }
 function onAction(act, el){
+  if(act!=='giveup') giveupArmed = 0;
   if(act==='hint'){
-    pushMe('もう少し詳しく聞いてみよう');
-    if(revealHint()){ beep(660,0.08); const h=S.hints[S.revealed-1]; pushGuest(h.text, guestCat(h)); }
+    if(revealHint()){ beep(660,0.08); const h=S.hints[S.revealed-1]; pushMe(questionFor(h)); pushGuest(h.text, guestCat(h)); }
     render();
-  } else if(act==='toggleGuess'){
-    const gp = $('guessPanel'); if(gp) gp.classList.toggle('open');
+  } else if(act==='openGuess' || act==='toggleGuess'){
+    openSheet();
+  } else if(act==='closeSheet'){
+    closeSheet();
   } else if(act==='guess'){
     const name = el.getAttribute('data-name');
     pushMe('ズバリ、' + name + 'ですね！');
     const beforeRev = S.revealed; const r = guess(name);
     if(r.correct){ beep(880,0.15); setTimeout(()=>beep(1174,0.2),140); pushSys('🎉 正解！ '+name+' でした（'+r.pts+'点）','good'); }
     else if(r.exhausted){ beep(196,0.3); pushSys('❌ '+wrongLimit()+'回外してしまった… 答えは '+S.traveler.name+' でした','bad'); }
-    else { beep(220,0.2); S.keepGuessOpen = true;
-      if(S.revealed > beforeRev){ pushSys('❌ '+name+' じゃないみたい… 旅行者がヒントを足してくれた','bad', name); pushGuest(S.hints[S.revealed-1].text, guestCat(S.hints[S.revealed-1])); }
-      else { pushSys('❌ '+name+' じゃないみたい…','bad', name); pushGuest(NO_HINT_LINES[Math.floor(Math.random()*NO_HINT_LINES.length)]); } }
+    else { beep(220,0.2);
+      if(S.revealed > beforeRev){ pushSys('❌ '+name+' じゃないみたい…（-150点）旅行者がヒントを足してくれた','bad', name); pushGuest(S.hints[S.revealed-1].text, guestCat(S.hints[S.revealed-1])); }
+      else { pushSys('❌ '+name+' じゃないみたい…（-150点）','bad', name); pushGuest(NO_HINT_LINES[Math.floor(Math.random()*NO_HINT_LINES.length)]); } }
     render();
   } else if(act==='giveup'){
-    giveUp(); beep(196,0.3); pushSys('ギブアップ… 答えは '+S.traveler.name+' でした','bad'); render();
+    if(giveupArmed > Date.now()){ giveupArmed = 0; giveUp(); beep(196,0.3); pushSys('ギブアップ… 答えは '+S.traveler.name+' でした','bad'); render(); }
+    else { giveupArmed = Date.now() + 3000; render('instant'); setTimeout(()=>{ if(giveupArmed && giveupArmed<=Date.now() && S && S.phase==='ask'){ giveupArmed=0; render('instant'); } }, 3100); }
   } else if(act==='next'){
     if(nextTraveler()){
-      if(S.phase==='final'){ render(); }
-      else {
-        S.log = [];
-        pushSys('次の旅行者がやってきた（' + S.persona.label + '／難易度：' + diffLabel(S.idx) + '）');
-        pushGuest(INTROS[Math.floor(Math.random()*INTROS.length)]);
-        askCurrentHint();
-        render();
-      }
+      if(S.phase==='final'){ beep(784,0.12); setTimeout(()=>beep(1046,0.25),120); render(); }
+      else arriveTraveler(false);
     }
   } else if(act==='mode-domestic'){
     ACTIVE = MODES.domestic; startRunUI();
@@ -330,15 +428,18 @@ function onAction(act, el){
   } else if(act==='restart'){
     startRunUI();
   } else if(act==='share'){
-    const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(S._shareText||'');
-    window.open(url, '_blank');
+    const url = 'https://x.com/intent/post?text=' + encodeURIComponent(S._shareText||'') + '&url=' + encodeURIComponent(SITE_URL);
+    const w = window.open(url, '_blank', 'noopener');
+    if(!w) location.href = url;
   }
 }
 if(!IS_TEST && typeof window !== 'undefined'){
   document.addEventListener('click', e => {
+    if(e.target.id==='sheet'){ closeSheet(); return; }
     const el = e.target.closest('[data-act]');
-    if(el) onAction(el.getAttribute('data-act'), el);
+    if(el && !el.disabled) onAction(el.getAttribute('data-act'), el);
   });
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeSheet(); });
   window.addEventListener('DOMContentLoaded', startRunUI);
 }
 if(IS_TEST && typeof globalThis !== 'undefined'){
