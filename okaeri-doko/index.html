@@ -71,6 +71,9 @@
   .share { display:block; width:100%; margin-top:12px; background:#000; color:#fff; font-size:14.5px; padding:12px; border-radius:10px; }
   footer { text-align:center; font-size:11px; color:#637f9f; padding:22px 16px 0; line-height:1.7; }
   .hidden { display:none !important; }
+  .topnav { display:flex; justify-content:space-between; gap:8px; margin:-6px 0 8px; }
+  .topnav button, .topnav a { font-family:inherit; font-size:12px; font-weight:700; color:#fff; background:rgba(13,27,46,.35); border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:5px 12px; text-decoration:none; line-height:1.4; }
+  .topnav button:active, .topnav a:active { background:rgba(13,27,46,.6); }
   .card .btns + p { margin-top:14px; font-size:14px; line-height:1.7; }
   footer a { color:#9db8d6; }
   /* --- UI改善 --- */
@@ -142,6 +145,7 @@
   .insight p { margin:4px 0 8px; }
   .insight .btn-sub { width:100%; }
   .album-btn { display:block; width:100%; margin-top:10px; }
+  a.other-games { text-align:center; text-decoration:none; border-radius:12px; font-weight:700; }
   .album h2 { text-align:center; }
   .tabs { display:flex; gap:6px; margin:8px 0; }
   .tabs button { flex:1; background:#e6dcc4; color:#5d5342; padding:9px; font-size:14px; }
@@ -165,6 +169,7 @@
 <body>
 <div id="app">
   <header>
+    <nav class="topnav"><button data-act="goHome">🏠 HOME</button><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
     <h1><span class="plane">✈️</span>おかえり、どこ行ってた？</h1>
     <p id="subhead">帰ってきた旅行者の土産話から、行き先を推理しよう。当たっても外れても、まだ知らない土地の魅力に出会える旅のゲーム。</p>
   </header>
@@ -494,6 +499,7 @@ function render(scrollMode){
       insightHtml(ACTIVE) +
       '<button class="btn-sub album-btn" data-act="album" data-mode="'+ACTIVE.key+'">📖 旅の図鑑（出会った '+met+' / '+ACTIVE.places.length+'）</button>' +
       '<button class="share" data-act="share">𝕏 で結果をポストする</button>' +
+      '<a class="btn-sub album-btn other-games" href="https://red-freegames.github.io/">🎮 他のゲームを見る</a>' +
       '</div>';
     bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="restart">もう一度【'+esc(ACTIVE.label)+'】</button><button class="btn-sub" data-act="home">🏠 勤務先を選ぶ</button></div>';
   }
@@ -614,6 +620,10 @@ function onAction(act, el){
     ACTIVE = MODES.domestic; startRunUI();
   } else if(act==='mode-intl'){
     ACTIVE = MODES.intl; startRunUI();
+  } else if(act==='goHome'){
+    const midRun = S && S.phase !== 'final' && (S.idx > 0 || S.revealed > 1 || S.wrong > 0 || S.phase === 'explain');
+    if(midRun && !confirm('勤務を中断してHOMEに戻りますか？\n（今回の得点は記録されません。出会った土地は図鑑に残ります）')) return;
+    ACTIVE = null; S = null; startRunUI();
   } else if(act==='home'){
     ACTIVE = null; S = null; startRunUI();
   } else if(act==='restart'){
