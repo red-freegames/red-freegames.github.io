@@ -268,7 +268,7 @@ function nextTraveler(){
   startTraveler();
   return true;
 }
-function rankFor(total){ if(total>=4300) return "伝説の到着ロビー係員"; if(total>=3600) return "旅行の達人"; if(total>=2800) return "聞き上手のベテラン係員"; if(total>=1800) return "一人前スタッフ"; return "新人スタッフ"; }
+function rankFor(total){ for(const r of RANKS){ if(total >= r[0]) return r[1]; } return RANKS[RANKS.length-1][1]; }
 
 /* ===== 画面描画（ブラウザのみ） ===== */
 const $ = id => document.getElementById(id);
@@ -415,7 +415,7 @@ function renderAlbum(key, focus){
   requestAnimationFrame(() => { const f = focus && document.getElementById('rg-' + focus); if(f) f.scrollIntoView({block:'start'}); else window.scrollTo(0,0); });
 }
 const SITE_URL = 'https://red-freegames.github.io/okaeri-doko/';
-const RANKS = [[4300,"伝説の到着ロビー係員"],[3600,"旅行の達人"],[2800,"聞き上手のベテラン係員"],[1800,"一人前スタッフ"],[0,"新人スタッフ"]];
+const RANKS = [[5200,"歩く地図帳"],[4500,"旅の神"],[3800,"地理オタク"],[3000,"そこそこ物知り"],[2300,"人並み…以下"],[1500,"地図が読めない人"],[700,"方向音痴の極み"],[0,"無知の塊"]];
 function nextRank(total){ for(let i=RANKS.length-1;i>=0;i--){ if(total < RANKS[i][0]) return {need:RANKS[i][0]-total, name:RANKS[i][1]}; } return null; }
 function resultWord(r){ if(r.gaveUp) return 'ギブアップ'; if(r.pts<=0) return '不正解'; return 'ヒント'+r.hints+'件'+(r.wrong?'・誤答'+r.wrong:''); }
 let giveupArmed = 0;
