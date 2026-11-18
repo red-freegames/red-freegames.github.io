@@ -632,8 +632,10 @@ function onAction(act, el){
     const wants = S.results.map(r => r.name).filter(isWant);
     const text = '✈️おかえり、どこ行ってた？【' + ACTIVE.label + '】\n' + S.total + '点／ランク「' + rankFor(S.total) + '」\n' + (wants.length ? '行ってみたくなった場所：' + wants.join('・') + '\n' : '') + '#おかえりどこ行ってた';
     const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(SITE_URL);
-    const w = window.open(url, '_blank', 'noopener');
-    if(!w) location.href = url;
+    // 別タブで開く（元のページはそのまま残す）
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 }
 if(!IS_TEST && typeof window !== 'undefined'){
