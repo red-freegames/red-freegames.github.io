@@ -472,7 +472,6 @@ function renderAlbum(key, focus){
     '<div class="album-sum">出会った土地 <b>' + met + '</b> / ' + m.places.length + '　・　行ってみたい <b>★' + wants.length + '</b></div>' +
     '<div class="meter"><span style="width:' + Math.round(met / m.places.length * 100) + '%"></span></div>' +
     '<button class="share" data-act="shareAlbum" data-mode="' + key + '">𝕏 で図鑑の進み具合をポストする<small>' + esc(albumLine(key)) + '</small></button>' +
-    snsHomeButtons(key) +
     insightHtml(m);
   if(wants.length) html += '<div class="region">★ 行ってみたいリスト</div><div class="grid">' + wants.map(p => '<button class="met want-chip" data-act="charm" data-name="' + esc(p.name) + '">★ ' + esc(p.name) + '</button>').join('') + '</div>';
   rs.forEach(r => {
