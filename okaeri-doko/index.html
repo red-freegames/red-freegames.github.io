@@ -441,7 +441,7 @@ function openPicker(type, mode){
   const isShare = type === 'share';
   $('sheetTitle').textContent = isShare ? '📣 あなたのオススメをシェア' : '🔍 みんなのオススメを見る';
   $('sheetBody').innerHTML =
-    (isShare ? '' : '<button class="sns-btn search-all" data-act="searchAll">🌏 全旅行先を見てみる<small>#おかえりどこ行ってた の話題のポストをまとめて見る</small></button>') +
+    (isShare ? '' : '<button class="sns-btn search-all" data-act="searchAll">🌏 旅行先を探す<small>#おかえりどこ行ってた の話題のポストをまとめて見る</small></button>') +
     '<div class="picker-lead">' + (isShare
       ? '行ったことのある、オススメの旅行先を選んでください。<b>#ただいま○○行ってた</b> のタグ付きでXが開きます。写真や思い出の一言を添えてポストしよう！'
       : '気になる旅行先を選ぶと、<b>#ただいま○○行ってた</b> のXの検索結果が開きます。みんながシェアした写真や情報を見てみよう。') + '</div>' +
