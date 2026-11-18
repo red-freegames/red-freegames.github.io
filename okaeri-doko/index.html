@@ -68,6 +68,7 @@
   .final-score { font-size:30px; font-weight:800; color:#c47f17; text-align:center; margin:6px 0; }
   .rank { text-align:center; font-size:17px; font-weight:700; margin-bottom:8px; }
   .recap { font-size:13px; line-height:1.9; border-top:1px dashed #d8cdb4; padding-top:8px; }
+  .share small { display:block; font-size:11.5px; opacity:.8; margin-top:2px; }
   .share { display:block; width:100%; margin-top:12px; background:#000; color:#fff; font-size:14.5px; padding:12px; border-radius:10px; }
   footer { text-align:center; font-size:11px; color:#637f9f; padding:22px 16px 0; line-height:1.7; }
   .hidden { display:none !important; }
@@ -394,6 +395,24 @@ function showLocked(name){
   $('sheetBody').innerHTML = '<div class="locked-msg">🔒 まだ出会っていない土地です。<br>ゲームでこの土地から帰ってきた旅行者に出会うと、魅力のページが開きます。</div>';
   $('sheet').classList.add('open'); document.body.classList.add('noscroll');
 }
+function metCount(key){ return MODES[key].places.filter(p => STATS[p.name]).length; }
+function albumLine(key){ return '【' + MODES[key].label + '】' + metCount(key) + '／' + MODES[key].places.length + '制覇'; }
+function openShare(text){
+  const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(SITE_URL);
+  // 別タブで開く（元のページはそのまま残す）
+  const a = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function albumShareText(key){
+  const other = key === 'intl' ? 'domestic' : 'intl';
+  const lines = ['📖 おかえり、どこ行ってた？ 旅の図鑑', albumLine(key)];
+  if(metCount(other)) lines.push(albumLine(other));
+  const wants = MODES[key].places.filter(p => isWant(p.name)).map(p => p.name).slice(0, 5);
+  if(wants.length) lines.push('行ってみたい：' + wants.join('・'));
+  lines.push('#おかえりどこ行ってた');
+  return lines.join('\n');
+}
 function renderAlbum(key, focus){
   const m = MODES[key];
   S = null; render(); $('chat').style.display = 'none';
@@ -405,6 +424,7 @@ function renderAlbum(key, focus){
     '<div class="tabs"><button class="' + (key==='domestic'?'on':'') + '" data-act="album" data-mode="domestic">🛬 国内編</button><button class="' + (key==='intl'?'on':'') + '" data-act="album" data-mode="intl">🌍 国際編</button></div>' +
     '<div class="album-sum">出会った土地 <b>' + met + '</b> / ' + m.places.length + '　・　行ってみたい <b>★' + wants.length + '</b></div>' +
     '<div class="meter"><span style="width:' + Math.round(met / m.places.length * 100) + '%"></span></div>' +
+    '<button class="share" data-act="shareAlbum" data-mode="' + key + '">𝕏 で図鑑の進み具合をポストする<small>' + esc(albumLine(key)) + '</small></button>' +
     insightHtml(m);
   if(wants.length) html += '<div class="region">★ 行ってみたいリスト</div><div class="grid">' + wants.map(p => '<button class="met want-chip" data-act="charm" data-name="' + esc(p.name) + '">★ ' + esc(p.name) + '</button>').join('') + '</div>';
   rs.forEach(r => {
@@ -630,12 +650,9 @@ function onAction(act, el){
     startRunUI();
   } else if(act==='share'){
     const wants = S.results.map(r => r.name).filter(isWant);
-    const text = '✈️おかえり、どこ行ってた？【' + ACTIVE.label + '】\n' + S.total + '点／ランク「' + rankFor(S.total) + '」\n' + (wants.length ? '行ってみたくなった場所：' + wants.join('・') + '\n' : '') + '#おかえりどこ行ってた';
-    const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(SITE_URL);
-    // 別タブで開く（元のページはそのまま残す）
-    const a = document.createElement('a');
-    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    document.body.appendChild(a); a.click(); a.remove();
+    openShare('✈️おかえり、どこ行ってた？【' + ACTIVE.label + '】\n' + S.total + '点／ランク「' + rankFor(S.total) + '」\n' + (wants.length ? '行ってみたくなった場所：' + wants.join('・') + '\n' : '') + '📖 旅の図鑑 ' + metCount(ACTIVE.key) + '／' + ACTIVE.places.length + '制覇\n#おかえりどこ行ってた');
+  } else if(act==='shareAlbum'){
+    openShare(albumShareText(el.getAttribute('data-mode') || 'domestic'));
   }
 }
 if(!IS_TEST && typeof window !== 'undefined'){
