@@ -163,6 +163,16 @@
   .album .grid button.met.ok { background:#1d6fb8; }
   .album .grid button.want-chip { background:#ffb340; color:#3a2400; border-color:#c47f17; }
   .album-note { font-size:11.5px; color:#7a6a52; margin-top:14px; line-height:1.6; }
+  .sns-row { display:flex; gap:8px; margin-top:10px; }
+  .sns-btn { flex:1; background:#000; color:#fff; font-size:13px; padding:10px 6px; line-height:1.4; }
+  .sns-row.big { flex-direction:column; }
+  .sns-row.big .sns-btn { font-size:14px; padding:12px 8px; }
+  .sns-tag { font-size:11.5px; color:#9db8d6; text-align:center; margin-top:6px; }
+  .card .sns-tag { color:#7a6a52; }
+  .picker-lead { font-size:13px; line-height:1.7; color:#dbe7f3; margin:2px 0 8px; }
+  .picker-lead b { color:#ffd27a; }
+  #sheetBody .tabs button { background:#223c5e; color:#cfe2f5; }
+  #sheetBody .tabs button.on { background:#ffb340; color:#3a2400; }
   .howto { margin-top:14px; font-size:13.5px; line-height:1.7; }
   .howto ol { padding-left:1.3em; margin-top:4px; }
   .howto li + li { margin-top:4px; }
@@ -388,12 +398,13 @@ function showCharm(name){
   const p = placeOf(name), s = STATS[name];
   $('sheetTitle').textContent = name;
   $('sheetBody').innerHTML = charmHtml(name, true) +
+    snsButtonsHtml(name) +
     '<div class="charm-meta">お土産の定番：' + esc(p ? p.souvenir : '') + (s ? '<br>これまで' + s.n + '回出会って、' + s.ok + '回正解' : '') + '</div>';
   $('sheet').classList.add('open'); document.body.classList.add('noscroll'); $('sheetBody').scrollTop = 0;
 }
 function showLocked(name){
   $('sheetTitle').textContent = name;
-  $('sheetBody').innerHTML = '<div class="locked-msg">🔒 まだ出会っていない土地です。<br>ゲームでこの土地から帰ってきた旅行者に出会うと、魅力のページが開きます。</div>';
+  $('sheetBody').innerHTML = '<div class="locked-msg">🔒 まだ出会っていない土地です。<br>ゲームでこの土地から帰ってきた旅行者に出会うと、魅力のページが開きます。</div>' + snsButtonsHtml(name);
   $('sheet').classList.add('open'); document.body.classList.add('noscroll');
 }
 function metCount(key){ return MODES[key].places.filter(p => STATS[p.name]).length; }
@@ -401,10 +412,44 @@ function albumLine(key){ return '【' + MODES[key].label + '】' + metCount(key)
 function openShare(text){
   // URLは本文の最後に改行して入れる（urlパラメータだとハッシュタグと同じ行に並んでしまう）
   const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text + '\n' + SITE_URL);
-  // 別タブで開く（元のページはそのまま残す）
+  openTab(url);
+}
+/* 別タブで開く（元のページはそのまま残す） */
+function openTab(url){
   const a = document.createElement('a');
   a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
   document.body.appendChild(a); a.click(); a.remove();
+}
+/* ===== みんなのオススメ（Xのハッシュタグ） ===== */
+function shortName(n){ return n === '北海道' ? n : n.replace(/[都府県]$/, ''); }
+function placeTag(n){ return '#ただいま' + shortName(n) + '行ってた'; }
+function shareRecommend(n){ openShare(placeTag(n) + '\n\n#おかえりどこ行ってた'); }
+function searchRecommend(n){ openTab('https://x.com/search?q=' + encodeURIComponent(placeTag(n)) + '&f=top'); }
+function snsButtonsHtml(name){
+  return '<div class="sns-row"><button class="sns-btn" data-act="pickShare" data-name="' + esc(name) + '">📣 オススメをXでシェア</button>' +
+    '<button class="sns-btn" data-act="pickSearch" data-name="' + esc(name) + '">🔍 Xで情報を見る</button></div>' +
+    '<div class="sns-tag">' + esc(placeTag(name)) + '</div>';
+}
+let PICK = { type:'share', mode:'domestic' };
+function openPicker(type, mode){
+  PICK = { type: type, mode: mode || PICK.mode };
+  const m = MODES[PICK.mode];
+  const groups = {}, order = [];
+  m.places.forEach(p => { if(!groups[p.region]){ groups[p.region] = []; order.push(p.region); } groups[p.region].push(p.name); });
+  const isShare = type === 'share';
+  $('sheetTitle').textContent = isShare ? '📣 あなたのオススメをシェア' : '🔍 みんなのオススメを見る';
+  $('sheetBody').innerHTML =
+    '<div class="picker-lead">' + (isShare
+      ? '行ったことのある、オススメの旅行先を選んでください。<b>#ただいま○○行ってた</b> のタグ付きでXが開きます。写真や思い出の一言を添えてポストしよう！'
+      : '気になる旅行先を選ぶと、<b>#ただいま○○行ってた</b> のXの検索結果が開きます。みんながシェアした写真や情報を見てみよう。') + '</div>' +
+    '<div class="tabs"><button class="' + (PICK.mode==='domestic'?'on':'') + '" data-act="pickerMode" data-mode="domestic">🛬 国内</button><button class="' + (PICK.mode==='intl'?'on':'') + '" data-act="pickerMode" data-mode="intl">🌍 海外</button></div>' +
+    order.map(g => '<div class="region">' + esc(areaName(m, g)) + '</div><div class="grid">' +
+      groups[g].map(n => '<button data-act="' + (isShare ? 'pickShare' : 'pickSearch') + '" data-name="' + esc(n) + '">' + esc(n) + '</button>').join('') + '</div>').join('');
+  $('sheet').classList.add('open'); document.body.classList.add('noscroll'); $('sheetBody').scrollTop = 0;
+}
+function snsHomeButtons(mode){
+  return '<div class="sns-row big"><button class="sns-btn" data-act="openPicker" data-type="share" data-mode="' + mode + '">📣 あなたのオススメをXでシェアする</button>' +
+    '<button class="sns-btn" data-act="openPicker" data-type="search" data-mode="' + mode + '">🔍 Xでみんなのオススメ情報を見る</button></div>';
 }
 function albumShareText(key){
   const other = key === 'intl' ? 'domestic' : 'intl';
@@ -427,6 +472,7 @@ function renderAlbum(key, focus){
     '<div class="album-sum">出会った土地 <b>' + met + '</b> / ' + m.places.length + '　・　行ってみたい <b>★' + wants.length + '</b></div>' +
     '<div class="meter"><span style="width:' + Math.round(met / m.places.length * 100) + '%"></span></div>' +
     '<button class="share" data-act="shareAlbum" data-mode="' + key + '">𝕏 で図鑑の進み具合をポストする<small>' + esc(albumLine(key)) + '</small></button>' +
+    snsHomeButtons(key) +
     insightHtml(m);
   if(wants.length) html += '<div class="region">★ 行ってみたいリスト</div><div class="grid">' + wants.map(p => '<button class="met want-chip" data-act="charm" data-name="' + esc(p.name) + '">★ ' + esc(p.name) + '</button>').join('') + '</div>';
   rs.forEach(r => {
@@ -440,7 +486,7 @@ function renderAlbum(key, focus){
   html += '<p class="album-note">色のついた土地をタップすると、魅力のページが読めます。記録はこの端末のブラウザにだけ保存されます。</p></div>';
   $('panel').innerHTML = html;
   const bar = $('actionbar'); bar.classList.remove('hidden');
-  bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="mode-' + key + '">' + (key==='intl' ? '🌍 国際編' : '🛬 国内編') + 'で遊ぶ</button><button class="btn-sub" data-act="home">🏠 ホーム</button></div>';
+  bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="mode-' + key + '">' + (key==='intl' ? '🌍 国際編' : '🛬 国内編') + 'で遊ぶ</button><button class="btn-sub" data-act="home">🏠 HOME</button></div>';
   document.body.classList.add('playing');
   requestAnimationFrame(() => { const f = focus && document.getElementById('rg-' + focus); if(f) f.scrollIntoView({block:'start'}); else window.scrollTo(0,0); });
 }
@@ -595,6 +641,7 @@ function renderHome(){
     (ready ? '<button class="btn-main" data-act="mode-intl">🌍 国際編<small>' + MODES.intl.countLabel + 'から出題' + (bi!==null ? '／ベスト ' + bi + '点' : '') + '</small></button>' : '<button class="btn-main" disabled>🌍 国際編<small>準備中</small></button>') +
     '</div>' +
     '<button class="btn-sub album-btn" data-act="album" data-mode="domestic">📖 旅の図鑑・行ってみたいリスト' + (WANT.length ? '（★' + WANT.length + '）' : '') + '</button>' +
+    snsHomeButtons('domestic') +
     '<div class="howto"><b>遊び方</b><ol><li>旅行者に話を聞くと、「第一印象→空気感→景色→お土産→移動→過ごし方→名所→食」の順にヒントが少しずつ具体的になります。</li><li>分かったら「🎯 当てる！」。早く当てるほど高得点（ヒント2件以内ならボーナス）。</li><li>外すと減点。でも旅行者が「もっと北のほう」などと教えてくれます。4人目からはヒントの種類が伏せられ、5人目は2回外すと終了です。</li><li>答え合わせでは、その土地の魅力を紹介。気になった場所は「☆ 行ってみたい！」で図鑑に残せます。旅行者は、まだ図鑑にない土地から優先してやってきます。</li></ol></div></div>';
 }
 function onAction(act, el){
@@ -636,6 +683,14 @@ function onAction(act, el){
     showCharm(el.getAttribute('data-name'));
   } else if(act==='locked'){
     showLocked(el.getAttribute('data-name'));
+  } else if(act==='openPicker'){
+    openPicker(el.getAttribute('data-type'), el.getAttribute('data-mode'));
+  } else if(act==='pickerMode'){
+    openPicker(PICK.type, el.getAttribute('data-mode'));
+  } else if(act==='pickShare'){
+    shareRecommend(el.getAttribute('data-name'));
+  } else if(act==='pickSearch'){
+    searchRecommend(el.getAttribute('data-name'));
   } else if(act==='album'){
     renderAlbum(el.getAttribute('data-mode') || 'domestic', el.getAttribute('data-focus'));
   } else if(act==='mode-domestic'){
