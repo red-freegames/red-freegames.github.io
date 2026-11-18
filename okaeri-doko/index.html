@@ -471,7 +471,7 @@ function render(scrollMode){
       '<div class="verdict '+(ok?'good':'bad')+'">'+(ok? '🎉 正解！ <span>+'+r.pts+'点</span>' : (r.gaveUp? '🏳️ ギブアップ' : '😢 残念…'))+'</div>' +
       '<h2>答え：'+esc(t.name)+'</h2>' +
       '<div class="sub">お土産：'+esc(t.souvenir)+' ／ '+esc(resultWord(r))+' ／ 合計 '+S.total+'点</div>' +
-      (ok ? charmHtml(t.name, false) + hintsBlock
+      (ok ? charmHtml(t.name, true) + hintsBlock
           : '<div class="learn-lead">知らなかった土地に出会えたのも、旅のうち。</div>' + charmHtml(t.name, true) +
             '<details class="unseen-box"><summary>ヒントの解説を見る</summary>' + seenRows.join('') + unseenRows.join('') + '</details>') +
       '</div>';
