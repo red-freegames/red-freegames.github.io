@@ -399,7 +399,8 @@ function showLocked(name){
 function metCount(key){ return MODES[key].places.filter(p => STATS[p.name]).length; }
 function albumLine(key){ return '【' + MODES[key].label + '】' + metCount(key) + '／' + MODES[key].places.length + '制覇'; }
 function openShare(text){
-  const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(SITE_URL);
+  // URLは本文の最後に改行して入れる（urlパラメータだとハッシュタグと同じ行に並んでしまう）
+  const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text + '\n' + SITE_URL);
   // 別タブで開く（元のページはそのまま残す）
   const a = document.createElement('a');
   a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
@@ -522,7 +523,7 @@ function render(scrollMode){
       '<button class="share" data-act="share">𝕏 で結果をポストする</button>' +
       '<a class="btn-sub album-btn other-games" href="https://red-freegames.github.io/">🎮 他のゲームを見る</a>' +
       '</div>';
-    bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="restart">もう一度【'+esc(ACTIVE.label)+'】</button><button class="btn-sub" data-act="home">🏠 勤務先を選ぶ</button></div>';
+    bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="restart">もう一度【'+esc(ACTIVE.label)+'】</button><button class="btn-sub" data-act="home">🏠 HOME</button></div>';
   }
   requestAnimationFrame(() => {
     if(S.phase==='ask'){ window.scrollTo({top: document.body.scrollHeight, behavior: scrollMode==='instant'?'auto':'smooth'}); }
@@ -588,7 +589,7 @@ function renderHome(){
   const sh = $('subhead'); if(sh) sh.textContent = '帰ってきた旅行者の土産話から、行き先を推理しよう。当たっても外れても、まだ知らない土地の魅力に出会える旅のゲーム。';
   const bd = bestOf(MODES.domestic.bestKey), bi = bestOf(MODES.intl.bestKey);
   const ready = modeReady(MODES.intl);
-  $('panel').innerHTML = '<div class="card"><h2 style="text-align:center">勤務先を選んでください</h2>' +
+  $('panel').innerHTML = '<div class="card">' +
     '<div class="btns">' +
     '<button class="btn-main" data-act="mode-domestic">🛬 国内編<small>' + MODES.domestic.countLabel + 'から出題' + (bd!==null ? '／ベスト ' + bd + '点' : '') + '</small></button>' +
     (ready ? '<button class="btn-main" data-act="mode-intl">🌍 国際編<small>' + MODES.intl.countLabel + 'から出題' + (bi!==null ? '／ベスト ' + bi + '点' : '') + '</small></button>' : '<button class="btn-main" disabled>🌍 国際編<small>準備中</small></button>') +
