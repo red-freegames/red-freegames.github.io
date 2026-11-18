@@ -215,7 +215,10 @@ let S = null;
 function shuffle(a){ const x=a.slice(); for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
 function pointsFor(revealed, wrong, stage){ let p = 1000 - (revealed-1)*hintCost(stage) - wrong*150; if(revealed<=2) p += 150; return Math.max(50, p); }
 function newRun(){
-  const pools = {1:shuffle(ACTIVE.places.filter(p=>p.tier===1)), 2:shuffle(ACTIVE.places.filter(p=>p.tier===2)), 3:shuffle(ACTIVE.places.filter(p=>p.tier===3))};
+  /* 図鑑にまだない（出会っていない）土地を優先。全部出会った難易度では、出会った回数が少ない土地から */
+  const seenCount = n => { try{ return (STATS[n] && STATS[n].n) || 0; }catch(e){ return 0; } };
+  const poolFor = t => { const ps = shuffle(ACTIVE.places.filter(p=>p.tier===t)); return ps.filter(p=>!seenCount(p.name)).concat(ps.filter(p=>seenCount(p.name)).sort((a,b)=>seenCount(a.name)-seenCount(b.name))); };
+  const pools = {1:poolFor(1), 2:poolFor(2), 3:poolFor(3)};
   const plan = [1,2,2,3,3];
   S = { order: plan.map(t => pools[t].shift()), idx:0, total:0, results:[], phase:'ask',
         traveler:null, persona:null, revealed:0, wrong:0, log:[] };
@@ -564,7 +567,7 @@ function renderHome(){
     (ready ? '<button class="btn-main" data-act="mode-intl">🌍 国際編<small>' + MODES.intl.countLabel + 'から出題' + (bi!==null ? '／ベスト ' + bi + '点' : '') + '</small></button>' : '<button class="btn-main" disabled>🌍 国際編<small>準備中</small></button>') +
     '</div>' +
     '<button class="btn-sub album-btn" data-act="album" data-mode="domestic">📖 旅の図鑑・行ってみたいリスト' + (WANT.length ? '（★' + WANT.length + '）' : '') + '</button>' +
-    '<div class="howto"><b>遊び方</b><ol><li>旅行者に話を聞くと、「第一印象→空気感→景色→お土産→移動→過ごし方→名所→食」の順にヒントが少しずつ具体的になります。</li><li>分かったら「🎯 当てる！」。早く当てるほど高得点（ヒント2件以内ならボーナス）。</li><li>外すと減点。でも旅行者が「もっと北のほう」などと教えてくれます。4人目からはヒントの種類が伏せられ、5人目は2回外すと終了です。</li><li>答え合わせでは、その土地の魅力を紹介。気になった場所は「☆ 行ってみたい！」で図鑑に残せます。</li></ol></div></div>';
+    '<div class="howto"><b>遊び方</b><ol><li>旅行者に話を聞くと、「第一印象→空気感→景色→お土産→移動→過ごし方→名所→食」の順にヒントが少しずつ具体的になります。</li><li>分かったら「🎯 当てる！」。早く当てるほど高得点（ヒント2件以内ならボーナス）。</li><li>外すと減点。でも旅行者が「もっと北のほう」などと教えてくれます。4人目からはヒントの種類が伏せられ、5人目は2回外すと終了です。</li><li>答え合わせでは、その土地の魅力を紹介。気になった場所は「☆ 行ってみたい！」で図鑑に残せます。旅行者は、まだ図鑑にない土地から優先してやってきます。</li></ol></div></div>';
 }
 function onAction(act, el){
   if(act!=='giveup') giveupArmed = 0;
