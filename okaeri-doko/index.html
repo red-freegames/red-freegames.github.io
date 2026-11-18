@@ -167,6 +167,7 @@
   .sns-btn { flex:1; background:#000; color:#fff; font-size:13px; padding:10px 6px; line-height:1.4; }
   .sns-row.big { flex-direction:column; }
   .sns-row.big .sns-btn { font-size:14px; padding:12px 8px; }
+  .sns-btn.search-all { display:block; width:100%; margin:2px 0 12px; padding:12px 8px; font-size:15px; border:1.5px solid #ffb340; }
   .sns-tag { font-size:11.5px; color:#9db8d6; text-align:center; margin-top:6px; }
   .card .sns-tag { color:#7a6a52; }
   .picker-lead { font-size:13px; line-height:1.7; color:#dbe7f3; margin:2px 0 8px; }
@@ -424,6 +425,7 @@ function openTab(url){
 function shortName(n){ return n === '北海道' ? n : n.replace(/[都府県]$/, ''); }
 function placeTag(n){ return '#ただいま' + shortName(n) + '行ってた'; }
 function shareRecommend(n){ openShare(placeTag(n) + '\n\n#おかえりどこ行ってた'); }
+function searchAll(){ openTab('https://x.com/search?q=' + encodeURIComponent('#おかえりどこ行ってた') + '&f=top'); }
 function searchRecommend(n){ openTab('https://x.com/search?q=' + encodeURIComponent(placeTag(n)) + '&f=top'); }
 function snsButtonsHtml(name){
   return '<div class="sns-row"><button class="sns-btn" data-act="pickShare" data-name="' + esc(name) + '">📣 オススメをXでシェア</button>' +
@@ -439,6 +441,7 @@ function openPicker(type, mode){
   const isShare = type === 'share';
   $('sheetTitle').textContent = isShare ? '📣 あなたのオススメをシェア' : '🔍 みんなのオススメを見る';
   $('sheetBody').innerHTML =
+    (isShare ? '' : '<button class="sns-btn search-all" data-act="searchAll">🌏 全旅行先を見てみる<small>#おかえりどこ行ってた の話題のポストをまとめて見る</small></button>') +
     '<div class="picker-lead">' + (isShare
       ? '行ったことのある、オススメの旅行先を選んでください。<b>#ただいま○○行ってた</b> のタグ付きでXが開きます。写真や思い出の一言を添えてポストしよう！'
       : '気になる旅行先を選ぶと、<b>#ただいま○○行ってた</b> のXの検索結果が開きます。みんながシェアした写真や情報を見てみよう。') + '</div>' +
@@ -688,6 +691,8 @@ function onAction(act, el){
     openPicker(PICK.type, el.getAttribute('data-mode'));
   } else if(act==='pickShare'){
     shareRecommend(el.getAttribute('data-name'));
+  } else if(act==='searchAll'){
+    searchAll();
   } else if(act==='pickSearch'){
     searchRecommend(el.getAttribute('data-name'));
   } else if(act==='album'){
