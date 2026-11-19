@@ -492,6 +492,7 @@ function renderAlbum(key, focus){
   const bar = $('actionbar'); bar.classList.remove('hidden');
   bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="mode-' + key + '">' + (key==='intl' ? '🌍 国際編' : '🛬 国内編') + 'で遊ぶ</button><button class="btn-sub" data-act="home">🏠 HOME</button></div>';
   document.body.classList.add('playing');
+  fitBottom();
   requestAnimationFrame(() => { const f = focus && document.getElementById('rg-' + focus); if(f) f.scrollIntoView({block:'start'}); else window.scrollTo(0,0); });
 }
 const SITE_URL = 'https://red-freegames.github.io/okaeri-doko/';
@@ -513,7 +514,7 @@ function render(scrollMode){
   const b = best(); $('hudBest').textContent = b===null? '-' : b;
   chat.innerHTML = ''; panel.innerHTML=''; ex.innerHTML=''; bar.innerHTML='';
   closeSheet();
-  if(!S){ bar.classList.add('hidden'); return; }
+  if(!S){ bar.classList.add('hidden'); fitBottom(); return; }
   if(S.phase!=='final') S.log.forEach(m => {
     if(m.kind==='sys'){ const d=document.createElement('div'); d.className='sys '+(m.cls||''); d.textContent=m.text; chat.appendChild(d); return; }
     const row=document.createElement('div'); row.className='row '+(m.kind==='me'?'me':'guest');
@@ -575,11 +576,24 @@ function render(scrollMode){
       '</div>';
     bar.innerHTML = '<div class="btns"><button class="btn-main" data-act="restart">もう一度【'+esc(ACTIVE.label)+'】</button><button class="btn-sub" data-act="home">🏠 HOME</button></div>';
   }
+  fitBottom();
   requestAnimationFrame(() => {
-    if(S.phase==='ask'){ window.scrollTo({top: document.body.scrollHeight, behavior: scrollMode==='instant'?'auto':'smooth'}); }
+    fitBottom();
+    if(S.phase==='ask'){ scrollChatEnd(scrollMode==='instant'?'auto':'smooth'); }
     else if(S.phase==='explain'){ const c=$('resultCard'); if(c) window.scrollTo({top: c.getBoundingClientRect().top + window.scrollY - 8, behavior:'smooth'}); }
     else window.scrollTo(0,0);
   });
+}
+/* 下に固定した操作ボタンの実際の高さぶん余白を取る（アプリ内ブラウザでは高さが変わるため） */
+function barHeight(){ const bar = $('actionbar'); return (!bar || bar.classList.contains('hidden')) ? 0 : bar.getBoundingClientRect().height; }
+function viewH(){ return (window.visualViewport && window.visualViewport.height) || window.innerHeight; }
+function fitBottom(){ const h = barHeight(); $('app').style.paddingBottom = h ? (h + 48) + 'px' : ''; }
+/* 最後のメッセージが操作ボタンの少し上に来るようにスクロール */
+function scrollChatEnd(behavior){
+  const last = $('chat').lastElementChild; if(!last) return;
+  const bottom = last.getBoundingClientRect().bottom + window.scrollY;
+  const top = bottom - (viewH() - barHeight() - 20);
+  window.scrollTo({top: Math.max(0, top), behavior: behavior || 'smooth'});
 }
 function guessGridHtml(){
   const groups = {};
@@ -726,6 +740,9 @@ if(!IS_TEST && typeof window !== 'undefined'){
   });
   document.addEventListener('keydown', e => { if(e.key==='Escape') closeSheet(); });
   window.addEventListener('DOMContentLoaded', startRunUI);
+  const onResize = () => { fitBottom(); };
+  window.addEventListener('resize', onResize);
+  if(window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
 }
 if(IS_TEST && typeof globalThis !== 'undefined'){
   globalThis.__G = { PREFECTURES, DATA_INTL, MODES, CAT_ORDER, buildHints, pointsFor, newRun, revealHint, guess, giveUp, nextTraveler, rankFor, modeReady, onAction, startRunUI, setMode(k){ ACTIVE = MODES[k]; }, get ACTIVE(){ return ACTIVE; }, get S(){ return S; } };
