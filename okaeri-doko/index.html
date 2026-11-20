@@ -142,6 +142,14 @@
   .recap-title { font-size:12px; font-weight:700; color:#7a6a52; text-align:left; margin:4px 0; }
   button.recap-row { width:100%; background:none; border:none; border-top:1px dashed #d8cdb4; border-radius:0; padding:6px 2px; font-size:13px; font-weight:400; color:#2a2118; text-align:left; }
   .recap-row em { font-style:normal; font-size:11.5px; color:#1d6fb8; font-weight:700; }
+  .judge { text-align:center; font-size:13px; color:#5d5342; margin:-4px 0 8px; }
+  .judge b { display:inline-block; font-size:15px; border-radius:999px; padding:2px 12px; margin-left:4px; }
+  .jtag { font-style:normal; font-size:10.5px; font-weight:700; border-radius:4px; padding:1px 5px; }
+  .j-local b, .jtag.j-local { background:#ffb340; color:#3a2400; }
+  .j-regular b, .jtag.j-regular { background:#dff5e6; color:#1d7a3f; }
+  .j-fair b, .jtag.j-fair { background:#e3eefa; color:#1d5a99; }
+  .j-vague b, .jtag.j-vague { background:#efe9db; color:#7a6a52; }
+  .j-unknown b, .jtag.j-unknown { background:#fbe3e3; color:#a33a3a; }
   .newtag { font-style:normal; font-size:10px; font-weight:700; background:#fbe3e3; color:#a33a3a; border-radius:4px; padding:1px 5px; }
   .insight { margin-top:12px; background:#eef5fc; border-radius:10px; padding:10px 12px; text-align:left; font-size:13.5px; line-height:1.7; color:#17304d; }
   .insight p { margin:4px 0 8px; }
@@ -500,6 +508,34 @@ const RANKS = [[5200,"歩く地図帳"],[4500,"旅の神"],[3800,"地理オタ�
 function nextRank(total){ for(let i=RANKS.length-1;i>=0;i--){ if(total < RANKS[i][0]) return {need:RANKS[i][0]-total, name:RANKS[i][1]}; } return null; }
 function resultWord(r){ if(r.gaveUp) return 'ギブアップ'; if(r.pts<=0) return '不正解'; return 'ヒント'+r.hints+'件'+(r.wrong?'・誤答'+r.wrong:''); }
 let giveupArmed = 0;
+/* ===== 1問ごとの判定（聞いたヒント数＋外した回数で決める） ===== */
+const JUDGES = { local:'地元民', regular:'常連', fair:'そこそこ', vague:'うろ覚え', unknown:'知らなかった' };
+function judgeKey(r){
+  if(r.pts <= 0) return 'unknown';
+  const e = r.hints + r.wrong;
+  return e <= 1 ? 'local' : e <= 2 ? 'regular' : e <= 4 ? 'fair' : 'vague';
+}
+function judgeOf(r, mode){ const k = judgeKey(r); return (k === 'local' && mode && mode.key === 'intl') ? '現地民' : JUDGES[k]; }
+/* Xの文字数（日本語・絵文字は2、半角は1、URLは23）。上限280 */
+function xLen(text){
+  let n = 0;
+  text.replace(/https?:\/\/\S+/g, () => { n += 23; return ''; }).split('').forEach(ch => {
+    const c = ch.charCodeAt(0);
+    n += (c <= 0x10FF || (c >= 0x2000 && c <= 0x200D) || (c >= 0x2010 && c <= 0x201F) || (c >= 0x2032 && c <= 0x2037)) ? 1 : (c >= 0xD800 && c <= 0xDBFF) ? 2 : (c >= 0xDC00 && c <= 0xDFFF) ? 0 : 2;
+  });
+  return n;
+}
+function finalShareText(){
+  const head = '✈️おかえり、どこ行ってた？【' + ACTIVE.label + '】\n' + S.total + '点／ランク「' + rankFor(S.total) + '」';
+  const lines = S.results.map(r => '・' + r.name + ' - ' + judgeOf(r, ACTIVE));
+  const tail = '#おかえりどこ行ってた';
+  const album = '📖 旅の図鑑 ' + metCount(ACTIVE.key) + '／' + ACTIVE.places.length + '制覇';
+  const build = (ls, extra) => [head].concat(ls, extra ? [extra] : [], [tail]).join('\n');
+  const fits = t => xLen(t + '\n' + SITE_URL) <= 280;
+  let t = build(lines, album); if(fits(t)) return t;
+  t = build(lines); if(fits(t)) return t;
+  return build(S.results.map(r => '・' + shortName(r.name) + ' - ' + judgeOf(r, ACTIVE)));
+}
 
 function render(scrollMode){
   const chat = $('chat'), panel = $('panel'), ex = $('explain'), bar = $('actionbar');
@@ -550,6 +586,7 @@ function render(scrollMode){
       (unseenRows.length ? '<details class="unseen-box"><summary>聞かなかったヒント（'+unseenRows.length+'件）を見る</summary>'+unseenRows.join('')+'</details>' : '');
     ex.innerHTML = '<div class="card result" id="resultCard">' +
       '<div class="verdict '+(ok?'good':'bad')+'">'+(ok? '🎉 正解！ <span>+'+r.pts+'点</span>' : (r.gaveUp? '🏳️ ギブアップ' : '😢 残念…'))+'</div>' +
+      '<div class="judge j-'+judgeKey(r)+'">判定：<b>'+esc(judgeOf(r, ACTIVE))+'</b></div>' +
       '<h2>答え：'+esc(t.name)+'</h2>' +
       '<div class="sub">お土産：'+esc(t.souvenir)+' ／ '+esc(resultWord(r))+' ／ 合計 '+S.total+'点</div>' +
       (ok ? charmHtml(t.name, true) + hintsBlock
@@ -560,7 +597,7 @@ function render(scrollMode){
   } else if(S.phase==='final'){
     const isBest = prevBest===null || S.total > prevBest;
     const nr = nextRank(S.total);
-    const recap = S.results.map((r,i)=> '<button class="recap-row" data-act="charm" data-name="'+esc(r.name)+'"><span>'+(i+1)+'. '+esc(r.name)+(r.pts<=0?' <i class="newtag">知らなかった</i>':'')+'</span><span>'+esc(resultWord(r))+'</span><b>'+r.pts+'点</b><em>魅力 ›</em></button>').join('');
+    const recap = S.results.map((r,i)=> '<button class="recap-row" data-act="charm" data-name="'+esc(r.name)+'"><span>'+(i+1)+'. '+esc(r.name)+' <i class="jtag j-'+judgeKey(r)+'">'+esc(judgeOf(r, ACTIVE))+'</i></span><span>'+esc(resultWord(r))+'</span><b>'+r.pts+'点</b><em>魅力 ›</em></button>').join('');
     const met = MODES[ACTIVE.key].places.filter(p => STATS[p.name]).length;
     ex.innerHTML = '<div class="card final"><div class="final-head">勤務終了！ 【'+esc(ACTIVE.label)+'】</div>' +
       '<div class="final-score">'+S.total+'<small>点</small></div>' +
@@ -726,8 +763,7 @@ function onAction(act, el){
   } else if(act==='restart'){
     startRunUI();
   } else if(act==='share'){
-    const wants = S.results.map(r => r.name).filter(isWant);
-    openShare('✈️おかえり、どこ行ってた？【' + ACTIVE.label + '】\n' + S.total + '点／ランク「' + rankFor(S.total) + '」\n' + (wants.length ? '行ってみたくなった場所：' + wants.join('・') + '\n' : '') + '📖 旅の図鑑 ' + metCount(ACTIVE.key) + '／' + ACTIVE.places.length + '制覇\n#おかえりどこ行ってた');
+    openShare(finalShareText());
   } else if(act==='shareAlbum'){
     openShare(albumShareText(el.getAttribute('data-mode') || 'domestic'));
   }
