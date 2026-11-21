@@ -134,6 +134,12 @@
   #feverBar { display:none; margin-top:10px; background:linear-gradient(90deg,#ff9d00,#ffc400); color:#4a2400;
     font-weight:900; font-size:13.5px; border:2px solid #7a4a00; border-radius:10px; padding:8px 10px; }
   body.fever #feverBar { display:block; }
+  /* 噂：来週の値動きの予兆。乗るか降りるかはプレイヤー次第 */
+  #rumorBar { display:none; margin-top:10px; background:#3b2450; color:#f1e2ff; border:2px solid #1f1030; border-radius:10px;
+    padding:8px 10px; font-size:13px; font-weight:800; line-height:1.55; }
+  #rumorBar .rs { display:block; font-size:12px; color:#ffd98a; }
+  #rumorBar .rc { display:block; font-size:11.5px; color:#cdb6e6; font-weight:700; }
+  .badge.rumor { background:#3b2450; border-color:#1f1030; color:#f1e2ff; }
   /* 精算ドカドカ表示の数字アニメーション */
   .popNum { animation:popNum .18s ease-out; }
   @keyframes popNum { 0% { transform:scale(1.22); } 100% { transform:scale(1); } }
@@ -177,6 +183,8 @@
   <div id="ticker">📢 ニュース速報を待っています…</div>
 
   <div id="feverBar"></div>
+
+  <div id="rumorBar"></div>
 
   <div class="topBtns">
     <button class="sub" id="btnOpenTactics">🕶️ 手口</button>
@@ -328,7 +336,7 @@ return {
 week:1, cash:START_CASH, profit:0,
 risk:0, totalSales:0, belowSales:0, gougeSales:0,
 boxBought:0, bestWeekProfit:0,
-items, tactics:{}, nextPicks:null,
+items, tactics:{}, nextPicks:null, rumor:null, rumorResult:null,
 goalDone:false, frozen:false, over:false,
 };
 }
@@ -507,6 +515,8 @@ runEvent();
 /* ニュースで動いた分も「今週の相場の動き」に含める（フィーバー表示・売れ行き判定と一致させる） */
 ITEMS.forEach(it => { const s = S.items[it.id]; if (s.prevMult > 0) s.weekChange = (s.mult - s.prevMult) / s.prevMult; });
 }
+/* 来週の噂 */
+S.rumor = makeRumor(picks);
 /* Botは週の初めに自動で買い占める */
 if (S.tactics.bot){
 ITEMS.slice().sort((a,b) => S.items[b.id].mult - S.items[a.id].mult).forEach(it => {
@@ -538,7 +548,41 @@ S.week += 1;
 driftMarkets();
 startWeek();
 }
+/* ===== 噂：週の初めに「来週の値動き」の噂が流れる。6割は本当、4割はガセ ===== */
+const RUMOR_CHANCE = 0.6, RUMOR_TRUE = 0.6;
+const RUMOR_TEXT = {
+  up:   ["「{x}」がテレビで紹介されるらしい", "「{x}」を有名配信者が探しているらしい", "「{x}」が生産終了になるらしい"],
+  down: ["「{x}」の再販が決まったらしい", "「{x}」に初期不良の噂が出ている", "メーカーが「{x}」を大増産するらしい"],
+};
+function makeRumor(picks){
+  if (Math.random() >= RUMOR_CHANCE) return null;
+  /* 今週買える商品か、手元にある商品の噂が出やすい（判断できる噂にするため） */
+  const near = ITEMS.filter(it => picks.includes(it) || S.items[it.id].inv + S.items[it.id].listed > 0);
+  const pool = near.length && Math.random() < 0.75 ? near : ITEMS;
+  const it = pool[Math.floor(Math.random() * pool.length)];
+  const real = Math.random() < RUMOR_TRUE;
+  return {
+    id: it.id, dir: Math.random() < 0.55 ? "up" : "down", real,
+    text: Math.floor(Math.random() * 3),
+    /* リサーチツールで見える信ぴょう性。85%の確率で正しいことを示す */
+    credHigh: real ? Math.random() < 0.85 : Math.random() < 0.15,
+  };
+}
+function rumorText(r){ return RUMOR_TEXT[r.dir][r.text].replace("{x}", nm(ITEMS.find(x => x.id === r.id))); }
+/* 先週の噂の答え合わせ（相場の週次変動に上乗せする） */
+function resolveRumor(it, s){
+  const r = S.rumor;
+  if (!r || r.id !== it.id) return;
+  if (r.real){
+    if (r.dir === "up"){ s.mult *= 2.0 + Math.random() * 0.5; s.momentum = Math.max(s.momentum, 0.06); }
+    else { s.mult = Math.max(0.3, s.mult * (0.35 + Math.random() * 0.15)); s.momentum = Math.min(s.momentum, -0.06); }
+  }
+  S.rumorResult = { id: r.id, dir: r.dir, real: r.real };
+  pushLog(r.real ? (r.dir === "up" ? "📈 噂は本当だった！「" + nm(it) + "」の相場が跳ねた" : "📉 噂は本当だった。「" + nm(it) + "」の相場が崩れた")
+                 : "💨 「" + nm(it) + "」の噂はガセだった", r.real ? (r.dir === "up" ? "good" : "bad") : "dim");
+}
 function driftMarkets(){
+S.rumorResult = null;
 ITEMS.forEach(it => {
 const s = S.items[it.id];
 const before = s.mult;
@@ -546,8 +590,10 @@ s.prevMult = before;
 const pull = (it.heat - s.mult) * 0.15;
 s.momentum = Math.max(-0.17, Math.min(0.17, s.momentum + (Math.random() - 0.5) * 0.08));
 s.mult = Math.max(0.35, s.mult + pull + s.momentum * s.mult + (Math.random() - 0.5) * it.vol * s.mult * 2.4);
+resolveRumor(it, s);
 s.weekChange = before > 0 ? (s.mult - before) / before : 0;
 });
+S.rumor = null;
 }
 const EVENTS = [
 { w:3, run(){ const it = ITEMS[Math.floor(Math.random()*ITEMS.length)]; const s = S.items[it.id];
@@ -611,7 +657,7 @@ function nm(it){ return ITEM_NAMES[it.id][wordTier()]; }
 /* ================= テスト用フック ================= */
 globalThis.__TENBAI__ = { get S(){ return S;}, ITEMS, TACTICS, DIRTY_TITLES, SAINT_TITLES,
 newState, doBuy, doBox, BOX_PRICE, BOX_LIMIT, listItem, unlistItem, startWeek, endWeek, settleSales, saleChance, canBuy, pickWave, ensureAffordable, currentTitle, saintTitle, dirtiness, wordTier, nm, dirtyTier, GOAL_PROFIT,
-checkUnlocks, get pendingUnlocks(){ return pendingUnlocks; }, get pendingReport(){ return pendingReport; }};
+makeRumor, checkUnlocks, get pendingUnlocks(){ return pendingUnlocks; }, get pendingReport(){ return pendingReport; }};
 
 </script>
 <script>
@@ -887,6 +933,10 @@ function endFlash(){
   drainModals();
 }
 $("flashCap").addEventListener("click", endFlash);
+function rumorBadge(it){
+  if (!S.rumor || S.rumor.id !== it.id || S.over) return "";
+  return ' <span class="badge rumor">🗣️ 噂' + (S.rumor.dir === "up" ? "↑" : "↓") + "</span>";
+}
 function render(){
   if (!cashAnimating) $("stCash").textContent = fmt(S.cash);
   /* フィーバー：相場が跳ねた商品がある週は画面が金色に光る */
@@ -895,6 +945,23 @@ function render(){
   const fever = !!hottest && hottest.weekChange >= 0.25 && !S.over;
   document.body.classList.toggle("fever", fever);
   if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + nm(hottest.it) + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！";
+  /* 噂 */
+  const rb = $("rumorBar"); rb.innerHTML = "";
+  if (S.rumorResult && !S.over){
+    const r = S.rumorResult, it = ITEMS.find(x => x.id === r.id);
+    const sp = document.createElement("span"); sp.className = "rs";
+    sp.textContent = "先週の噂の結末：" + (r.real ? (r.dir === "up" ? "本当だった。「" + nm(it) + "」が急騰 📈" : "本当だった。「" + nm(it) + "」が暴落 📉") : "「" + nm(it) + "」の噂はガセだった 💨");
+    rb.appendChild(sp);
+  }
+  if (S.rumor && !S.over){
+    const t = document.createElement("span");
+    t.textContent = "🗣️ 噂：" + rumorText(S.rumor) + "（来週の相場に影響するかも）";
+    rb.appendChild(t);
+    const c = document.createElement("span"); c.className = "rc";
+    c.textContent = S.tactics.research ? "🔍 信ぴょう性：" + (S.rumor.credHigh ? "高い" : "低い（ガセかも）") : "信ぴょう性：？（手口「リサーチツール」で分かる）";
+    rb.appendChild(c);
+  }
+  rb.style.display = rb.children.length ? "block" : "none";
   /* 闇箱ボタン */
   $("btnBox").disabled = S.over || S.boxBought >= BOX_LIMIT || S.cash < BOX_PRICE;
   $("boxLeft").textContent = "今週はあと " + Math.max(0, BOX_LIMIT - S.boxBought) + "箱";
@@ -922,7 +989,7 @@ function render(){
     const div = document.createElement("div"); div.className = "item";
     const can = canBuy(it);
     div.innerHTML =
-      '<div class="row1"><span class="name">' + nm(it) + "</span>" +
+      '<div class="row1"><span class="name">' + nm(it) + "</span>" + rumorBadge(it) +
       (it.illegal ? '<span class="badge illegal">⚠ 不正転売禁止法の対象</span>' : "") + "</div>" +
       '<div class="meta">定価 <b>' + fmt(it.list) + '円</b> ｜ 現在の相場 <b>' + fmt(marketYen(it)) + "円</b>（定価の" + (s.mult).toFixed(1) + "倍）" + trendArrow(it) + "</div>" +
       '<div class="buyRow"><span class="stockNum' + (s.stock>0 ? "" : " none") + '">在庫 ' + s.stock + "個</span>" +
@@ -941,7 +1008,7 @@ function render(){
     const gain = price - feeOf(price) - it.list;
     const div = document.createElement("div"); div.className = "item";
     div.innerHTML =
-      '<div class="row1"><span class="name">' + nm(it) + '</span><span class="meta">在庫 ' + s.inv + "個 ／ 出品中 " + s.listed + "個</span></div>" +
+      '<div class="row1"><span class="name">' + nm(it) + rumorBadge(it) + '</span><span class="meta">在庫 ' + s.inv + "個 ／ 出品中 " + s.listed + "個</span></div>" +
       '<input type="range" min="40" max="500" step="5" value="' + s.pricePct + '" data-price="' + it.id + '">' +
       '<div class="priceRow"><span>定価の' + s.pricePct + '%</span><span class="pv' + (price < it.list ? " cheap" : "") + '">' + fmt(price) + '円</span>' +
       '<span>相場 <b>' + fmt(marketYen(it)) + '円</b></span>' +
@@ -1264,6 +1331,7 @@ $("btnRestart").addEventListener("click", () => {
 setTicker("借金500,000円の返済のため、転売を始めた……");
 pushLog("所持金60,000円からスタート。目標は累計利益500,000円", "dim");
 pushLog("1週間＝1ターン。ターン内は何度でも行動できます。「1週間を終える」で精算されます", "dim");
+pushLog("「噂」は来週の相場の予兆。本当なら大きく動き、ガセなら何も起きません", "dim");
 pushLog("出品した商品は相場次第で売れます。暴落した週は相場通りでも買い手が消え、跳ねた週は相場の1.5倍でも売れることがあります", "dim");
 const saved = loadGame();
 if (saved){
