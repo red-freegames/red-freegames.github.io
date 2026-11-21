@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>転売ヤー・ライフ（仮）｜転売を繰り返すゲーム</title>
-<meta name="description" content="転売ヤーになって高額転売を繰り返すゲーム。稼げば稼ぐほど、画面に少しずつシミが広がっていく。">
+<meta name="description" content="転売ヤーになって高額転売を繰り返すゲーム。稼げば稼ぐほど、画面も心も、少しずつ汚れていく。">
 <meta property="og:title" content="転売ヤー・ライフ（仮）">
-<meta property="og:description" content="転売ヤーになって高額転売を繰り返すゲーム。稼げば稼ぐほど、画面に少しずつシミが広がっていく。">
+<meta property="og:description" content="転売ヤーになって高額転売を繰り返すゲーム。稼げば稼ぐほど、画面も心も、少しずつ汚れていく。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://red-freegames.github.io/tenbai-life/">
 <meta property="og:site_name" content="RED FREE GAMES">
@@ -22,7 +22,7 @@
   html,body { height:100%; }
   body {
     font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
-    background:#f3ead8; color:#2b2118; overflow-x:hidden;
+    background:var(--bg,#f3ead8); color:var(--ink,#2b2118); overflow-x:hidden;
   }
   /* 下部はSNSアプリ内ブラウザのバーに隠れる前提で、大きめの余白を確保する */
   #app { max-width:760px; margin:0 auto; padding:10px 10px calc(190px + env(safe-area-inset-bottom, 0px)); position:relative; z-index:2; }
@@ -30,18 +30,21 @@
   #btnWeek { position:sticky; top:8px; z-index:15; box-shadow:0 2px 0 #2b2118, 0 8px 18px rgba(43,33,24,.35); }
   /* 闇オーバーレイ：利益に応じて気づかない速度で濃くなる */
   #warmVeil { position:fixed; inset:0; background:radial-gradient(ellipse at 50% 35%, #fff3c4 0%, #ffd98a 55%, transparent 100%); opacity:0; pointer-events:none; z-index:5; transition:opacity 6s linear; }
-  /* 背景のシミ：利益に比例して、知覚できない速度で広がる */
-  #stainLayer { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-  .stain { position:absolute; opacity:0; filter:blur(7px); transition:opacity 6s linear, transform 6s linear;
-    background:radial-gradient(ellipse at center, rgba(94,66,28,.6) 0%, rgba(94,66,28,.3) 52%, rgba(94,66,28,0) 74%); }
-  .stain.s1 { width:210px; height:150px; left:-60px; top:-40px; border-radius:63% 37% 54% 46% / 55% 48% 52% 45%; }
-  .stain.s2 { width:260px; height:190px; right:-80px; top:26%; border-radius:41% 59% 38% 62% / 60% 42% 58% 40%; }
-  .stain.s3 { width:300px; height:210px; left:-90px; bottom:-60px; border-radius:55% 45% 62% 38% / 44% 58% 42% 56%; }
-  .stain.s4 { width:180px; height:140px; right:6%; top:-50px; border-radius:48% 52% 41% 59% / 57% 44% 56% 43%; }
-  .stain.s5 { width:340px; height:240px; left:32%; bottom:-110px; border-radius:60% 40% 47% 53% / 50% 55% 45% 50%; }
+  /* 汚れ：色はJSが --bg などを少しずつ濁らせる。変化はゆっくり補間して「気づかない」ようにする */
+  body, header.top, section.panel, .item, button, #modal .card {
+    transition:background-color 5s linear, box-shadow 5s linear, color 5s linear, border-color 5s linear; }
+  #app { text-shadow:var(--smudge,none); }
+  /* 画面の手前に乗る汚れ（指紋・コーヒーの輪じみ・ほこり・傷）。タップは素通しする */
+  .grime { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:7; mix-blend-mode:multiply; opacity:0; transition:opacity 5s linear; }
+  body.noTrans, body.noTrans * { transition:none !important; }
+  /* 初心フラッシュ：一瞬だけ第1週の画面に戻す */
+  #flashCap { position:fixed; inset:0; z-index:19; display:none; align-items:flex-end; justify-content:center; padding:0 16px calc(200px + env(safe-area-inset-bottom, 0px)); cursor:pointer; }
+  #flashCap span { background:rgba(20,14,8,.88); color:#fff; font-weight:900; font-size:17px; line-height:1.6; border-radius:12px; padding:12px 18px; text-align:center; white-space:pre-line; box-shadow:0 6px 24px rgba(0,0,0,.35); }
+  .voice { display:block; margin-top:8px; font-size:13px; color:#5b4a33; }
+  .voice i { display:block; color:#8d8271; font-style:normal; }
   header.top {
-    background:rgba(255,252,244,.94); border:2px solid #2b2118; border-radius:14px;
-    padding:10px 12px; box-shadow:0 3px 0 #2b2118;
+    background:var(--panel,rgba(255,252,244,.94)); border:2px solid #2b2118; border-radius:14px;
+    padding:10px 12px; box-shadow:var(--pshadow,0 3px 0 #2b2118);
   }
   .ttl { font-size:20px; font-weight:900; letter-spacing:.02em; }
   .ttl small { font-size:11px; font-weight:700; color:#8a6d3b; }
@@ -59,27 +62,27 @@
   }
   #ticker.warn { background:#5a1d1d; color:#ffd9d0; border-color:#3a0f0f; }
   section.panel {
-    margin-top:12px; background:rgba(255,252,244,.94); border:2px solid #2b2118; border-radius:14px;
-    padding:10px 12px 12px; box-shadow:0 3px 0 #2b2118;
+    margin-top:12px; background:var(--panel,rgba(255,252,244,.94)); border:2px solid #2b2118; border-radius:14px;
+    padding:10px 12px 12px; box-shadow:var(--pshadow,0 3px 0 #2b2118);
   }
   section.panel h2 { font-size:15px; font-weight:900; margin-bottom:8px; }
   section.panel h2 span { display:block; margin-top:2px; font-size:11px; line-height:1.5; color:#8a6d3b; font-weight:700; }
-  .item { border:1.5px solid #d8c9a6; border-radius:10px; padding:8px 10px; margin-bottom:8px; background:#fffdf7; }
+  .item { border:1.5px solid var(--line,#d8c9a6); border-radius:10px; padding:8px 10px; margin-bottom:8px; background:var(--item,#fffdf7); }
   .item .row1 { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
   .item .name { font-weight:900; font-size:14.5px; }
-  .item .meta { font-size:11.5px; color:#6d5a38; margin-top:2px; line-height:1.5; }
+  .item .meta { font-size:11.5px; color:var(--muted,#6d5a38); margin-top:2px; line-height:1.5; }
   .item .meta b { color:#2b2118; }
   .badge { display:inline-block; font-size:10.5px; font-weight:900; padding:1px 7px; border-radius:20px; background:#ffe1a8; border:1px solid #c99b3f; color:#6d4c00; vertical-align:2px; }
   .badge.hot { background:#ffd0cc; border-color:#c2554a; color:#7c1d12; }
   .badge.illegal { background:#2b2118; color:#ff9d8a; border-color:#000; }
   button {
     font-family:inherit; font-weight:900; border:2px solid #2b2118; border-radius:10px;
-    background:#ffd94d; color:#2b2118; padding:7px 12px; font-size:13.5px; cursor:pointer;
+    background:var(--btn,#ffd94d); color:#2b2118; padding:7px 12px; font-size:13.5px; cursor:pointer;
     box-shadow:0 2px 0 #2b2118; touch-action:manipulation;
   }
   button:active { transform:translateY(2px); box-shadow:none; }
   button:disabled { background:#ddd3bd; color:#8d8271; cursor:not-allowed; box-shadow:none; }
-  button.sub { background:#fff; }
+  button.sub { background:var(--btnSub,#fff); }
   button.danger { background:#ff9d8a; }
   .buyRow { display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap; }
   .stockNum { font-size:12px; font-weight:900; }
@@ -114,7 +117,7 @@
   .note { font-size:11px; color:#8d8271; margin-top:10px; line-height:1.6; }
   /* モーダル */
   #modal { position:fixed; inset:0; background:rgba(10,6,4,.72); z-index:20; display:none; align-items:center; justify-content:center; padding:14px; }
-  #modal .card { background:#fffaf0; border:3px solid #2b2118; border-radius:16px; max-width:560px; width:100%; padding:18px; padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px)); max-height:92vh; max-height:92dvh; overflow-y:auto; }
+  #modal .card { background:var(--card,#fffaf0); border:3px solid #2b2118; border-radius:16px; max-width:560px; width:100%; padding:18px; padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px)); max-height:92vh; max-height:92dvh; overflow-y:auto; }
   #modal h3 { font-size:19px; font-weight:900; margin-bottom:8px; }
   #modal p { font-size:13.5px; line-height:1.75; white-space:pre-line; }
   #modal img { width:100%; border:2px solid #2b2118; border-radius:10px; margin-top:10px; }
@@ -147,11 +150,11 @@
      crossorigin="anonymous"></script>
 </head>
 <body>
-<div id="stainLayer" aria-hidden="true">
-  <div class="stain s1"></div><div class="stain s2"></div><div class="stain s3"></div><div class="stain s4"></div><div class="stain s5"></div>
-</div>
 <div id="warmVeil"></div>
 <div id="feverFrame" aria-hidden="true"></div>
+<canvas class="grime" id="grimeA" aria-hidden="true"></canvas>
+<canvas class="grime" id="grimeB" aria-hidden="true"></canvas>
+<div id="flashCap"><span id="flashTxt"></span></div>
 
 <div id="app">
   <nav class="topnav"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
@@ -176,13 +179,14 @@
   <div id="feverBar"></div>
 
   <div class="topBtns">
-    <button class="sub" id="btnOpenTactics">🕶️ 手口を見る</button>
-    <button class="sub" id="btnOpenLog">📜 取引ログ</button>
+    <button class="sub" id="btnOpenTactics">🕶️ 手口</button>
+    <button class="sub" id="btnOpenLog">📜 ログ</button>
+    <button class="sub" id="btnMirror">🪞 初心</button>
     <button class="sub" id="btnSound">🔊 音ON</button>
   </div>
 
   <section class="panel">
-    <h2>🏬 仕入れ <span>今週の入荷は今週限り。ターン内は何度でも行動できる</span></h2>
+    <h2><b id="hdShop">🏬 仕入れ</b> <span>今週の入荷は今週限り。ターン内は何度でも行動できる</span></h2>
     <div id="shopList"></div>
     <div id="nextWave" style="font-size:12px;color:#6d5a38;font-weight:700;"></div>
     <div class="item" style="margin-top:8px;">
@@ -193,7 +197,7 @@
   </section>
 
   <section class="panel">
-    <h2>📦 在庫と出品 <span>売れるかどうかは相場次第。暴落した週は相場通りでも売れ残り、跳ねた週は相場の1.5倍でも売れることがある</span></h2>
+    <h2><b id="hdInv">📦 在庫と出品</b> <span>売れるかどうかは相場次第。暴落した週は相場通りでも売れ残り、跳ねた週は相場の1.5倍でも売れることがある</span></h2>
     <div id="invList"></div>
   </section>
 
@@ -273,6 +277,37 @@ const SAINT_TITLES = [
   { at:15, name:"値引きの聖人" },
   { at:5,  name:"転売ヤー失格" },
 ];
+/* 言葉の汚れ：[0]=最初 [1]=称号「転売の鬼」から [2]=称号「人の不幸を金にする悪魔」から */
+const ITEM_NAMES = {
+  console:["ゲーム機「NX-2」", "ゲーム機「NX-2」（利ざや良し）", "金づる「NX-2」"],
+  tcg:    ["限定トレカBOX", "トレカBOX（未開封で転がす）", "紙切れBOX（未開封に限る）"],
+  shoes:  ["限定スニーカー「エア赤」", "スニーカー「エア赤」（履かない）", "履く気のない靴「エア赤」"],
+  figure: ["限定フィギュア", "限定フィギュア（箱が本体）", "オタク向け在庫"],
+  toy:    ["変身ベルトDX（子供向け）", "変身ベルトDX（親が泣いて買う）", "変身ベルトDX（ガキの涙付き）"],
+  ticket: ["人気アイドル ライブチケット", "ライブチケット（ファンが払う）", "推し活税チケット"],
+};
+const WORDS = {
+  week:    ["▶ 1週間を終える（精算する）", "▶ 1週間を終える（回収する）", "▶ 今週も搾り取る（精算）"],
+  buyOne:  ["1つ買う", "1つ確保する", "1つかっさらう"],
+  buyMax:  ["上限まで買う", "買い占める", "根こそぎ奪う"],
+  list:    ["出品する", "出品する", "市場に流す"],
+  shop:    ["🏬 仕入れ", "🏬 買い占め", "🏬 狩り場"],
+  inv:     ["📦 在庫と出品", "📦 在庫と出品", "📦 獲物の値付け"],
+  empty:   ["在庫がありません。入荷を待って仕入れましょう。", "在庫が切れた。次の入荷で押さえよう。", "手持ちがない。次の獲物を待て。"],
+  report:  ["精算", "回収", "収穫"],
+  sold:    ["が {n}個 売れた", "を {n}個 さばいた", "を {n}個 情弱に流した"],
+  bought:  ["を {n}個 仕入れた", "を {n}個 確保した", "を {n}個 かっさらった"],
+  inner:   ["（……ちょっと悪いことしたかな）", "（まあ、需要があるんだし）", "（知るか。買う方が悪い）"],
+};
+/* 高値で売れた週に届く、買った人の声 */
+const BUYER_VOICE = {
+  console:"「子供に頼まれて……お店にはどこにも無くて」",
+  tcg:"「開けてみたら外れでした」",
+  shoes:"「本当は定価で買いたかったです」",
+  figure:"「予約戦争に負けたので、仕方なく」",
+  toy:"「息子の誕生日に間に合いました。定価の何倍だったかは考えないようにします」",
+  ticket:"「……やっと推しに会えます。生活費を削りました」",
+};
 const NEWS_FLAVOR = [
   "人気商品の転売がSNSで話題になっています",
   "フリマアプリの利用者が過去最高を記録",
@@ -395,10 +430,10 @@ const cash0 = S.cash, profit0 = S.profit;
 s.listed = soldCount;
 let guard = soldCount;
 while (guard-- > 0 && s.listed > 0) doSale(it);
-rep.sold.push({ name: it.name, count: soldCount, revenue: S.cash - cash0 });
+rep.sold.push({ id: it.id, name: nm(it), count: soldCount, revenue: S.cash - cash0, pct: s.pricePct });
 rep.revenue += S.cash - cash0;
 rep.profit += S.profit - profit0;
-pushLog("💴 「" + it.name + "」が " + soldCount + "個 売れた（" + Math.round(S.cash - cash0).toLocaleString() + "円）", "good");
+pushLog("💴 「" + nm(it) + "」" + W("sold", soldCount) + "（" + Math.round(S.cash - cash0).toLocaleString() + "円）", "good");
 }
 if (unsoldCount > 0){
 s.listed = 0;
@@ -408,8 +443,8 @@ if (s.weekChange <= -0.25) reason = "相場が暴落して買い手が消えた"
 else if (ratio > OVERPRICE_RATIO) reason = "相場より高すぎたため売れ残った";
 else if (s.mult < CRASH_MULT) reason = "相場が暴落したため売れ残った";
 else reason = "買い手がつかなかった";
-rep.unsold.push({ name: it.name, count: unsoldCount, reason });
-pushLog("📦 「" + it.name + "」は " + unsoldCount + "個 売れ残り、出品を取りやめた（" + reason + "）", "bad");
+rep.unsold.push({ name: nm(it), count: unsoldCount, reason });
+pushLog("📦 「" + nm(it) + "」は " + unsoldCount + "個 売れ残り、出品を取りやめた（" + reason + "）", "bad");
 }
 });
 if (rep.profit > 0 && rep.profit > S.bestWeekProfit){ S.bestWeekProfit = rep.profit; rep.newRecord = true; }
@@ -465,7 +500,7 @@ let qty = it.stock;
 if (S.tactics.group) qty = Math.round(qty * 1.3);
 s.stock = qty;
 });
-pushLog("🚚 入荷：" + picks.map(it => "「" + it.name + "」" + S.items[it.id].stock + "個").join("、"), "");
+pushLog("🚚 入荷：" + picks.map(it => "「" + nm(it) + "」" + S.items[it.id].stock + "個").join("、"), "");
 /* 週の初めのニュース（相場やリスクが動く） */
 if (S.week > 1){
 runEvent();
@@ -476,7 +511,7 @@ ITEMS.forEach(it => { const s = S.items[it.id]; if (s.prevMult > 0) s.weekChange
 if (S.tactics.bot){
 ITEMS.slice().sort((a,b) => S.items[b.id].mult - S.items[a.id].mult).forEach(it => {
 const got = doBuy(it, canBuy(it));
-if (got > 0) pushLog("🤖 Botが「" + it.name + "」を " + got + "個 自動購入", "");
+if (got > 0) pushLog("🤖 Botが「" + nm(it) + "」を " + got + "個 自動購入", "");
 });
 }
 }
@@ -517,15 +552,15 @@ s.weekChange = before > 0 ? (s.mult - before) / before : 0;
 const EVENTS = [
 { w:3, run(){ const it = ITEMS[Math.floor(Math.random()*ITEMS.length)]; const s = S.items[it.id];
 s.mult *= 0.45; s.momentum = -0.07;
-setTicker("📉 「" + it.name + "」の再販が発表されました！ 相場が暴落しています", true);
-pushLog("再販発表で「" + it.name + "」の相場が暴落", "bad");}},
+setTicker("📉 「" + nm(it) + "」の再販が発表されました！ 相場が暴落しています", true);
+pushLog("再販発表で「" + nm(it) + "」の相場が暴落", "bad");}},
 { w:2, run(){ ITEMS.forEach(it => { S.items[it.id].mult *= 0.72;});
 setTicker("📉 メーカー各社が増産を発表。「まだまだ作ります」とのこと", true);
 pushLog("増産発表で全体の相場が下落", "bad");}},
 { w:2, run(){ const it = ITEMS[Math.floor(Math.random()*ITEMS.length)]; const s = S.items[it.id];
 s.mult *= 1.45; s.momentum = 0.07;
-setTicker("📈 「" + it.name + "」がSNSで大バズり！ 相場が急騰しています");
-pushLog("バズりで「" + it.name + "」の相場が急騰", "good");}},
+setTicker("📈 「" + nm(it) + "」がSNSで大バズり！ 相場が急騰しています");
+pushLog("バズりで「" + nm(it) + "」の相場が急騰", "good");}},
 { w:2, run(){ const s = S.items.toy; s.mult *= 1.8; s.momentum = 0.07;
 setTicker("🎄 クリスマス商戦が開始！ 子供向け玩具の需要が爆発しています");
 pushLog("商戦で変身ベルトの相場が急騰", "good");}},
@@ -560,13 +595,22 @@ const st = saintTitle();
 if (st) return st;
 return DIRTY_TITLES[dirtyTier()].name;
 }
-function dirtiness(){ /* 0..1：累計利益に比例する「汚れ」の進み具合。シミの広がり方を決める */
-if (saintTitle()) return 0;
-return Math.min(1, Math.max(0, S.profit / GOAL_PROFIT));
+/* 初心フラッシュ中だけ true（画面も言葉も第1週に戻す） */
+let flashClean = false;
+function dirtiness(){ /* 0..1：累計利益で進む「汚れ」。序盤から少しずつ効くよう緩い曲線にする */
+if (flashClean || saintTitle()) return 0;
+return Math.pow(Math.min(1, Math.max(0, S.profit / GOAL_PROFIT)), 0.6);
 }
+function wordTier(){ /* 言葉の汚れ段階 0..2（称号に連動） */
+if (flashClean || saintTitle()) return 0;
+const t = dirtyTier();
+return t >= 4 ? 2 : t >= 2 ? 1 : 0;
+}
+function W(key, n){ return WORDS[key][wordTier()].replace("{n}", n); }
+function nm(it){ return ITEM_NAMES[it.id][wordTier()]; }
 /* ================= テスト用フック ================= */
 globalThis.__TENBAI__ = { get S(){ return S;}, ITEMS, TACTICS, DIRTY_TITLES, SAINT_TITLES,
-newState, doBuy, doBox, BOX_PRICE, BOX_LIMIT, listItem, unlistItem, startWeek, endWeek, settleSales, saleChance, canBuy, pickWave, ensureAffordable, currentTitle, saintTitle, dirtiness, GOAL_PROFIT,
+newState, doBuy, doBox, BOX_PRICE, BOX_LIMIT, listItem, unlistItem, startWeek, endWeek, settleSales, saleChance, canBuy, pickWave, ensureAffordable, currentTitle, saintTitle, dirtiness, wordTier, nm, dirtyTier, GOAL_PROFIT,
 checkUnlocks, get pendingUnlocks(){ return pendingUnlocks; }, get pendingReport(){ return pendingReport; }};
 
 </script>
@@ -692,6 +736,157 @@ function loadGame(){
     return base;
   } catch(e){ return null; }
 }
+/* ===== 汚れ：色 ===== */
+const DIRT_PAL = {
+  bg:["#f3ead8","#7d6f55"], panel:["#fffcf4","#c3b695"], item:["#fffdf7","#bdb08f"], line:["#d8c9a6","#86744f"],
+  btn:["#ffd94d","#a99140"], btnSub:["#ffffff","#bbb197"], muted:["#6d5a38","#43341d"], card:["#fffaf0","#cdc1a2"], ink:["#2b2118","#1a130c"],
+};
+function hexRgb(h){ return [1,3,5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function dirtPal(d){
+  const o = {};
+  for (const k in DIRT_PAL){
+    const a = hexRgb(DIRT_PAL[k][0]), b = hexRgb(DIRT_PAL[k][1]);
+    o[k] = a.map((v, i) => Math.round(v + (b[i] - v) * d));
+  }
+  return o;
+}
+const rgb = (c, a) => a == null ? "rgb(" + c.join(",") + ")" : "rgba(" + c.join(",") + "," + a + ")";
+let lastDirt = -1;
+function applyDirt(d, instant){
+  const p = dirtPal(d), st = document.documentElement.style;
+  st.setProperty("--bg", rgb(p.bg));
+  st.setProperty("--panel", rgb(p.panel, (0.94 + d * 0.03).toFixed(3)));
+  st.setProperty("--item", rgb(p.item));
+  st.setProperty("--line", rgb(p.line));
+  st.setProperty("--btn", rgb(p.btn));
+  st.setProperty("--btnSub", rgb(p.btnSub));
+  st.setProperty("--muted", rgb(p.muted));
+  st.setProperty("--card", rgb(p.card));
+  st.setProperty("--ink", rgb(p.ink));
+  st.setProperty("--pshadow", "0 3px 0 " + rgb(p.ink) + ", 0 0 " + (d * 16).toFixed(1) + "px rgba(50,35,15," + (d * 0.5).toFixed(3) + ")");
+  st.setProperty("--smudge", d > 0.01 ? "0 0 " + (d * 1.6).toFixed(2) + "px rgba(40,28,14," + (d * 0.55).toFixed(3) + ")" : "none");
+  updateGrime(d, instant);
+  lastDirt = d;
+}
+/* ===== 汚れ：画面の手前の汚れ（毎回同じ配置になるよう固定シードで生成） ===== */
+function seeded(seed){ return function(){ seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const clamp01 = v => Math.max(0, Math.min(1, v));
+function drawGrime(ctx, x, y, w, h, d){
+  if (d <= 0.001) return;
+  const r = seeded(20261121);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  /* 全体のヤニ汚れと、縁のくすみ */
+  ctx.fillStyle = "rgba(125,98,45," + (0.13 * d).toFixed(3) + ")";
+  ctx.fillRect(x, y, w, h);
+  const vg = ctx.createRadialGradient(x + w / 2, y + h * 0.45, Math.min(w, h) * 0.25, x + w / 2, y + h * 0.45, Math.max(w, h) * 0.78);
+  vg.addColorStop(0, "rgba(60,40,15,0)");
+  vg.addColorStop(1, "rgba(60,40,15," + (0.5 * d).toFixed(3) + ")");
+  ctx.fillStyle = vg; ctx.fillRect(x, y, w, h);
+  /* 油っぽいくもり */
+  for (let i = 0; i < 7; i++){
+    const st = 0.35 + r() * 0.5, cx = x + r() * w, cy = y + r() * h, rad = 60 + r() * 110;
+    const a = clamp01((d - st) / 0.25) * 0.16;
+    if (a <= 0) continue;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    g.addColorStop(0, "rgba(90,65,25," + a.toFixed(3) + ")"); g.addColorStop(1, "rgba(90,65,25,0)");
+    ctx.fillStyle = g; ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+  }
+  /* ほこり */
+  for (let i = 0; i < 220; i++){
+    const st = r() * 0.85, cx = x + r() * w, cy = y + r() * h, rad = 0.5 + r() * 1.6, k = r();
+    const a = clamp01((d - st) / 0.15) * (0.25 + k * 0.4);
+    if (a <= 0) continue;
+    ctx.fillStyle = "rgba(55,40,22," + a.toFixed(3) + ")";
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+  }
+  /* 指紋：親指が触れる画面の下半分と中央に多い */
+  for (let i = 0; i < 9; i++){
+    const st = 0.08 + i * 0.09, cx = x + (0.15 + r() * 0.7) * w, cy = y + (0.35 + r() * 0.6) * h, rot = r() * Math.PI;
+    const a = clamp01((d - st) / 0.2);
+    if (a <= 0) continue;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
+    ctx.setLineDash([3 + r() * 3, 2 + r() * 2]);
+    for (let k = 0; k < 11; k++){
+      const rx = 3 + k * 2.1;
+      ctx.strokeStyle = "rgba(75,55,30," + (a * 0.42 * (1 - k / 14)).toFixed(3) + ")";
+      ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.ellipse(0, 0, rx, rx * 1.3, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  /* コーヒーの輪じみ */
+  for (let i = 0; i < 4; i++){
+    const st = 0.3 + i * 0.17, cx = x + r() * w, cy = y + r() * h, rad = 28 + r() * 26;
+    const a = clamp01((d - st) / 0.2);
+    if (a <= 0) continue;
+    ctx.fillStyle = "rgba(120,75,30," + (a * 0.07).toFixed(3) + ")";
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+    for (let k = 0; k < 18; k++){
+      const t0 = k / 18 * Math.PI * 2;
+      ctx.strokeStyle = "rgba(110,65,25," + (a * (0.2 + r() * 0.3)).toFixed(3) + ")";
+      ctx.lineWidth = 1.5 + r() * 2.5;
+      ctx.beginPath(); ctx.arc(cx, cy, rad + r() * 2, t0, t0 + Math.PI * 2 / 18 + 0.05); ctx.stroke();
+    }
+  }
+  /* ひっかき傷 */
+  for (let i = 0; i < 12; i++){
+    const st = 0.45 + r() * 0.5, cx = x + r() * w, cy = y + r() * h, len = 40 + r() * 120, ang = r() * Math.PI;
+    const a = clamp01((d - st) / 0.15) * 0.28;
+    if (a <= 0) continue;
+    ctx.strokeStyle = "rgba(45,32,18," + a.toFixed(3) + ")"; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len); ctx.stroke();
+  }
+  ctx.restore();
+}
+const grimeCv = [document.getElementById("grimeA"), document.getElementById("grimeB")];
+let grimeActive = 0, grimeD = -1, grimeW = 0, grimeH = 0;
+function updateGrime(d, instant){
+  const w = window.innerWidth, h = window.innerHeight;
+  const sized = w === grimeW && h === grimeH;
+  if (!instant && sized && Math.abs(d - grimeD) < 0.004) return;
+  grimeD = d; grimeW = w; grimeH = h;
+  /* 普段は新しい汚れを裏で描いてゆっくり重ね替える（気づかない速度）。フラッシュ時は一瞬で切り替える */
+  const fade = !instant && sized;
+  const idx = fade ? 1 - grimeActive : grimeActive;
+  const cv = grimeCv[idx], dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  drawGrime(ctx, 0, 0, w, h, d);
+  cv.style.opacity = 1;
+  grimeCv[1 - idx].style.opacity = 0;
+  grimeActive = idx;
+}
+window.addEventListener("resize", () => { if (lastDirt >= 0) updateGrime(lastDirt, true); });
+/* ===== 初心フラッシュ：称号が汚れた瞬間、一瞬だけ第1週の画面を見せる ===== */
+let flashActive = false, flashTimers = [], pendingFlash = null;
+function flashback(caption2){
+  if (flashActive) return;
+  flashActive = true;
+  document.body.classList.add("noTrans");
+  flashClean = true; render();
+  $("flashTxt").textContent = "これが、第1週のあなたの画面。";
+  $("flashCap").style.display = "flex";
+  thudSound();
+  flashTimers.push(setTimeout(() => {
+    flashClean = false; render();
+    $("flashTxt").textContent = caption2 || "そして、これが今のあなた。";
+    beep(82, .5, "sawtooth", .05, 0);
+  }, 2000));
+  flashTimers.push(setTimeout(endFlash, 4400));
+}
+function endFlash(){
+  if (!flashActive) return;
+  flashTimers.forEach(clearTimeout); flashTimers = [];
+  flashClean = false; render();
+  $("flashCap").style.display = "none";
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("noTrans")));
+  flashActive = false;
+  drainModals();
+}
+$("flashCap").addEventListener("click", endFlash);
 function render(){
   if (!cashAnimating) $("stCash").textContent = fmt(S.cash);
   /* フィーバー：相場が跳ねた商品がある週は画面が金色に光る */
@@ -699,7 +894,7 @@ function render(){
   ITEMS.forEach(it => { const s = S.items[it.id]; if (!hottest || s.weekChange > hottest.weekChange) hottest = { it, weekChange: s.weekChange }; });
   const fever = !!hottest && hottest.weekChange >= 0.25 && !S.over;
   document.body.classList.toggle("fever", fever);
-  if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + hottest.it.name + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！";
+  if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + nm(hottest.it) + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！";
   /* 闇箱ボタン */
   $("btnBox").disabled = S.over || S.boxBought >= BOX_LIMIT || S.cash < BOX_PRICE;
   $("boxLeft").textContent = "今週はあと " + Math.max(0, BOX_LIMIT - S.boxBought) + "箱";
@@ -707,7 +902,7 @@ function render(){
   $("stDay").textContent = S.week;
   $("btnWeek").disabled = S.over;
   $("nextWave").textContent = S.tactics.group && S.nextPicks
-    ? "💬 入荷情報グループの予告：来週は " + S.nextPicks.map(it => "「" + it.name + "」").join("、") + " が入荷予定"
+    ? "💬 入荷情報グループの予告：来週は " + S.nextPicks.map(it => "「" + nm(it) + "」").join("、") + " が入荷予定"
     : "";
   $("stGoal").textContent = fmt(Math.max(0, GOAL_PROFIT - S.profit));
   $("stTitle").textContent = currentTitle();
@@ -716,13 +911,10 @@ function render(){
   const d = dirtiness();
   const saint = !!saintTitle();
   $("warmVeil").style.opacity = saint ? Math.min(0.45, S.belowSales / 30 * 0.45).toFixed(3) : 0;
-  /* シミ：利益の進み具合で1つずつ目覚め、それぞれ連続的に広がる */
-  const stainStarts = [0.0, 0.18, 0.38, 0.58, 0.78];
-  document.querySelectorAll(".stain").forEach((el, i) => {
-    const local = Math.max(0, Math.min(1, (d - stainStarts[i]) / (1 - stainStarts[i])));
-    el.style.opacity = (local * 0.55).toFixed(3);
-    el.style.transform = "scale(" + (0.25 + local * 1.15).toFixed(3) + ")";
-  });
+  applyDirt(d, false);
+  $("btnWeek").textContent = W("week");
+  $("hdShop").textContent = W("shop");
+  $("hdInv").textContent = W("inv");
   /* 仕入れ */
   const shop = $("shopList"); shop.innerHTML = "";
   ITEMS.forEach(it => {
@@ -730,12 +922,12 @@ function render(){
     const div = document.createElement("div"); div.className = "item";
     const can = canBuy(it);
     div.innerHTML =
-      '<div class="row1"><span class="name">' + it.name + "</span>" +
+      '<div class="row1"><span class="name">' + nm(it) + "</span>" +
       (it.illegal ? '<span class="badge illegal">⚠ 不正転売禁止法の対象</span>' : "") + "</div>" +
       '<div class="meta">定価 <b>' + fmt(it.list) + '円</b> ｜ 現在の相場 <b>' + fmt(marketYen(it)) + "円</b>（定価の" + (s.mult).toFixed(1) + "倍）" + trendArrow(it) + "</div>" +
       '<div class="buyRow"><span class="stockNum' + (s.stock>0 ? "" : " none") + '">在庫 ' + s.stock + "個</span>" +
-      '<button ' + (can>0 ? "" : "disabled") + ' data-buy-one="' + it.id + '">1つ買う</button>' +
-      '<button ' + (can>0 ? "" : "disabled") + ' data-buy="' + it.id + '">上限まで買う（' + can + "個）</button></div>";
+      '<button ' + (can>0 ? "" : "disabled") + ' data-buy-one="' + it.id + '">' + W("buyOne") + '</button>' +
+      '<button ' + (can>0 ? "" : "disabled") + ' data-buy="' + it.id + '">' + W("buyMax") + '（' + can + "個）</button></div>";
     shop.appendChild(div);
   });
   /* 在庫と出品 */
@@ -749,20 +941,20 @@ function render(){
     const gain = price - feeOf(price) - it.list;
     const div = document.createElement("div"); div.className = "item";
     div.innerHTML =
-      '<div class="row1"><span class="name">' + it.name + '</span><span class="meta">在庫 ' + s.inv + "個 ／ 出品中 " + s.listed + "個</span></div>" +
+      '<div class="row1"><span class="name">' + nm(it) + '</span><span class="meta">在庫 ' + s.inv + "個 ／ 出品中 " + s.listed + "個</span></div>" +
       '<input type="range" min="40" max="500" step="5" value="' + s.pricePct + '" data-price="' + it.id + '">' +
       '<div class="priceRow"><span>定価の' + s.pricePct + '%</span><span class="pv' + (price < it.list ? " cheap" : "") + '">' + fmt(price) + '円</span>' +
       '<span>相場 <b>' + fmt(marketYen(it)) + '円</b></span>' +
       '<span class="gain">1個あたりの利益 ' + (gain >= 0 ? "+" : "") + fmt(gain) + "円</span></div>" +
       '<div class="buyRow">' +
-      '<button ' + (s.inv>0 ? "" : "disabled") + ' data-list="' + it.id + '">出品する</button>' +
+      '<button ' + (s.inv>0 ? "" : "disabled") + ' data-list="' + it.id + '">' + W("list") + '</button>' +
       '<button class="sub" ' + (s.listed>0 ? "" : "disabled") + ' data-unlist="' + it.id + '">出品を取り下げる</button></div>';
     inv.appendChild(div);
   });
   if (!anyInv){
     const d = document.createElement("div");
     d.className = "meta"; d.style.fontSize = "12.5px"; d.style.color = "#8d8271";
-    d.textContent = "在庫がありません。入荷を待って仕入れましょう。";
+    d.textContent = W("empty");
     inv.appendChild(d);
   }
   saveGame();
@@ -773,13 +965,13 @@ document.addEventListener("click", e => {
   if (b.dataset.buyOne){
     const it = ITEMS.find(x => x.id === b.dataset.buyOne);
     const n = doBuy(it, 1);
-    if (n > 0) pushLog("「" + it.name + "」を 1個 仕入れた", "");
+    if (n > 0) pushLog("「" + nm(it) + "」" + W("bought", 1), "");
     render();
   }
   if (b.dataset.buy){
     const it = ITEMS.find(x => x.id === b.dataset.buy);
     const n = doBuy(it, canBuy(it));
-    if (n > 0) pushLog("「" + it.name + "」を " + n + "個 仕入れた", "");
+    if (n > 0) pushLog("「" + nm(it) + "」" + W("bought", n), "");
     render();
   }
   if (b.dataset.list){
@@ -811,36 +1003,29 @@ document.addEventListener("input", e => {
   }
 });
 /* ================= 結果画像 ================= */
-function drawHomeMock(ctx, x, y, w, h, stainLevel, saint){
+function drawHomeMock(ctx, x, y, w, h, level, saint){
+  const p = dirtPal(level);
   ctx.save();
-  ctx.fillStyle = saint ? "#fff6da" : "#fffaf0";
+  ctx.fillStyle = saint ? "#fff6da" : rgb(p.bg);
   ctx.fillRect(x, y, w, h);
   ctx.fillStyle = "#2b2118";
   ctx.fillRect(x, y, w, 34);
   ctx.fillStyle = "#ffd98a";
   ctx.font = "bold 15px sans-serif";
   ctx.fillText("転売ヤー・ライフ", x + 10, y + 23);
-  ctx.fillStyle = "#e8dcc4";
-  for (let i = 0; i < 3; i++){
-    ctx.fillRect(x + 12, y + 50 + i * 52, w - 24, 42);
-    ctx.fillStyle = "#b7a67f";
-    ctx.fillRect(x + 22, y + 62 + i * 52, w - 90, 8);
-    ctx.fillRect(x + 22, y + 76 + i * 52, w - 130, 8);
-    ctx.fillStyle = "#e8dcc4";
+  ctx.fillStyle = rgb(p.btn);
+  ctx.fillRect(x + 12, y + 46, w - 24, 30);
+  ctx.fillStyle = "#2b2118"; ctx.font = "bold 14px sans-serif";
+  ctx.fillText(WORDS.week[saint ? 0 : (level >= Math.pow(200000 / GOAL_PROFIT, 0.6) ? 2 : level >= Math.pow(30000 / GOAL_PROFIT, 0.6) ? 1 : 0)], x + 24, y + 66);
+  for (let i = 0; i < 4; i++){
+    const ry = y + 90 + i * 74;
+    ctx.fillStyle = rgb(p.panel); ctx.fillRect(x + 12, ry, w - 24, 64);
+    ctx.fillStyle = rgb(p.item); ctx.fillRect(x + 20, ry + 8, w - 40, 48);
+    ctx.fillStyle = rgb(p.muted);
+    ctx.fillRect(x + 30, ry + 18, w - 120, 8);
+    ctx.fillRect(x + 30, ry + 34, w - 170, 8);
   }
-  if (stainLevel > 0){
-    /* 背景のシミ（比較画像でも分かるように） */
-    const blobs = [[0.06,0.16,90],[0.94,0.5,110],[0.1,0.95,130],[0.8,0.05,70],[0.5,1.02,140]];
-    blobs.forEach(function(b, i){
-      const st = [0.0, 0.18, 0.38, 0.58, 0.78][i];
-      const local = Math.max(0, Math.min(1, (stainLevel - st) / (1 - st)));
-      if (local <= 0) return;
-      ctx.beginPath();
-      ctx.ellipse(x + b[0] * w, y + b[1] * h, b[2] * (0.3 + local), b[2] * 0.7 * (0.3 + local), 0.6, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(94,66,28," + (local * 0.28).toFixed(2) + ")";
-      ctx.fill();
-    });
-  }
+  if (!saint) drawGrime(ctx, x, y, w, h, level);
   ctx.restore();
 }
 function makeResultImage(){
@@ -875,7 +1060,7 @@ function showImageModal(){
 }
 const GAME_URL = "https://red-freegames.github.io/tenbai-life/";
 function shareUrl(){
-  const text = "【転売ヤー・ライフ】第" + S.week + "週、累計利益" + fmt(S.profit) + "円。\n現在の称号は「" + currentTitle() + "」でした。\n稼げば稼ぐほど、画面にシミが広がっていくゲーム。\n#転売ヤーライフ #無料ゲーム";
+  const text = "【転売ヤー・ライフ】第" + S.week + "週、累計利益" + fmt(S.profit) + "円。\n現在の称号は「" + currentTitle() + "」でした。\n稼げば稼ぐほど、画面も心も汚れていくゲーム。\n#転売ヤーライフ #無料ゲーム";
   return "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent(GAME_URL);
 }
 /* ================= モーダルとエンディング ================= */
@@ -905,14 +1090,15 @@ function closeModal(){
   drainModals();
 }
 function drainModals(){
-  if ($("modal").style.display === "flex") return;
+  if ($("modal").style.display === "flex" || flashActive) return;
   if (pendingReport){ showReport(); return; }
+  if (pendingFlash){ const t = pendingFlash; pendingFlash = null; flashback("そして今。称号は「" + t + "」。"); return; }
   if (pendingUnlocks.length) showNextUnlock();
 }
 function showReport(){
   const rep = pendingReport; pendingReport = null;
   if (!rep) return;
-  $("mTitle").textContent = "📋 第" + rep.week + "週の精算";
+  $("mTitle").textContent = "📋 第" + rep.week + "週の" + W("report");
   const mText = $("mText");
   mText.innerHTML = "";
   $("mImg").style.display = "none";
@@ -946,6 +1132,15 @@ function showReport(){
     runEl.textContent = "売上合計 " + fmt(rep.revenue) + "円\n（利益 " + (rep.profit >= 0 ? "+" : "") + fmt(rep.profit) + "円）";
     runEl.classList.remove("slamNum"); void runEl.offsetWidth; runEl.classList.add("slamNum");
     slamSound();
+    /* 買った人の声：いちばん高値で売れた商品について */
+    const top = rep.sold.slice().sort((a, b) => b.pct - a.pct)[0];
+    if (top){
+      const v = document.createElement("span"); v.className = "voice";
+      const gouge = top.pct >= 130;
+      v.textContent = "購入者より：" + (gouge ? BUYER_VOICE[top.id] : top.pct < 100 ? "「こんなに安く！？ ありがとうございます！」" : "「ありがとうございました。助かりました」");
+      if (gouge){ const i = document.createElement("i"); i.textContent = W("inner"); v.appendChild(i); }
+      listEl.appendChild(v);
+    }
     if (rep.newRecord){
       const d = mk("text-align:center;font-size:17px;font-weight:900;color:#b8860b;margin-top:6px;");
       d.textContent = "🎉 週の利益が新記録！";
@@ -1005,7 +1200,7 @@ function onGoal(){
   pushLog("🎯 借金返済の目標額に到達した", "good");
   const url = makeResultImage();
   openModal("🎯 目標達成……？",
-    "累計利益500,000円に到達し、借金は返済できました。\nでも、あなたの称号は「" + currentTitle() + "」。\nHOME画面を見てください。最初はなかったシミが、こんなに広がっています。\nこのまま転売を続けることもできます。",
+    "累計利益500,000円に到達し、借金は返済できました。\nでも、あなたの称号は「" + currentTitle() + "」。\nHOME画面を見てください。最初はきれいだった画面が、こんなに汚れています。\nこのまま転売を続けることもできます。",
     url, [
       { label: "𝕏 でシェア", href: shareUrl() },
       { label: "このまま続ける", fn: closeModal },
@@ -1024,6 +1219,7 @@ function onFreeze(){
 function restart(){
   pendingUnlocks = [];
   pendingReport = null;
+  pendingFlash = null;
   S = newState();
   globalThis.__TENBAI__.forceState(S);
   $("log").innerHTML = "";
@@ -1035,6 +1231,7 @@ function restart(){
 }
 /* __TENBAI__ の state 差し替え用 */
 globalThis.__TENBAI__.forceState = s => { S = s; };
+globalThis.__TENBAI__.render = () => render();
 function openTacticsModal(){
   const lines = TACTICS.map(tc => {
     const owned = !!S.tactics[tc.id];
@@ -1054,6 +1251,7 @@ function openLogModal(){
 }
 $("btnOpenTactics").addEventListener("click", openTacticsModal);
 $("btnOpenLog").addEventListener("click", openLogModal);
+$("btnMirror").addEventListener("click", () => flashback());
 $("btnImage").addEventListener("click", showImageModal);
 $("btnRestart").addEventListener("click", () => {
   if (S.over || (S.week === 1 && S.totalSales === 0)){ restart(); return; }
@@ -1078,14 +1276,18 @@ if (saved){
 render();
 function doEndWeek(){
   const cash0 = S.cash;
+  const tier0 = saintTitle() ? 0 : dirtyTier();
   endWeek(); render();
+  /* 称号が一段汚れたら（序盤の1段目は変化が小さいので除く）、精算のあとに初心フラッシュ */
+  const tier1 = saintTitle() ? 0 : dirtyTier();
+  if (!S.over && tier1 > tier0 && tier1 >= 2) pendingFlash = currentTitle();
   countUpCash(cash0, S.cash);
   drainModals();
 }
 $("btnWeek").addEventListener("click", () => {
   const unlisted = ITEMS.filter(it => S.items[it.id].inv > 0);
   if (unlisted.length && !S.over){
-    const names = unlisted.map(it => "「" + it.name + "」× " + S.items[it.id].inv).join("、");
+    const names = unlisted.map(it => "「" + nm(it) + "」× " + S.items[it.id].inv).join("、");
     openModal("⚠️ 未出品の商品があります",
       names + "\n\n出品していない商品は売れません。このまま1週間を終えますか？",
       null,
@@ -1107,7 +1309,7 @@ $("btnBox").addEventListener("click", () => {
   } else {
     slamSound();
     const big = r.item.id === "console";
-    openModal("🎁 闇箱を開けた！", "「" + r.item.name + "」× " + r.count + " が入っていた！\n（定価 " + fmt(r.item.list * r.count) + "円相当）" + (big ? "\n\n🎉 大当たり！！" : ""), null, [{ label: "やった！", fn: closeModal }]);
+    openModal("🎁 闇箱を開けた！", "「" + nm(r.item) + "」× " + r.count + " が入っていた！\n（定価 " + fmt(r.item.list * r.count) + "円相当）" + (big ? "\n\n🎉 大当たり！！" : ""), null, [{ label: "やった！", fn: closeModal }]);
   }
 });
 const btnSoundEl = $("btnSound");
