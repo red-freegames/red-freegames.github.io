@@ -71,6 +71,29 @@ startBtn._handlers.click[0]();
 ok(UI.G.phase === 'play', 'game in play after start, phase=' + UI.G.phase);
 
 function frame() { fakeNow += 33.3; const cb = rafCb; rafCb = null; cb(); }
+function click(id) { const e = elCache[id]; ok(e && e._handlers.click, id + ' handler bound'); e._handlers.click[0]({}); }
+// --- HOME: プレイ中に開くと一時停止、続きからで再開、最初からは確認を挟む ---
+{
+  for (let i = 0; i < 10; i++) frame();
+  click('btnHome');
+  ok(UI.paused && elCache['home'].style.display === 'flex', 'HOME opens and pauses');
+  ok(elCache['homeCont'].style.display !== 'none', 'continue shown while in progress');
+  const t0 = UI.G.elapsed;
+  for (let i = 0; i < 20; i++) frame();
+  ok(UI.G.elapsed === t0, 'time frozen while on HOME');
+  click('homeCont');
+  ok(!UI.paused && elCache['home'].style.display === 'none', 'continue resumes');
+  for (let i = 0; i < 5; i++) frame();
+  ok(UI.G.elapsed > t0, 'time runs again after continue');
+  click('btnHome');
+  const g0 = UI.G;
+  click('btnStart');
+  ok(elCache['confirmPanel'].style.display === 'flex' && UI.G === g0, 'restart asks for confirmation');
+  click('confirmNo');
+  ok(elCache['confirmPanel'].style.display === 'none' && UI.G === g0, 'cancel keeps the run');
+  click('btnStart'); click('confirmYes');
+  ok(UI.G !== g0 && UI.G.phase === 'play' && !UI.paused, 'confirm starts a new run');
+}
 // bot: steer with keys toward nearest walker
 function botKeys() {
   const G = UI.G;

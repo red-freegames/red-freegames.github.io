@@ -692,7 +692,7 @@ function onDanceClick(e) {
   }
   selDance = d.id; lsSet('dm_dance', selDance);
   renderDances();
-  danceStyle = selDance; // タイトル背景のプレビューにも反映
+  if (!inProgress()) danceStyle = selDance; // タイトル背景のプレビューにも反映。プレイ途中なら次にはじめる時から
 }
 ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
 renderDances();
@@ -855,18 +855,48 @@ function showResult(goal, reason) {
   $('resultPanel').style.display = 'flex';
 }
 
-$('btnStart').addEventListener('click', function () {
+// ================= HOME =================
+// HOME はゲームの上に重ねて出す。プレイ中に開くと一時停止し、「続きから」で再開する。
+let paused = false;
+function inProgress() { return started && (G.phase === 'play' || G.phase === 'clear'); }
+function showHome() {
+  paused = true; releaseAll();
+  const has = inProgress(), c = $('homeCont'), n = $('btnStart');
+  c.style.display = has ? 'inline-block' : 'none';
+  if (has) c.innerHTML = '▶ 続きから<small>STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + '・スコア ' + G.score + '</small>';
+  n.textContent = has ? '最初からはじめる' : '▶ はじめる';
+  n.className = has ? 'btn sub' : 'btn';
+  renderDances(); renderStages();
+  if (has) $('home').classList.add('inrun'); else $('home').classList.remove('inrun');
+  $('home').style.display = 'flex';
+  $('home').scrollTop = 0;
+}
+function hideHome() { $('home').style.display = 'none'; paused = false; }
+function startNew() {
   unlockAudio();
-  $('titlePanel').style.display = 'none';
+  ['home', 'stagePanel', 'resultPanel', 'confirmPanel'].forEach(function (id) { $(id).style.display = 'none'; });
   el.hud.style.display = 'block';
   el.btnSound.style.display = 'block';
-  started = true;
+  $('btnHome').style.display = 'block';
+  started = true; paused = false;
+  endTimer = -1; pendingEnd = null;
   G = newGame();
   G.startIdx = startIdx;
   G.startStage(startIdx);
   setupStage();
   stageToast();
+}
+$('btnStart').addEventListener('click', function () {
+  if (!inProgress()) { startNew(); return; }
+  $('confirmText').textContent = 'STAGE ' + (G.stageIdx + 1) + '・スコア ' + G.score + ' のプレイは終わりになります。';
+  $('confirmPanel').style.display = 'flex';
 });
+$('confirmNo').addEventListener('click', function () { $('confirmPanel').style.display = 'none'; });
+$('confirmYes').addEventListener('click', startNew);
+$('homeCont').addEventListener('click', function () { unlockAudio(); hideHome(); });
+$('btnHome').addEventListener('click', showHome);
+$('btnHomeStage').addEventListener('click', showHome);
+$('btnHomeResult').addEventListener('click', showHome);
 $('btnNext').addEventListener('click', function () {
   unlockAudio();
   $('stagePanel').style.display = 'none';
@@ -878,12 +908,8 @@ $('btnNext').addEventListener('click', function () {
 $('btnRetry').addEventListener('click', function () {
   unlockAudio();
   $('resultPanel').style.display = 'none';
-  const from = G.startIdx || 0;
-  G = newGame();
-  G.startIdx = from;
-  G.startStage(from);
-  setupStage();
-  stageToast();
+  startIdx = G.startIdx || 0;
+  startNew();
 });
 el.btnSound.addEventListener('click', function () {
   soundOn = !soundOn;
@@ -970,7 +996,7 @@ fitCamera();
 // 描画が重い端末では解像度を段階的に下げる(下げるだけで戻さない)。プレイ中の平均フレーム時間で判定。
 let qT = 0, qN = 0;
 function adaptQuality(dt) {
-  if (!(started && G.phase === 'play') || pixelRatio <= 1) { qT = 0; qN = 0; return; }
+  if (!(started && G.phase === 'play') || paused || pixelRatio <= 1) { qT = 0; qN = 0; return; }
   qT += dt; qN++;
   if (qT < 2) return;
   const avg = qT / qN; qT = 0; qN = 0;
@@ -1033,7 +1059,7 @@ function animate() {
   const now = performance.now() / 1000;
   let dt = now - lastT; lastT = now;
   if (dt > 0.06) dt = 0.06;
-  if (started && G.phase === 'play') {
+  if (started && G.phase === 'play' && !paused) {
     G.update(dt, readInput());
     handleEvents(G.drainEvents());
     updateHUD();
@@ -1071,5 +1097,5 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
+globalThis.__DM_UI__ = { get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();
