@@ -97,6 +97,15 @@
   .unlockMsg { display:none; margin:10px auto 0; padding:6px 12px; border-radius:12px; background:rgba(255,207,63,.15); border:1px solid rgba(255,207,63,.6); color:#ffcf3f; font-size:13px; font-weight:800; }
   .credit { font-size:11px; opacity:.75; margin-top:10px; line-height:1.6; }
   .credit a { color:#ffcf3f; }
+  #home { z-index:20; }
+  #home.inrun .intro { display:none; } /* プレイ途中で開いた HOME は説明を畳んでボタンを上に */
+  #confirmPanel { z-index:30; background:rgba(8,6,18,.75); }
+  .topnav { display:flex; justify-content:flex-end; margin:-10px -10px 4px 0; }
+  .topnav a { font-size:12px; font-weight:800; color:#fff; text-decoration:none; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:5px 12px; }
+  .hbtns { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .hbtns .btn small { display:block; font-size:11.5px; font-weight:700; opacity:.9; margin-top:2px; }
+  .hbtns .btn.sub { margin-top:12px; }
+  #btnHome { position:fixed; left:max(10px, env(safe-area-inset-left)); bottom:max(10px, env(safe-area-inset-bottom)); z-index:6; background:rgba(10,8,24,.62); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; display:none; touch-action:manipulation; }
   .bestLine { font-size:12px; opacity:.8; margin-top:4px; }
   .panel { padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 
@@ -140,7 +149,8 @@
     #hudTime { font-size:20px; }
     #infectWrap { margin-top:4px; height:18px; }
     #resultImg { max-height:34dvh; width:auto; max-width:100%; }
-    #titlePanel .danceDesc, #titlePanel #stageName, #titlePanel .kaku { display:none; }
+    #home .danceDesc, #home #stageName, #home .kaku { display:none; }
+    .topnav { margin:-4px -6px 0 0; }
     .danceSel { margin:4px 0 0; }
     .danceHead { margin-bottom:3px; font-size:11px; }
     .dBtn { padding:4px 9px; font-size:11px; }
@@ -165,16 +175,18 @@
 </div>
 <div id="feverFx"></div>
 <button id="btnSound">🔊 音ON</button>
+<button id="btnHome">🏠 HOME</button>
 <div id="chainPop"></div>
 <div id="feverPop"></div>
 <div id="toast"></div>
 <div id="stick"><div id="stickKnob"></div></div>
 
-<div class="panel" id="titlePanel">
+<div class="panel" id="home">
   <div class="card">
+    <nav class="topnav"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
     <h1>ダンシングマニア</h1>
     <div class="tagline">変な踊りは、感染する。</div>
-    <div class="desc">
+    <div class="desc intro">
       あなたは<b>患者ゼロ</b>――最初に踊り出す1人。<br>
       踊りながら人のそばにいると、その人も踊り出す。踊り出した人は、また次の人を踊らせる。<br>
       <b>警備員</b>は踊る人を説教して正気に戻し、あなたを捕まえに来る。<br>
@@ -190,7 +202,10 @@
       <div class="danceList" id="stageList"></div>
       <div class="danceDesc" id="stageName"></div>
     </div>
-    <button class="btn" id="btnStart">踊り始める</button>
+    <div class="hbtns">
+      <button class="btn" id="homeCont" style="display:none;">▶ 続きから</button>
+      <button class="btn" id="btnStart">▶ はじめる</button>
+    </div>
     <details class="howto" id="howto">
       <summary>遊び方</summary>
       <div class="desc">
@@ -203,7 +218,7 @@
     </div>
     </details>
     <div class="history">1518年、ストラスブール。1人の女性が踊り始め、1ヶ月で400人が踊り続けた――実在の事件「ダンシングマニア」がモチーフです。</div>
-    <div class="credit">実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">🎮 RED FREE GAMES の他のゲームを見る</a></div>
+    <div class="credit">ベストスコア・到達ステージ・解放した踊りは、この端末のブラウザに保存されます。<br>実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">RED FREE GAMES</a> の他のゲームで遊ぶ</div>
   </div>
 </div>
 
@@ -213,6 +228,7 @@
     <div class="desc" style="text-align:center;">全員、踊り出しました。</div>
     <div class="stats" id="stageStats"></div>
     <button class="btn" id="btnNext">次のステージへ</button>
+    <div><button class="btn sub" id="btnHomeStage">🏠 HOME</button></div>
   </div>
 </div>
 
@@ -237,7 +253,19 @@
     <div class="rowBtns">
       <button class="btn" id="btnRetry">もう一度踊る</button>
     </div>
+    <div class="rowBtns"><button class="btn sub" id="btnHomeResult">🏠 HOME</button></div>
     <div class="credit"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></div>
+  </div>
+</div>
+
+<div class="panel" id="confirmPanel" style="display:none;">
+  <div class="card">
+    <h2>↩️ 最初からはじめますか？</h2>
+    <div class="desc" style="text-align:center;" id="confirmText"></div>
+    <div class="rowBtns">
+      <button class="btn sub" id="confirmNo">やめておく</button>
+      <button class="btn" id="confirmYes">最初から</button>
+    </div>
   </div>
 </div>
 
@@ -1543,7 +1571,7 @@ function onDanceClick(e) {
   }
   selDance = d.id; lsSet('dm_dance', selDance);
   renderDances();
-  danceStyle = selDance; // タイトル背景のプレビューにも反映
+  if (!inProgress()) danceStyle = selDance; // タイトル背景のプレビューにも反映。プレイ途中なら次にはじめる時から
 }
 ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
 renderDances();
@@ -1706,18 +1734,48 @@ function showResult(goal, reason) {
   $('resultPanel').style.display = 'flex';
 }
 
-$('btnStart').addEventListener('click', function () {
+// ================= HOME =================
+// HOME はゲームの上に重ねて出す。プレイ中に開くと一時停止し、「続きから」で再開する。
+let paused = false;
+function inProgress() { return started && (G.phase === 'play' || G.phase === 'clear'); }
+function showHome() {
+  paused = true; releaseAll();
+  const has = inProgress(), c = $('homeCont'), n = $('btnStart');
+  c.style.display = has ? 'inline-block' : 'none';
+  if (has) c.innerHTML = '▶ 続きから<small>STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + '・スコア ' + G.score + '</small>';
+  n.textContent = has ? '最初からはじめる' : '▶ はじめる';
+  n.className = has ? 'btn sub' : 'btn';
+  renderDances(); renderStages();
+  if (has) $('home').classList.add('inrun'); else $('home').classList.remove('inrun');
+  $('home').style.display = 'flex';
+  $('home').scrollTop = 0;
+}
+function hideHome() { $('home').style.display = 'none'; paused = false; }
+function startNew() {
   unlockAudio();
-  $('titlePanel').style.display = 'none';
+  ['home', 'stagePanel', 'resultPanel', 'confirmPanel'].forEach(function (id) { $(id).style.display = 'none'; });
   el.hud.style.display = 'block';
   el.btnSound.style.display = 'block';
-  started = true;
+  $('btnHome').style.display = 'block';
+  started = true; paused = false;
+  endTimer = -1; pendingEnd = null;
   G = newGame();
   G.startIdx = startIdx;
   G.startStage(startIdx);
   setupStage();
   stageToast();
+}
+$('btnStart').addEventListener('click', function () {
+  if (!inProgress()) { startNew(); return; }
+  $('confirmText').textContent = 'STAGE ' + (G.stageIdx + 1) + '・スコア ' + G.score + ' のプレイは終わりになります。';
+  $('confirmPanel').style.display = 'flex';
 });
+$('confirmNo').addEventListener('click', function () { $('confirmPanel').style.display = 'none'; });
+$('confirmYes').addEventListener('click', startNew);
+$('homeCont').addEventListener('click', function () { unlockAudio(); hideHome(); });
+$('btnHome').addEventListener('click', showHome);
+$('btnHomeStage').addEventListener('click', showHome);
+$('btnHomeResult').addEventListener('click', showHome);
 $('btnNext').addEventListener('click', function () {
   unlockAudio();
   $('stagePanel').style.display = 'none';
@@ -1729,12 +1787,8 @@ $('btnNext').addEventListener('click', function () {
 $('btnRetry').addEventListener('click', function () {
   unlockAudio();
   $('resultPanel').style.display = 'none';
-  const from = G.startIdx || 0;
-  G = newGame();
-  G.startIdx = from;
-  G.startStage(from);
-  setupStage();
-  stageToast();
+  startIdx = G.startIdx || 0;
+  startNew();
 });
 el.btnSound.addEventListener('click', function () {
   soundOn = !soundOn;
@@ -1821,7 +1875,7 @@ fitCamera();
 // 描画が重い端末では解像度を段階的に下げる(下げるだけで戻さない)。プレイ中の平均フレーム時間で判定。
 let qT = 0, qN = 0;
 function adaptQuality(dt) {
-  if (!(started && G.phase === 'play') || pixelRatio <= 1) { qT = 0; qN = 0; return; }
+  if (!(started && G.phase === 'play') || paused || pixelRatio <= 1) { qT = 0; qN = 0; return; }
   qT += dt; qN++;
   if (qT < 2) return;
   const avg = qT / qN; qT = 0; qN = 0;
@@ -1884,7 +1938,7 @@ function animate() {
   const now = performance.now() / 1000;
   let dt = now - lastT; lastT = now;
   if (dt > 0.06) dt = 0.06;
-  if (started && G.phase === 'play') {
+  if (started && G.phase === 'play' && !paused) {
     G.update(dt, readInput());
     handleEvents(G.drainEvents());
     updateHUD();
@@ -1922,7 +1976,7 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
+globalThis.__DM_UI__ = { get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();
 
 </script>
