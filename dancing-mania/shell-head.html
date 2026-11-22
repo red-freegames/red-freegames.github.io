@@ -2,18 +2,21 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#14101f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>ダンシングマニア（仮） | 変な踊りは、感染する。</title>
 <meta property="og:title" content="ダンシングマニア（仮）">
 <meta property="og:description" content="変な踊りが人から人へ感染していく3Dゲーム。あなたは患者ゼロ。全員踊らせろ。">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { width:100%; height:100%; overflow:hidden; background:#14101f; font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif; color:#fff; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#14101f; font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif; color:#fff; overscroll-behavior:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-text-size-adjust:100%; }
   #game { position:fixed; inset:0; }
   #game canvas { display:block; touch-action:none; }
 
   /* ===== HUD ===== */
-  #hud { position:fixed; top:0; left:0; right:0; padding:8px 10px; display:none; pointer-events:none; z-index:5; }
+  #hud { position:fixed; top:0; left:0; right:0; padding:max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); display:none; pointer-events:none; z-index:5; }
   #hudTop { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .hudBox { background:rgba(10,8,24,.62); border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:6px 12px; backdrop-filter:blur(3px); }
   #hudStage { font-size:13px; font-weight:700; letter-spacing:.04em; }
@@ -37,13 +40,16 @@
   @keyframes feverPulse { from{ box-shadow:inset 0 0 110px 28px rgba(255,170,0,.42);} to{ box-shadow:inset 0 0 165px 58px rgba(255,120,0,.68);} }
   #feverPop { position:fixed; left:50%; top:37%; transform:translate(-50%,-50%) scale(.6); font-size:40px; font-weight:900; color:#ff8a3f; text-shadow:0 0 20px rgba(255,207,63,.95),0 3px 0 #a13d00; opacity:0; pointer-events:none; z-index:6; white-space:nowrap; }
   #feverPop.show { animation:chainAnim .9s ease-out; }
-  #btnSound { position:fixed; right:10px; bottom:10px; z-index:6; pointer-events:auto; background:rgba(10,8,24,.62); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; display:none; }
+  #btnSound { position:fixed; right:max(10px, env(safe-area-inset-right)); bottom:max(10px, env(safe-area-inset-bottom)); touch-action:manipulation; z-index:6; pointer-events:auto; background:rgba(10,8,24,.62); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; display:none; }
 
   #chainPop { position:fixed; left:50%; top:26%; transform:translate(-50%,-50%) scale(.6); font-size:44px; font-weight:900; color:#ffcf3f; text-shadow:0 0 18px rgba(255,93,162,.9),0 3px 0 #c2185b; opacity:0; pointer-events:none; z-index:6; white-space:nowrap; }
   #chainPop.show { animation:chainAnim .8s ease-out; }
   @keyframes chainAnim { 0%{opacity:0; transform:translate(-50%,-50%) scale(.5) rotate(-4deg);} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.15) rotate(2deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-60%) scale(1);} }
-  #toast { position:fixed; left:50%; bottom:12%; transform:translateX(-50%); background:rgba(10,8,24,.8); border:1px solid rgba(255,255,255,.25); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:6; white-space:nowrap; }
+  #toast { position:fixed; left:50%; bottom:calc(12% + env(safe-area-inset-bottom)); transform:translateX(-50%); background:rgba(10,8,24,.8); border:1px solid rgba(255,255,255,.25); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:6; white-space:nowrap; }
   #toast.show { opacity:1; }
+  /* ===== 仮想スティック(ドラッグ中だけ表示) ===== */
+  #stick { position:fixed; left:0; top:0; width:110px; height:110px; margin:-55px 0 0 -55px; border-radius:50%; border:2px solid rgba(255,255,255,.45); background:rgba(10,8,24,.25); pointer-events:none; z-index:7; display:none; }
+  #stickKnob { position:absolute; left:50%; top:50%; width:46px; height:46px; margin:-23px 0 0 -23px; border-radius:50%; background:rgba(255,93,162,.75); border:2px solid rgba(255,255,255,.8); }
 
   /* ===== パネル ===== */
   .panel { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(8,6,18,.55); z-index:10; padding:16px; }
@@ -54,7 +60,7 @@
   .tagline { margin:8px 0 4px; font-size:15px; font-weight:700; color:#ffcf3f; }
   .desc { font-size:13px; line-height:1.75; opacity:.92; text-align:left; margin:12px 2px; }
   .desc b { color:#ffcf3f; }
-  .btn { display:inline-block; background:linear-gradient(90deg,#ff5da2,#ff8a3f); color:#fff; border:none; border-radius:999px; padding:14px 38px; font-size:17px; font-weight:900; cursor:pointer; box-shadow:0 6px 0 #a12c5e; margin-top:10px; text-decoration:none; }
+  .btn { touch-action:manipulation; display:inline-block; background:linear-gradient(90deg,#ff5da2,#ff8a3f); color:#fff; border:none; border-radius:999px; padding:14px 38px; font-size:17px; font-weight:900; cursor:pointer; box-shadow:0 6px 0 #a12c5e; margin-top:10px; text-decoration:none; }
   .btn:active { transform:translateY(4px); box-shadow:0 2px 0 #a12c5e; }
   .btn.sub { background:#3a2f5e; box-shadow:0 6px 0 #241b3f; font-size:14px; padding:11px 26px; }
   .stats { margin:14px auto 4px; font-size:14px; line-height:2; }
@@ -63,6 +69,47 @@
   #resultImg { width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.25); margin-top:12px; display:none; }
   .rowBtns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
   .history { font-size:11px; opacity:.65; margin-top:14px; line-height:1.6; }
+  .panel { padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+
+  /* ===== スマホ ===== */
+  @media (max-width:420px) {
+    .card { padding:20px 16px; border-radius:16px; }
+    .card h1 { font-size:28px; }
+    .tagline { font-size:14px; }
+    .desc { font-size:12.5px; line-height:1.65; margin:10px 0; }
+    .btn { padding:13px 34px; font-size:16px; }
+    #hud { padding-left:max(6px, env(safe-area-inset-left)); padding-right:max(6px, env(safe-area-inset-right)); }
+    .hudBox { padding:5px 9px; border-radius:10px; }
+    #hudStage { font-size:12px; }
+    #hudTime { font-size:22px; }
+    #hudScore { font-size:16px; }
+    #chainPop { font-size:36px; }
+    #feverPop { font-size:32px; }
+    #toast { font-size:13px; padding:7px 14px; }
+  }
+  @media (max-width:420px) and (max-height:700px) { /* 小さい縦画面(iPhone SE など) */
+    .card { padding:14px 14px; }
+    .card h1 { font-size:24px; }
+    .tagline { margin:4px 0 0; font-size:13px; }
+    .desc { font-size:11.5px; line-height:1.5; margin:6px 0; }
+    .btn { margin-top:4px; padding:11px 30px; font-size:15px; }
+    .history { margin-top:8px; font-size:10px; }
+  }
+  @media (max-height:520px) { /* 横持ちのスマホ */
+    .card { padding:10px 18px 12px; max-width:600px; }
+    .card h1 { font-size:22px; }
+    .kaku { display:inline; }
+    .tagline { margin:2px 0 0; font-size:13px; }
+    .desc { font-size:11.5px; line-height:1.42; margin:5px 0; }
+    .btn { margin-top:4px; padding:9px 28px; font-size:15px; }
+    .history { margin-top:8px; font-size:10px; }
+    .stats { margin:8px auto 2px; line-height:1.7; }
+    #hud { padding-top:max(4px, env(safe-area-inset-top)); }
+    .hudBox { padding:3px 10px; }
+    #hudTime { font-size:20px; }
+    #infectWrap { margin-top:4px; height:18px; }
+    #resultImg { max-height:34dvh; width:auto; max-width:100%; }
+  }
 </style>
 </head>
 <body>
@@ -82,6 +129,7 @@
 <div id="chainPop"></div>
 <div id="feverPop"></div>
 <div id="toast"></div>
+<div id="stick"><div id="stickKnob"></div></div>
 
 <div class="panel" id="titlePanel">
   <div class="card">
@@ -95,7 +143,7 @@
       捕まるのは<b>3回まで</b>。時間切れでも終わり。<b>全員を踊らせたらステージクリア！</b>
     </div>
     <div class="desc">
-      🖱️📱 移動：ドラッグ / WASD・矢印キー<br>
+      🖱️📱 移動：画面のどこでもドラッグ（指を置いた所がスティックになる）/ WASD・矢印キー<br>
       💃 感染：踊っている人の近くに約0.7秒いるだけ（頑固な人は長め）<br>
       👥 屋台の周りの「人だかり」に火をつけると一気に広がる<br>
       🔗 連鎖は2.5秒以内に次を感染させると継続（ゲージ表示あり）<br>

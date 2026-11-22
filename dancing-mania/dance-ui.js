@@ -25,6 +25,16 @@ function beep(freq, dur, type, vol, slideTo) {
     o.start(t); o.stop(t + dur);
   } catch (e) {}
 }
+function unlockAudio() { // iOS Safari: ユーザー操作の中で生成・resumeしないと鳴らない
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const b = audioCtx.createBuffer(1, 1, 22050), s = audioCtx.createBufferSource();
+    s.buffer = b; s.connect(audioCtx.destination); s.start(0);
+  } catch (e) {}
+}
+function buzz(ms) { try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 function sInfect(chain) { beep(500 + Math.min(chain, 24) * 32, 0.12, 'sine', 0.16); }
 function sCure() { beep(320, 0.16, 'square', 0.07, 150); }
 function sCatch() { beep(150, 0.32, 'sawtooth', 0.18, 65); }
@@ -35,7 +45,9 @@ function sFever() { const n = [659, 880, 1109, 1319]; for (let i = 0; i < n.leng
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 400);
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const IS_TOUCH = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+let pixelRatio = Math.min(window.devicePixelRatio || 1, IS_TOUCH ? 1.75 : 2);
+renderer.setPixelRatio(pixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 $('game').appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x445577, 0.95));
@@ -309,16 +321,55 @@ function scoldPose(P, t) {
 const keys = {};
 window.addEventListener('keydown', function (e) { keys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', function (e) { keys[e.key.toLowerCase()] = false; });
-let dragOn = false, dragSX = 0, dragSY = 0, dragX = 0, dragY = 0;
+// ドラッグ = 指を置いた所が中心の仮想スティック。指が半径より遠くへ行くと中心が追従するので、
+// 逆方向へ切り返すときに指を大きく戻さなくてよい。
+const STICK_R = 46, STICK_DEAD = 12;
+let dragId = null, dragSX = 0, dragSY = 0, dragX = 0, dragY = 0;
 const cvs = renderer.domElement;
-cvs.addEventListener('pointerdown', function (e) { dragOn = true; dragSX = dragX = e.clientX; dragSY = dragY = e.clientY; });
-window.addEventListener('pointermove', function (e) { if (dragOn) { dragX = e.clientX; dragY = e.clientY; } });
-window.addEventListener('pointerup', function () { dragOn = false; });
+const stickEl = $('stick'), knobEl = $('stickKnob');
+function drawStick() {
+  if (!stickEl) return;
+  if (dragId === null) { stickEl.style.display = 'none'; return; }
+  stickEl.style.display = 'block';
+  stickEl.style.transform = 'translate(' + dragSX + 'px,' + dragSY + 'px)';
+  knobEl.style.transform = 'translate(' + (dragX - dragSX) + 'px,' + (dragY - dragSY) + 'px)';
+}
+function endDrag(e) {
+  if (dragId === null || (e && e.pointerId !== undefined && e.pointerId !== dragId)) return;
+  dragId = null; drawStick();
+}
+cvs.addEventListener('pointerdown', function (e) {
+  unlockAudio();
+  if (dragId !== null) return; // 2本目の指は無視
+  dragId = e.pointerId;
+  dragSX = dragX = e.clientX; dragSY = dragY = e.clientY;
+  try { cvs.setPointerCapture(e.pointerId); } catch (er) {}
+  if (e.preventDefault) e.preventDefault();
+  drawStick();
+});
+window.addEventListener('pointermove', function (e) {
+  if (dragId === null || e.pointerId !== dragId) return;
+  dragX = e.clientX; dragY = e.clientY;
+  const dx = dragX - dragSX, dy = dragY - dragSY, l = Math.hypot(dx, dy);
+  if (l > STICK_R) { dragSX = dragX - dx / l * STICK_R; dragSY = dragY - dy / l * STICK_R; }
+  drawStick();
+});
+window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointercancel', endDrag);
+function releaseAll() { dragId = null; drawStick(); for (const k in keys) keys[k] = false; }
+window.addEventListener('blur', releaseAll);
+if (typeof document.addEventListener === 'function') {
+  document.addEventListener('visibilitychange', function () { if (document.hidden) releaseAll(); });
+  // iOS Safari: user-scalable=no を無視するのでピンチ/ダブルタップ拡大を止める
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  document.addEventListener('dblclick', function (e) { e.preventDefault(); });
+  document.addEventListener('contextmenu', function (e) { if (e.target === cvs) e.preventDefault(); });
+}
 function readInput() {
-  if (dragOn) {
+  if (dragId !== null) {
     const dx = dragX - dragSX, dy = dragY - dragSY;
     const l = Math.hypot(dx, dy);
-    if (l > 12) return { x: dx / l, z: dy / l };
+    if (l > STICK_DEAD) return { x: dx / l, z: dy / l };
     return { x: 0, z: 0 };
   }
   let x = 0, z = 0;
@@ -415,7 +466,7 @@ function handleEvents(evs) {
       if (ev.chain >= 3) showChain(ev.chain);
       updateHUD();
     } else if (ev.type === 'fever') {
-      sFever(); showFeverPop();
+      sFever(); showFeverPop(); buzz([40, 40, 40]);
       showToast('フィーバー！ 警備員も踊り出した！');
       updateHUD();
     } else if (ev.type === 'cure') {
@@ -423,7 +474,7 @@ function handleEvents(evs) {
       showToast('警備員の説教…1人が正気に戻った');
       updateHUD();
     } else if (ev.type === 'catch') {
-      sCatch(); camShake = 0.6;
+      sCatch(); camShake = 0.6; buzz(120);
       showToast(ev.hearts > 0 ? '捕まった！ 残り❤×' + ev.hearts : '捕まった…');
       updateHUD();
     } else if (ev.type === 'clear') {
@@ -492,6 +543,7 @@ function showResult(goal, reason) {
 }
 
 $('btnStart').addEventListener('click', function () {
+  unlockAudio();
   $('titlePanel').style.display = 'none';
   el.hud.style.display = 'block';
   el.btnSound.style.display = 'block';
@@ -501,12 +553,14 @@ $('btnStart').addEventListener('click', function () {
   showToast('STAGE 1　' + STAGES[0].name + ' ― 全員踊らせろ！');
 });
 $('btnNext').addEventListener('click', function () {
+  unlockAudio();
   $('stagePanel').style.display = 'none';
   G.startStage(G.stageIdx + 1);
   setupStage();
   showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― 全員踊らせろ！');
 });
 $('btnRetry').addEventListener('click', function () {
+  unlockAudio();
   $('resultPanel').style.display = 'none';
   G = DM.createGame((Math.random() * 1e9) | 0);
   G.startStage(0);
@@ -515,6 +569,7 @@ $('btnRetry').addEventListener('click', function () {
 });
 el.btnSound.addEventListener('click', function () {
   soundOn = !soundOn;
+  if (soundOn) unlockAudio();
   try { localStorage.setItem('dm_sound', soundOn ? '1' : '0'); } catch (e) {}
   el.btnSound.textContent = soundOn ? '🔊 音ON' : '🔇 音OFF';
 });
@@ -568,7 +623,31 @@ function syncPersons(t, dt) {
     else walkPose(Q, dt, g.mode === 'chase');
   }
 }
-const camPos = new THREE.Vector3(0, 33, 47);
+// 縦持ち(縦長画面)では左右が見えなくなるので、画角を広げてカメラを少し引く。横長(PC)は従来どおり。
+let camDist = 1;
+function fitCamera() {
+  const a = window.innerWidth / window.innerHeight;
+  const k = a < 1 ? Math.min(1, (1 - a) / 0.5) : 0; // 正方形で0、縦横比1:2で1
+  camera.fov = 50 + 14 * k;
+  camDist = 1 + 0.28 * k;
+  camera.aspect = a;
+  camera.updateProjectionMatrix();
+}
+fitCamera();
+// 描画が重い端末では解像度を段階的に下げる(下げるだけで戻さない)。プレイ中の平均フレーム時間で判定。
+let qT = 0, qN = 0;
+function adaptQuality(dt) {
+  if (!(started && G.phase === 'play') || pixelRatio <= 1) { qT = 0; qN = 0; return; }
+  qT += dt; qN++;
+  if (qT < 2) return;
+  const avg = qT / qN; qT = 0; qN = 0;
+  if (avg > 1 / 45) {
+    pixelRatio = Math.max(1, pixelRatio - 0.25);
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+}
+const camPos = new THREE.Vector3(0, 33 * camDist, 22 + 25 * camDist);
 let lastT = performance.now() / 1000;
 function animate() {
   requestAnimationFrame(animate);
@@ -586,22 +665,24 @@ function animate() {
     endTimer -= dt;
     if (endTimer <= 0 && pendingEnd) { const f = pendingEnd; pendingEnd = null; f(); }
   }
+  adaptQuality(dt);
   syncPersons(now, dt);
   updateFx(dt);
   if (camShake > 0) camShake = Math.max(0, camShake - dt);
   const shX = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
   const shY = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
   camPos.x += ((G.player.x) - camPos.x) * Math.min(1, dt * 3.2);
-  camPos.z += ((G.player.z + 25) - camPos.z) * Math.min(1, dt * 3.2);
-  camera.position.set(camPos.x + shX, 33 + shY, camPos.z);
+  camPos.z += ((G.player.z + 25 * camDist) - camPos.z) * Math.min(1, dt * 3.2);
+  camera.position.set(camPos.x + shX, 33 * camDist + shY, camPos.z);
   camera.lookAt(G.player.x + shX, 0, G.player.z - 3);
   renderer.render(scene, camera);
 }
-window.addEventListener('resize', function () {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
+function onResize() {
+  fitCamera();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});
+}
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', function () { setTimeout(onResize, 250); });
 
 // タイトル画面の背景としてステージ1を配置
 G.startStage(0);
