@@ -6,9 +6,20 @@
 <meta name="theme-color" content="#14101f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>ダンシングマニア（仮） | 変な踊りは、感染する。</title>
-<meta property="og:title" content="ダンシングマニア（仮）">
-<meta property="og:description" content="変な踊りが人から人へ感染していく3Dゲーム。あなたは患者ゼロ。全員踊らせろ。">
+<title>ダンシングマニア ｜ 変な踊りは、感染する。</title>
+<meta name="description" content="変な踊りが人から人へ感染していく3Dブラウザゲーム。あなたは最初に踊り出した「患者ゼロ」。警備員から逃げながら、広場の全員を踊らせろ。全7ステージ、スマホでそのまま遊べる。">
+<meta property="og:title" content="ダンシングマニア">
+<meta property="og:description" content="変な踊りが人から人へ感染していく3Dブラウザゲーム。あなたは最初に踊り出した「患者ゼロ」。警備員から逃げながら、広場の全員を踊らせろ。全7ステージ、スマホでそのまま遊べる。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://red-freegames.github.io/dancing-mania/">
+<meta property="og:site_name" content="RED FREE GAMES">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:image" content="https://red-freegames.github.io/dancing-mania/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://red-freegames.github.io/dancing-mania/og.png">
+<link rel="canonical" href="https://red-freegames.github.io/dancing-mania/">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#14101f; font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif; color:#fff; overscroll-behavior:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-text-size-adjust:100%; }
@@ -84,6 +95,8 @@
   .sBtn { min-width:34px; padding:5px 0; }
   .danceDesc { font-size:11.5px; opacity:.85; margin-top:6px; min-height:1.5em; }
   .unlockMsg { display:none; margin:10px auto 0; padding:6px 12px; border-radius:12px; background:rgba(255,207,63,.15); border:1px solid rgba(255,207,63,.6); color:#ffcf3f; font-size:13px; font-weight:800; }
+  .credit { font-size:11px; opacity:.75; margin-top:10px; line-height:1.6; }
+  .credit a { color:#ffcf3f; }
   .bestLine { font-size:12px; opacity:.8; margin-top:4px; }
   .panel { padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 
@@ -134,6 +147,8 @@
     .history { display:none; }
   }
 </style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
+     crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="game"></div>
@@ -158,7 +173,6 @@
 <div class="panel" id="titlePanel">
   <div class="card">
     <h1>ダンシングマニア</h1>
-    <div class="kaku">（仮タイトル）</div>
     <div class="tagline">変な踊りは、感染する。</div>
     <div class="desc">
       あなたは<b>患者ゼロ</b>――最初に踊り出す1人。<br>
@@ -189,6 +203,7 @@
     </div>
     </details>
     <div class="history">1518年、ストラスブール。1人の女性が踊り始め、1ヶ月で400人が踊り続けた――実在の事件「ダンシングマニア」がモチーフです。</div>
+    <div class="credit">実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">🎮 RED FREE GAMES の他のゲームを見る</a></div>
   </div>
 </div>
 
@@ -222,5 +237,6 @@
     <div class="rowBtns">
       <button class="btn" id="btnRetry">もう一度踊る</button>
     </div>
+    <div class="credit"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></div>
   </div>
 </div>

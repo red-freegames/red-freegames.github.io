@@ -1,4 +1,4 @@
-// 『ダンシングマニア(仮)』ロジックコア: THREE/DOM非依存。描画は dance-ui.js。
+// 『ダンシングマニア』ロジックコア: THREE/DOM非依存。描画は dance-ui.js。
 (function () {
 'use strict';
 

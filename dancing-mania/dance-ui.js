@@ -1,4 +1,4 @@
-// 『ダンシングマニア(仮)』描画/UI: THREE r128 + dance-core.js の上に構築
+// 『ダンシングマニア』描画/UI: THREE r128 + dance-core.js の上に構築
 (function () {
 'use strict';
 const DM = globalThis.__DM__;
@@ -818,7 +818,7 @@ function buildResultImage(done) {
     cx.fillStyle = gr; cx.fillRect(0, 0, 1200, 630);
     cx.textAlign = 'left';
     cx.fillStyle = '#ffcf3f'; cx.font = '900 54px sans-serif';
-    cx.fillText('ダンシングマニア（仮）', 48, 452);
+    cx.fillText('ダンシングマニア', 48, 452);
     cx.fillStyle = '#ffffff'; cx.font = '700 40px sans-serif';
     cx.fillText('スコア ' + G.score + '　最大 ' + G.maxChain + ' 連鎖', 48, 516);
     cx.fillStyle = '#ff5da2'; cx.font = '900 44px sans-serif';
@@ -828,6 +828,7 @@ function buildResultImage(done) {
   img.onerror = function () { done(null); };
   img.src = snapshotURL;
 }
+const GAME_URL = 'https://red-freegames.github.io/dancing-mania/';
 function showResult(goal, reason) {
   $('resultTitle').textContent = goal ? '🎉 全ステージ制覇！' : (reason === 'caught' ? '警備員に捕まった…' : '時間切れ…');
   $('resultStats').innerHTML =
@@ -848,9 +849,9 @@ function showResult(goal, reason) {
     else im.style.display = 'none';
   });
   const txt = goal
-    ? '『ダンシングマニア（仮）』全' + STAGES.length + 'ステージ制覇！全員踊らせた💃 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」 #ダンシングマニア #ブラウザゲーム'
-    : '『ダンシングマニア（仮）』STAGE' + (G.stageIdx + 1) + 'まで到達 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」だった。変な踊りは感染する💃 #ダンシングマニア #ブラウザゲーム';
-  $('btnShareX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt);
+    ? '『ダンシングマニア』全' + STAGES.length + 'ステージ制覇！全員踊らせた💃 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」 #ダンシングマニア #ブラウザゲーム'
+    : '『ダンシングマニア』STAGE' + (G.stageIdx + 1) + 'まで到達 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」だった。変な踊りは感染する💃 #ダンシングマニア #ブラウザゲーム';
+  $('btnShareX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt) + '&url=' + encodeURIComponent(GAME_URL);
   $('resultPanel').style.display = 'flex';
 }
 
