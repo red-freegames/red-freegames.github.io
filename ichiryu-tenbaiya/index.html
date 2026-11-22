@@ -950,8 +950,8 @@ function updateGrime(d, instant){
   grimeActive = idx;
 }
 window.addEventListener("resize", () => { if (lastDirt >= 0) updateGrime(lastDirt, true); });
-/* ===== 初心フラッシュ：称号が汚れた瞬間、一瞬だけ第1週の画面を見せる ===== */
-let flashActive = false, flashTimers = [], pendingFlash = null;
+/* ===== 初心フラッシュ：「🪞 初心」ボタンで、一瞬だけ第1週の画面を見せる ===== */
+let flashActive = false, flashTimers = [];
 function flashback(caption2){
   if (flashActive) return;
   flashActive = true;
@@ -1203,7 +1203,6 @@ function closeModal(){
 function drainModals(){
   if ($("modal").style.display === "flex" || flashActive) return;
   if (pendingReport){ showReport(); return; }
-  if (pendingFlash){ const t = pendingFlash; pendingFlash = null; flashback("そして今。称号は「" + t + "」。"); return; }
   if (pendingUnlocks.length) showNextUnlock();
 }
 function showReport(){
@@ -1330,7 +1329,6 @@ function onFreeze(){
 function restart(){
   pendingUnlocks = [];
   pendingReport = null;
-  pendingFlash = null;
   S = newState();
   globalThis.__TENBAI__.forceState(S);
   $("log").innerHTML = "";
@@ -1414,11 +1412,7 @@ $("homeNew").addEventListener("click", () => {
 showHome();
 function doEndWeek(){
   const cash0 = S.cash;
-  const tier0 = wordTier();
   endWeek(); render();
-  /* 言葉が一段汚れたら（目標の45%・80%）、精算のあとに初心フラッシュ */
-  const tier1 = wordTier();
-  if (!S.over && tier1 > tier0) pendingFlash = currentTitle();
   countUpCash(cash0, S.cash);
   drainModals();
 }
