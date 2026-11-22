@@ -149,8 +149,26 @@
     animation-name:confFall; animation-timing-function:linear; animation-fill-mode:forwards; }
   @keyframes confFall { to { transform:translateY(105vh) rotate(680deg); } }
   @media (max-width:480px){ .ttl{font-size:17px;} }
-  .topnav { display:flex; justify-content:flex-end; margin-bottom:6px; font-size:12px; font-weight:800; }
-  .topnav a { color:#6d5a38; }
+  .topnav { display:flex; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .topnav button, .topnav a { font-family:inherit; font-size:12px; font-weight:800; color:#2b2118; background:rgba(255,252,244,.75);
+    border:1.5px solid #2b2118; border-radius:999px; padding:5px 12px; text-decoration:none; line-height:1.4; box-shadow:none; min-height:0; }
+  .topnav button:active, .topnav a:active { transform:none; background:rgba(43,33,24,.15); }
+  .topnav.right { justify-content:flex-end; }
+  /* HOME（タイトル画面）：汚れの影響を受けない、第1週のままの色で描く */
+  #home { position:fixed; inset:0; z-index:12; background:#f3ead8; color:#2b2118; overflow-y:auto; display:none; justify-content:center; align-items:flex-start;
+    padding:calc(10px + env(safe-area-inset-top, 0px)) 14px calc(190px + env(safe-area-inset-bottom, 0px)); text-shadow:none; }
+  #home .inner { width:100%; max-width:520px; }
+  #home .hcard { background:#fffcf4; border:2px solid #2b2118; border-radius:16px; box-shadow:0 3px 0 #2b2118; padding:22px 18px 18px; margin-top:6px; }
+  #home h1 { font-size:31px; font-weight:900; line-height:1.2; letter-spacing:.02em; white-space:nowrap; }
+  #home .hbtns button small { display:block; font-size:12px; font-weight:700; margin-top:2px; }
+  #home h1 small { font-size:15px; color:#8a6d3b; }
+  #home .lead { margin-top:10px; font-size:14.5px; font-weight:800; line-height:1.7; }
+  #home .hbtns { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+  #home .hbtns button { font-size:16px; padding:12px; background:#ffd94d; }
+  #home .hbtns button.sub { background:#fff; font-size:14px; padding:10px; }
+  #home h2 { font-size:14px; font-weight:900; margin-top:20px; }
+  #home ol { margin-top:6px; padding-left:1.4em; font-size:13px; line-height:1.75; }
+  #home .hnote { margin-top:14px; font-size:11px; color:#8d8271; line-height:1.6; }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
      crossorigin="anonymous"></script>
@@ -163,7 +181,7 @@
 <div id="flashCap"><span id="flashTxt"></span></div>
 
 <div id="app">
-  <nav class="topnav"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
+  <nav class="topnav"><button id="btnHome">🏠 HOME</button><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
   <header class="top">
     <div class="ttl">転売ヤー・ライフ <small>（仮）</small></div>
     <div class="stats">
@@ -218,6 +236,29 @@
     <p class="note">進行状況はこの端末のブラウザに自動保存されます。実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">RED FREE GAMES</a> の他のゲームで遊ぶ</p>
   </section>
   <div id="log" style="display:none"></div>
+</div>
+
+<div id="home">
+  <div class="inner">
+    <nav class="topnav right"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
+    <div class="hcard">
+      <h1>転売ヤー・ライフ <small>（仮）</small></h1>
+      <p class="lead">借金は50万円。返す方法は、転売。<br>限定品を買い占めて、高値で売りさばけ。</p>
+      <div class="hbtns">
+        <button id="homeCont">▶ 続きから</button>
+        <button id="homeNew">▶ はじめる</button>
+      </div>
+      <h2>遊び方</h2>
+      <ol>
+        <li>毎週入荷する限定品を仕入れる（入荷は今週限り）</li>
+        <li>相場を見て値段を決め、出品する</li>
+        <li>「1週間を終える」で精算。売れるかどうかは相場次第</li>
+        <li>🗣️ 噂が流れたら、乗るか降りるかを決める</li>
+        <li>累計利益50万円で借金完済。通報リスクが満タンになるとアカウント凍結</li>
+      </ol>
+      <p class="hnote">進行状況はこの端末のブラウザに自動保存されます。<br>※このゲームはフィクションの風刺作品です。実在の転売行為を推奨するものではありません。チケットの不正転売は法律で禁止されています。</p>
+    </div>
+  </div>
 </div>
 
 <div id="modal"><div class="card">
@@ -1109,8 +1150,8 @@ function makeResultImage(){
   drawHomeMock(ctx, 620, 90, 540, 400, saint ? 0 : d, saint);
   ctx.fillStyle = "#fff";
   ctx.font = "bold 26px sans-serif";
-  ctx.fillText("最初のHOME画面", 40, 70);
-  ctx.fillText(saint ? "今のHOME画面（明るい）" : "今のHOME画面", 620, 70);
+  ctx.fillText("第1週の画面", 40, 70);
+  ctx.fillText(saint ? "今の画面（明るい）" : "今の画面", 620, 70);
   ctx.font = "bold 40px sans-serif";
   ctx.fillStyle = saint ? "#ffe9a8" : "#ffd94d";
   const title = "称号： " + currentTitle();
@@ -1122,7 +1163,7 @@ function makeResultImage(){
 }
 function showImageModal(){
   const url = makeResultImage();
-  openModal("🖼️ 結果画像", "初日と現在のHOME画面の比較です。画像を保存してXに添付できます。\n（スマホは画像を長押しでも保存できます）", url, [
+  openModal("🖼️ 結果画像", "第1週と今の画面の比較です。画像を保存してXに添付できます。\n（スマホは画像を長押しでも保存できます）", url, [
     { label: "𝕏 でシェア", href: shareUrl() },
     { label: "💾 画像を保存", href: url, download: "tenbai-life.png" },
     { label: "閉じる", fn: closeModal },
@@ -1270,7 +1311,7 @@ function onGoal(){
   pushLog("🎯 借金返済の目標額に到達した", "good");
   const url = makeResultImage();
   openModal("🎯 目標達成……？",
-    "累計利益500,000円に到達し、借金は返済できました。\nでも、あなたの称号は「" + currentTitle() + "」。\nHOME画面を見てください。最初はきれいだった画面が、こんなに汚れています。\nこのまま転売を続けることもできます。",
+    "累計利益500,000円に到達し、借金は返済できました。\nでも、あなたの称号は「" + currentTitle() + "」。\n画面を見てください。最初はきれいだった画面が、こんなに汚れています。\nこのまま転売を続けることもできます。",
     url, [
       { label: "𝕏 でシェア", href: shareUrl() },
       { label: "このまま続ける", fn: closeModal },
@@ -1345,6 +1386,32 @@ if (saved){
   startWeek();
 }
 render();
+/* ===== HOME（タイトル画面） ===== */
+function hasProgress(){ return !S.over && (S.week > 1 || S.totalSales > 0 || S.profit !== 0); }
+function showHome(){
+  const has = hasProgress();
+  const c = $("homeCont"), n = $("homeNew");
+  c.style.display = has ? "" : "none";
+  c.textContent = "▶ 続きから";
+  const sm = document.createElement("small");
+  sm.textContent = "第" + S.week + "週・累計利益 " + fmt(S.profit) + "円・" + currentTitle();
+  c.appendChild(sm);
+  n.textContent = has ? "最初からはじめる" : "▶ はじめる";
+  n.className = has ? "sub" : "";
+  $("home").style.display = "flex";
+  $("home").scrollTop = 0;
+}
+function hideHome(){ $("home").style.display = "none"; window.scrollTo(0, 0); render(); drainModals(); }
+$("btnHome").addEventListener("click", showHome);
+$("homeCont").addEventListener("click", hideHome);
+$("homeNew").addEventListener("click", () => {
+  if (!hasProgress()){ if (S.over) restart(); hideHome(); return; }
+  openModal("↩️ 最初からはじめますか？", "第" + S.week + "週・累計利益 " + fmt(S.profit) + "円の進行状況は消えます。", null, [
+    { label: "やめておく", fn: closeModal },
+    { label: "最初から", fn: () => { restart(); hideHome(); } },
+  ]);
+});
+showHome();
 function doEndWeek(){
   const cash0 = S.cash;
   const tier0 = wordTier();
