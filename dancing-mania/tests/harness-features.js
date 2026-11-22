@@ -44,7 +44,7 @@ function ok(c, m) { if (!c) { fails++; console.log('FAIL:', m); } }
 // --- fever: triggers at 12 chain, guards harmless during fever ---
 {
   const G = DM.createGame(99);
-  G.startStage(2); // 52 NPCs
+  G.startStage(DM.STAGES.findIndex(s => s.npc >= 52)); // 52 NPCs
   // ring 16 non-stubborn walkers around the player
   const targets = G.npcs.filter(p => !p.stubborn).slice(0, 16);
   targets.forEach((n, i) => {
@@ -108,7 +108,7 @@ function botRun(seed) {
   }
   return { res: res, fevers: fevers };
 }
-let feverRuns = 0, timeLefts = [[], [], []];
+let feverRuns = 0, timeLefts = DM.STAGES.map(() => []);
 for (let seed = 1; seed <= 30; seed++) {
   const r = botRun(seed);
   if (r.fevers > 0) feverRuns++;

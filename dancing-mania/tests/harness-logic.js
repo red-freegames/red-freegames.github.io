@@ -115,7 +115,7 @@ function botRun(seed) {
   }
   return res;
 }
-let clears = [0, 0, 0], goals = 0, scores = [];
+let clears = DM.STAGES.map(() => 0), goals = 0, scores = [];
 for (let seed = 1; seed <= 30; seed++) {
   const r = botRun(seed);
   r.forEach((x, i) => { if (x.phase === 'clear' || x.phase === 'goal') clears[i]++; });

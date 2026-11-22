@@ -81,6 +81,7 @@
   .dBtn { font:inherit; font-size:12px; font-weight:700; color:#fff; background:#2e2550; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; cursor:pointer; touch-action:manipulation; }
   .dBtn.on { background:linear-gradient(90deg,#ff5da2,#ff8a3f); border-color:transparent; }
   .dBtn.lock { opacity:.5; }
+  .sBtn { min-width:34px; padding:5px 0; }
   .danceDesc { font-size:11.5px; opacity:.85; margin-top:6px; min-height:1.5em; }
   .unlockMsg { display:none; margin:10px auto 0; padding:6px 12px; border-radius:12px; background:rgba(255,207,63,.15); border:1px solid rgba(255,207,63,.6); color:#ffcf3f; font-size:13px; font-weight:800; }
   .bestLine { font-size:12px; opacity:.8; margin-top:4px; }
@@ -126,6 +127,11 @@
     #hudTime { font-size:20px; }
     #infectWrap { margin-top:4px; height:18px; }
     #resultImg { max-height:34dvh; width:auto; max-width:100%; }
+    #titlePanel .danceDesc, #titlePanel #stageName, #titlePanel .kaku { display:none; }
+    .danceSel { margin:4px 0 0; }
+    .danceHead { margin-bottom:3px; font-size:11px; }
+    .dBtn { padding:4px 9px; font-size:11px; }
+    .history { display:none; }
   }
 </style>
 </head>
@@ -164,6 +170,11 @@
       <div class="danceHead">踊りを選ぶ（スコアで解放）</div>
       <div class="danceList" id="danceList"></div>
       <div class="danceDesc" id="danceDesc"></div>
+    </div>
+    <div class="danceSel" id="stageSel" style="display:none;">
+      <div class="danceHead">スタート地点（到達したステージから選べる）</div>
+      <div class="danceList" id="stageList"></div>
+      <div class="danceDesc" id="stageName"></div>
     </div>
     <button class="btn" id="btnStart">踊り始める</button>
     <details class="howto" id="howto">

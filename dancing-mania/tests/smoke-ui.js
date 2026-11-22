@@ -120,6 +120,8 @@ let sawInfect = false, frames = 0;
       ok(UI.danceStyle === d.id, 'dance style applied: ' + d.id);
       const st = DM.STAGES[s];
       if (st.gimmick === 'bell') g.elapsed = st.bellAt - 0.5;
+      if (st.gimmick === 'rain') g.elapsed = st.rainFirst - 0.5;
+      if (st.gimmick === 'yagura') g.elapsed = st.drumFirst - 0.5;
       for (let i = 0; i < 30 * 20 && g.phase === 'play'; i++) {
         botKeys(); frame();
         for (const n of g.npcs) if (n.state === 'walk' && i % 90 === 0 && n.kind !== 'normal') { n.x = g.player.x + 1; n.z = g.player.z; } // 特別な人も踊らせる
@@ -127,9 +129,11 @@ let sawInfect = false, frames = 0;
       seen[st.gimmick] = (seen[st.gimmick] || 0) + 1;
       if (st.gimmick === 'train') ok(g.arrivals.length < st.arrivals.length || g.phase !== 'play', 'a train arrived during UI play');
       if (st.gimmick === 'bell') ok(g.bellRung, 'bell rang during UI play');
+      if (st.gimmick === 'rain') ok(g.nextRainAt > st.rainFirst || g.phase !== 'play', 'rain fell during UI play');
+      if (st.gimmick === 'band') ok(g.band.length === 3, 'band present in UI play');
     }
   }
-  ok(Object.keys(seen).length === 3, 'all gimmicks exercised');
+  ok(Object.keys(seen).length === DM.STAGES.length, 'all gimmicks exercised: ' + Object.keys(seen).join(','));
   for (let i = 0; i < 30; i++) frame();
   console.log(fails === 0 ? 'SMOKE TEST PASS' : fails + ' FAILURES');
 })();

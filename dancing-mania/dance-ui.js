@@ -43,6 +43,8 @@ function seq(notes, gap, type, vol, dur) { for (let i = 0; i < notes.length; i++
 function sTrain() { seq([784, 659], 260, 'sine', 0.13, 0.35); }
 function sBurst() { seq([523, 659, 784, 1047, 1319], 55, 'square', 0.09, 0.16); }
 function sBell() { seq([659, 523, 587, 392], 420, 'sine', 0.14, 0.5); }
+function sDrum() { beep(90, 0.22, 'sine', 0.3, 55); setTimeout(function () { beep(90, 0.22, 'sine', 0.3, 55); }, 160); }
+function sRain() { seq([440, 392, 349], 120, 'sine', 0.08, 0.3); }
 function sEscape() { beep(260, 0.25, 'triangle', 0.1, 180); }
 function sFever() { const n = [659, 880, 1109, 1319]; for (let i = 0; i < n.length; i++) (function (f, d) { setTimeout(function () { beep(f, 0.16, 'square', 0.1); }, d); })(n[i], i * 70); }
 
@@ -55,18 +57,25 @@ let pixelRatio = Math.min(window.devicePixelRatio || 1, IS_TOUCH ? 1.75 : 2);
 renderer.setPixelRatio(pixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 $('game').appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x445577, 0.95));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x445577, 0.95);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 0.5);
 sun.position.set(18, 32, 12);
 scene.add(sun);
 
+// STAGES と同じ順。足すときは1件ずつ。
 const THEMES = [
-  { sky: 0x9fd4ff, ground: 0x7d8aa0, arena: 0xb9c2cf, accent: 0xff5da2, prop: 'plaza' },
-  { sky: 0xffd9e4, ground: 0xd9b98c, arena: 0xf7ead0, accent: 0xd94f70, prop: 'wedding' },
-  { sky: 0xa9c3e6, ground: 0x4d5c6e, arena: 0x71808f, accent: 0xffcf3f, prop: 'office' },
+  { sky: 0x9fd4ff, ground: 0x7d8aa0, arena: 0xb9c2cf, accent: 0xff5da2, prop: 'plaza' },     // 駅前広場
+  { sky: 0xffd9e4, ground: 0xd9b98c, arena: 0xf7ead0, accent: 0xd94f70, prop: 'wedding' },   // 披露宴
+  { sky: 0x1d2445, ground: 0x2f2c3d, arena: 0x9c8c72, accent: 0xff6a3d, prop: 'festival' },  // 夏祭り(夜)
+  { sky: 0xb4bfcc, ground: 0x6d7682, arena: 0xa3acb6, accent: 0x3fa7e0, prop: 'shops' },     // 雨の商店街
+  { sky: 0xd6ecff, ground: 0xb7c2cf, arena: 0xeef1f5, accent: 0x3f7fe0, prop: 'airport' },   // 空港ロビー
+  { sky: 0xa9c3e6, ground: 0x4d5c6e, arena: 0x71808f, accent: 0xffcf3f, prop: 'office' },    // オフィス街
+  { sky: 0xf2b27c, ground: 0x6e5a48, arena: 0xb09c7e, accent: 0x8b2b2b, prop: 'oldtown' },   // 1518年 大聖堂前
 ];
+let curTheme = THEMES[0];
 const worldG = new THREE.Group();
-let trainG = null, lastTrainAt = -99;
+let trainG = null, lastTrainAt = -99, walkFx = [];
 scene.add(worldG);
 
 function box(w, h, d, mat, x, y, z) {
@@ -77,6 +86,7 @@ function buildWorld(idx) {
   lastTrainAt = -99;
   while (worldG.children.length) worldG.remove(worldG.children[0]);
   const th = THEMES[idx % THEMES.length];
+  curTheme = th; walkFx = [];
   scene.background = new THREE.Color(th.sky);
   scene.fog = new THREE.Fog(th.sky, 80, 160);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), new THREE.MeshLambertMaterial({ color: th.ground }));
@@ -91,6 +101,10 @@ function buildWorld(idx) {
   const build = new THREE.MeshLambertMaterial({ color: 0x8fa3bd });
   const build2 = new THREE.MeshLambertMaterial({ color: 0x6d8099 });
   const tableM = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const lanternM = new THREE.MeshBasicMaterial({ color: 0xffa34d });
+  const shopM = [0xe8a87c, 0x9fc7a8, 0xd9c27a, 0xb8a3d6, 0xe0e0d6].map(function (c) { return new THREE.MeshLambertMaterial({ color: c }); });
+  const glassM = new THREE.MeshLambertMaterial({ color: 0x9cc6ea });
+  const roofM = new THREE.MeshLambertMaterial({ color: 0x8b3a2b });
   let seed = idx * 77 + 13;
   const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   for (let i = 0; i < 14; i++) {
@@ -109,6 +123,24 @@ function buildWorld(idx) {
         box(0.5, 3.4, 0.5, tableM, x, 1.7, z);
         box(1.6, 0.4, 1.6, accMat, x, 3.6, z);
       }
+    } else if (th.prop === 'festival') { // 木と提灯の柱
+      if (i % 2) {
+        box(0.45, 1.1, 0.45, trunk, x, 0.55, z);
+        const c = new THREE.Mesh(new THREE.ConeGeometry(2.2, 4.6, 8), new THREE.MeshLambertMaterial({ color: 0x24563a })); c.position.set(x, 3.3, z); worldG.add(c);
+      } else {
+        box(0.25, 4.5, 0.25, trunk, x, 2.25, z);
+        box(0.7, 0.9, 0.7, lanternM, x, 4.2, z);
+      }
+    } else if (th.prop === 'shops') { // 色とりどりの低い店
+      const h = 4 + rnd() * 3;
+      box(6 + rnd() * 3, h, 5, shopM[i % shopM.length], x, h / 2, z);
+    } else if (th.prop === 'airport') { // ガラス張りのターミナル
+      const h = 6 + rnd() * 4;
+      box(7 + rnd() * 3, h, 6, glassM, x, h / 2, z);
+    } else if (th.prop === 'oldtown') { // 中世の家(三角屋根)
+      const h = 4 + rnd() * 3, w = 5 + rnd() * 2;
+      box(w, h, 5, shopM[(i + 2) % shopM.length], x, h / 2, z);
+      const r = new THREE.Mesh(new THREE.ConeGeometry(w * 0.75, 2.6, 4), roofM); r.position.set(x, h + 1.3, z); r.rotation.y = Math.PI / 4; worldG.add(r);
     } else {
       box(0.45, 1.1, 0.45, trunk, x, 0.55, z);
       const c = new THREE.Mesh(new THREE.ConeGeometry(1.9, 3.6, 8), leaf);
@@ -136,6 +168,48 @@ function buildWorld(idx) {
       box(7, 10, 3, build2, d[0], 5, -31.5);
       box(2.6, 3.2, 0.3, doorM, d[0], 1.6, -29.9);
     }
+  }
+  else if (gm === 'yagura') { // やぐら(中央)と提灯のロープ
+    const redM = new THREE.MeshLambertMaterial({ color: 0xc8322b });
+    for (const sx of [-1.6, 1.6]) for (const sz of [-1.6, 1.6]) box(0.3, 4.2, 0.3, trunk, sx, 2.1, sz);
+    box(4.2, 0.4, 4.2, tableM, 0, 2.6, 0);
+    box(4.4, 0.8, 4.4, redM, 0, 2.0, 0);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.6, 4), redM); roof.position.set(0, 5.0, 0); roof.rotation.y = Math.PI / 4; worldG.add(roof);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 1.1, 14), new THREE.MeshLambertMaterial({ color: 0x7a3b1f })); drum.position.set(0, 3.4, 0); drum.rotation.x = Math.PI / 2; worldG.add(drum);
+    for (const c of [[-26, -26], [26, -26], [-26, 26], [26, 26]]) for (let k = 1; k <= 5; k++) {
+      const f = k / 6; box(0.55, 0.7, 0.55, lanternM, c[0] * f, 5.2 - Math.sin(f * Math.PI) * 1.2, c[1] * f);
+    }
+  } else if (gm === 'rain') { // アーケード(雨宿りの屋根)
+    const st = STAGES[idx];
+    const stripe = [accMat, tableM];
+    for (const sh of st.shelters) {
+      const out = sh[0] > 0 ? 1 : -1;
+      box(0.25, 3.2, 0.25, trunk, sh[0] - out * 2, 1.6, sh[1] - 3); box(0.25, 3.2, 0.25, trunk, sh[0] - out * 2, 1.6, sh[1] + 3);
+      for (let k = 0; k < 6; k++) { const m = box(4.6, 0.18, 1.05, stripe[k % 2], sh[0] + out * 0.3, 3.3, sh[1] - 2.6 + k * 1.05); m.rotation.z = -out * 0.18; }
+    }
+  } else if (gm === 'walkway') { // 動く歩道(矢印が流れる)
+    const beltM = new THREE.MeshLambertMaterial({ color: 0x39414d }), arrowM = new THREE.MeshBasicMaterial({ color: 0x7fd0ff });
+    for (const w of STAGES[idx].walkways) {
+      box(w.x1 - w.x0, 0.12, w.w, beltM, (w.x0 + w.x1) / 2, 0.06, w.z);
+      box(w.x1 - w.x0, 0.6, 0.18, accMat, (w.x0 + w.x1) / 2, 0.3, w.z - w.w / 2 - 0.1);
+      box(w.x1 - w.x0, 0.6, 0.18, accMat, (w.x0 + w.x1) / 2, 0.3, w.z + w.w / 2 + 0.1);
+      for (let k = 0; k < 9; k++) {
+        const m = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.4, 3), arrowM);
+        m.rotation.x = -Math.PI / 2; m.rotation.z = w.v > 0 ? -Math.PI / 2 : Math.PI / 2; m.scale.set(1, 1, 0.15);
+        m.position.set(w.x0 + (k + 0.5) * (w.x1 - w.x0) / 9, 0.16, w.z); worldG.add(m);
+        walkFx.push({ m: m, w: w });
+      }
+    }
+    box(40, 9, 1, glassM, 0, 4.5, -33); // ガラスの壁
+  } else if (gm === 'band') { // 大聖堂と噴水
+    const stone = new THREE.MeshLambertMaterial({ color: 0xc9b89a }), stone2 = new THREE.MeshLambertMaterial({ color: 0xa8977a });
+    box(16, 12, 8, stone, 0, 6, -38);
+    box(4.5, 22, 4.5, stone2, -6, 11, -36); box(4.5, 22, 4.5, stone2, 6, 11, -36);
+    const sp = new THREE.Mesh(new THREE.ConeGeometry(2.6, 9, 4), roofM); sp.position.set(6, 26.5, -36); sp.rotation.y = Math.PI / 4; worldG.add(sp);
+    const sp2 = new THREE.Mesh(new THREE.ConeGeometry(2.6, 5, 4), roofM); sp2.position.set(-6, 24.5, -36); sp2.rotation.y = Math.PI / 4; worldG.add(sp2);
+    const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.8, 18), stone2); basin.position.set(0, 0.4, 0); worldG.add(basin);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.1, 18), new THREE.MeshBasicMaterial({ color: 0x6fb6d9 })); water.position.set(0, 0.82, 0); worldG.add(water);
+    box(0.5, 2.2, 0.5, stone, 0, 1.1, 0);
   }
   // 電車(駅のみ。位置は毎フレーム updateTrain で動かす)
   trainG = null;
@@ -181,6 +255,8 @@ const MAT = {
   cap: new THREE.MeshLambertMaterial({ color: 0xffd400 }),
   band: new THREE.MeshLambertMaterial({ color: 0xf5f5f5 }),
   djShirt: new THREE.MeshLambertMaterial({ color: 0x39ff6a }),
+  bandShirt: new THREE.MeshLambertMaterial({ color: 0xa3232f }),
+  gold: new THREE.MeshLambertMaterial({ color: 0xe0b23a }),
   phones: new THREE.MeshLambertMaterial({ color: 0x15151c }),
   bride: new THREE.MeshLambertMaterial({ color: 0xffffff }),
   groom: new THREE.MeshLambertMaterial({ color: 0x23232e }),
@@ -258,8 +334,16 @@ function makePerson(o) {
 const playerPerson = makePerson({ shirt: MAT.playerShirt, pants: MAT.playerPants, skin: MAT.skin[0], ring: 'player', marker: true });
 const npcPersons = [];
 for (let i = 0; i < 52; i++) npcPersons.push(makePerson({ shirt: MAT.shirt[i % 8], pants: MAT.pants[i % 4], skin: MAT.skin[i % 3], ring: 'dancer' }));
+const bandPersons = [];
+for (let i = 0; i < 3; i++) {
+  const bp = makePerson({ shirt: MAT.bandShirt, pants: MAT.guardPants, skin: MAT.skin[(i + 1) % 3] });
+  const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.42, 10), MAT.phones); hat.position.y = 0.6; bp.headG.add(hat);
+  const horn = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.7, 10), MAT.gold); horn.rotation.x = Math.PI / 2; horn.position.set(0, 1.45, 0.55); bp.root.add(horn);
+  bp.root.visible = false; bp.groundG.visible = false;
+  bandPersons.push(bp);
+}
 const guardPersons = [];
-for (let i = 0; i < 3; i++) guardPersons.push(makePerson({ shirt: MAT.guardShirt, pants: MAT.guardPants, skin: MAT.skin[i % 3], cap: true, band: true }));
+for (let i = 0; i < 4; i++) guardPersons.push(makePerson({ shirt: MAT.guardShirt, pants: MAT.guardPants, skin: MAT.skin[i % 3], cap: true, band: true }));
 
 // ================= エフェクト =================
 const fxPool = [];
@@ -524,6 +608,16 @@ function gimmickText() {
     const left = G.npcs.some(function (n) { return (n.kind === 'bride' || n.kind === 'groom') && !n.burstUsed; });
     return left ? '💒 奥の新郎新婦を踊らせると、周りの客が一斉に踊る' : '';
   }
+  if (gm === 'yagura') {
+    if (G.drum > 0) return '🥁 ドドン！ 太鼓の間は感染範囲が広がる';
+    return '🥁 次の太鼓まで ' + Math.ceil(G.nextDrumIn()) + '秒　やぐらの周りを回る人を狙え';
+  }
+  if (gm === 'rain') {
+    if (G.rain > 0) return '☔ 雨宿り中！ アーケードの下に人が集まってる（あと' + Math.ceil(G.rain) + '秒）';
+    return '☔ 次の雨まで ' + Math.ceil(G.nextRainIn()) + '秒　雨が降ると左右のアーケードに人が集まる';
+  }
+  if (gm === 'walkway') return '🛬 動く歩道に乗ると流される（警備員も）';
+  if (gm === 'band') return '🎺 楽団のそばの人は勝手に踊り出す';
   if (gm === 'bell') {
     const b = G.bellIn();
     if (b >= 0) return '🔔 昼休み終了まで ' + Math.ceil(b) + '秒';
@@ -555,6 +649,26 @@ function showFeverPop() {
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 let bestScore = parseInt(lsGet('dm_best') || '0', 10) || 0;
+let reach = Math.min(STAGES.length - 1, parseInt(lsGet('dm_reach') || '0', 10) || 0); // 到達した最大ステージ(0始まり)
+let startIdx = 0;
+function noteReach(idx) { if (idx > reach) { reach = idx; lsSet('dm_reach', '' + reach); renderStages(); } }
+function renderStages() {
+  const wrap = $('stageSel'); if (!wrap) return;
+  wrap.style.display = reach > 0 ? 'block' : 'none';
+  if (startIdx > reach) startIdx = 0;
+  $('stageList').innerHTML = STAGES.map(function (st, i) {
+    return '<button class="dBtn sBtn' + (i === startIdx ? ' on' : '') + (i > reach ? ' lock' : '') + '" data-stage="' + i + '" title="' + st.name + '">' + (i + 1) + '</button>';
+  }).join('');
+  $('stageName').textContent = 'STAGE ' + (startIdx + 1) + '　' + STAGES[startIdx].name + (startIdx > 0 ? '（スコアはここから）' : '');
+}
+function onStageClick(e) {
+  const b = e.target && e.target.closest ? e.target.closest('[data-stage]') : null;
+  if (!b) return;
+  const i = parseInt(b.getAttribute('data-stage'), 10);
+  if (i > reach) { $('stageName').textContent = '🔒 STAGE ' + i + ' まで進むと選べる'; return; }
+  startIdx = i; renderStages();
+}
+if ($('stageList')) $('stageList').addEventListener('click', onStageClick);
 let selDance = lsGet('dm_dance') || 'basic';
 if (bestScore < DM.danceById(selDance).unlock) selDance = 'basic';
 function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance }); }
@@ -582,6 +696,7 @@ function onDanceClick(e) {
 }
 ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
 renderDances();
+renderStages();
 // 遊び方: 縦に余裕のある画面では最初から開く(小さいスマホではボタンを優先して畳む)
 if ($('howto') && window.innerHeight >= 760 && window.innerWidth >= 421) $('howto').open = true;
 let G = newGame();
@@ -590,7 +705,8 @@ let camShake = 0;
 let snapshotURL = null;
 let endTimer = -1;
 
-const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '昼休みが終わる前に！'];
+// STAGES と同じ順
+const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '太鼓に合わせて広げろ！', 'にわか雨は好機！', '動く歩道を使いこなせ！', '昼休みが終わる前に！', '楽団が呼ばれた。踊りは止まらない'];
 function stageToast() { showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― ' + STAGE_HINT[G.stageIdx]); }
 function setupStage() {
   buildWorld(G.stageIdx);
@@ -611,7 +727,7 @@ function setupStage() {
   for (let i = 0; i < guardPersons.length; i++) { guardPersons[i].root.visible = !!G.guards[i]; guardPersons[i].groundG.visible = !!G.guards[i]; }
   playerPerson.root.visible = true;
   danceStyle = G.dance.id;
-  shownDJ = false; shownKid = false;
+  shownDJ = false; shownKid = false; shownDrum = false;
   hudCache = {};
   updateHUD();
 }
@@ -635,6 +751,15 @@ function handleEvents(evs) {
       sBurst(); camShake = 0.35; buzz([30, 30, 30]);
       for (let k = 0; k < 3; k++) spawnFx(ev.x + (k - 1) * 1.5, ev.z + 1, 0xff5da2);
       showToast('💒 ' + (ev.kind === 'bride' ? '新婦' : '新郎') + 'が踊り出した！ 周りの' + ev.n + '人も一斉に！');
+      updateHUD();
+    } else if (ev.type === 'drum') {
+      sDrum(); camShake = Math.max(camShake, 0.2);
+      for (let k = 0; k < 3; k++) spawnFx(Math.sin(k * 2.1) * 3.2, Math.cos(k * 2.1) * 3.2, 0xff6a3d);
+      if (!shownDrum) { shownDrum = true; showToast('🥁 太鼓が鳴った！ 少しの間、感染範囲が広がる'); }
+      updateHUD();
+    } else if (ev.type === 'rain') {
+      if (ev.on) { sRain(); showToast('☔ にわか雨！ みんなアーケードの下へ'); }
+      else showToast('☀ 雨が上がった。みんな散っていく');
       updateHUD();
     } else if (ev.type === 'bell') {
       sBell(); buzz(80);
@@ -672,7 +797,7 @@ function handleEvents(evs) {
   }
 }
 let pendingEnd = null;
-let shownDJ = false, shownKid = false;
+let shownDJ = false, shownKid = false, shownDrum = false;
 function showStagePanel(bonus) {
   $('stageStats').innerHTML =
     'クリアボーナス <span class="big">+' + bonus + '</span><br>' +
@@ -706,7 +831,7 @@ function buildResultImage(done) {
 function showResult(goal, reason) {
   $('resultTitle').textContent = goal ? '🎉 全ステージ制覇！' : (reason === 'caught' ? '警備員に捕まった…' : '時間切れ…');
   $('resultStats').innerHTML =
-    '到達： STAGE ' + (G.stageIdx + 1) + ' / ' + STAGES.length + '<br>' +
+    '到達： STAGE ' + (G.stageIdx + 1) + ' / ' + STAGES.length + (G.startIdx ? '（STAGE ' + (G.startIdx + 1) + ' から）' : '') + '<br>' +
     'スコア <span class="big">' + G.score + '</span><br>' +
     '最大 ' + G.maxChain + ' 連鎖　感染させた人数 のべ ' + G.totalInfectedEver + ' 人';
   $('resultRank').textContent = '「' + DM.rankFor(G.score) + '」';
@@ -723,8 +848,8 @@ function showResult(goal, reason) {
     else im.style.display = 'none';
   });
   const txt = goal
-    ? '『ダンシングマニア（仮）』全ステージ制覇！全員踊らせた💃 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」 #ダンシングマニア #ブラウザゲーム'
-    : '『ダンシングマニア（仮）』スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」だった。変な踊りは感染する💃 #ダンシングマニア #ブラウザゲーム';
+    ? '『ダンシングマニア（仮）』全' + STAGES.length + 'ステージ制覇！全員踊らせた💃 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」 #ダンシングマニア #ブラウザゲーム'
+    : '『ダンシングマニア（仮）』STAGE' + (G.stageIdx + 1) + 'まで到達 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」だった。変な踊りは感染する💃 #ダンシングマニア #ブラウザゲーム';
   $('btnShareX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt);
   $('resultPanel').style.display = 'flex';
 }
@@ -736,7 +861,8 @@ $('btnStart').addEventListener('click', function () {
   el.btnSound.style.display = 'block';
   started = true;
   G = newGame();
-  G.startStage(0);
+  G.startIdx = startIdx;
+  G.startStage(startIdx);
   setupStage();
   stageToast();
 });
@@ -744,14 +870,17 @@ $('btnNext').addEventListener('click', function () {
   unlockAudio();
   $('stagePanel').style.display = 'none';
   G.startStage(G.stageIdx + 1);
+  noteReach(G.stageIdx);
   setupStage();
   stageToast();
 });
 $('btnRetry').addEventListener('click', function () {
   unlockAudio();
   $('resultPanel').style.display = 'none';
+  const from = G.startIdx || 0;
   G = newGame();
-  G.startStage(0);
+  G.startIdx = from;
+  G.startStage(from);
   setupStage();
   stageToast();
 });
@@ -766,7 +895,7 @@ el.btnSound.textContent = soundOn ? '🔊 音ON' : '🔇 音OFF';
 // ================= メインループ =================
 function syncPersons(t, dt) {
   const P = G.player, PP = playerPerson;
-  const rs = G.fever > 0 ? CFG.feverRadiusMul : 1;
+  const rs = (G.fever > 0 ? CFG.feverRadiusMul : 1) * (G.drum > 0 ? STAGES[G.stageIdx].drumMul : 1);
   PP.root.position.x = P.x; PP.root.position.z = P.z;
   PP.groundG.position.x = P.x; PP.groundG.position.z = P.z;
   PP.root.rotation.y = P.face + danceSpinOffset(t);
@@ -802,6 +931,17 @@ function syncPersons(t, dt) {
         Q.note.position.y = 2.2 + Math.sin(t * 6 + n.id) * 0.06;
       } else Q.note.material.opacity = 0;
     }
+  }
+  for (let i = 0; i < bandPersons.length; i++) {
+    const b = G.band[i], Q = bandPersons[i];
+    Q.root.visible = Q.groundG.visible = !!b;
+    if (!b) continue;
+    Q.root.position.x = Q.groundG.position.x = b.x; Q.root.position.z = Q.groundG.position.z = b.z;
+    Q.root.rotation.y = b.face;
+    walkPose(Q, dt, false);
+    Q.armL.rotation.x = -1.35 + Math.sin(t * 9) * 0.08; Q.armR.rotation.x = -1.35 - Math.sin(t * 9) * 0.08; // 楽器を構える
+    Q.armL.rotation.z = -0.25; Q.armR.rotation.z = 0.25;
+    Q.note.material.opacity = 0.9; Q.note.position.y = 2.3 + Math.sin(t * 6 + i) * 0.15;
   }
   for (let i = 0; i < G.guards.length; i++) {
     const g = G.guards[i], Q = guardPersons[i];
@@ -839,6 +979,43 @@ function adaptQuality(dt) {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 }
+// 雨(商店街のみ): プレイヤーの周りに線を降らせ、空を暗くする
+const RAIN_N = 360;
+const rainGeo = new THREE.BufferGeometry();
+const rainPos = new Float32Array(RAIN_N * 6);
+for (let i = 0; i < RAIN_N; i++) { rainPos[i * 6] = (Math.random() - 0.5) * 60; rainPos[i * 6 + 1] = Math.random() * 22; rainPos[i * 6 + 2] = (Math.random() - 0.5) * 60; }
+rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+const rainLines = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0xcfe3ff, transparent: true, opacity: 0.55 }));
+rainLines.visible = false; rainLines.frustumCulled = false; scene.add(rainLines);
+const tmpCol = new THREE.Color(), wetCol = new THREE.Color(0x707a88);
+let wetK = 0;
+function updateWeather(dt) {
+  const wet = G.phase === 'play' && G.rain > 0;
+  wetK += ((wet ? 1 : 0) - wetK) * Math.min(1, dt * 2.5);
+  rainLines.visible = wetK > 0.05;
+  if (rainLines.visible) {
+    for (let i = 0; i < RAIN_N; i++) {
+      let y = rainPos[i * 6 + 1] - dt * 38;
+      if (y < 0) { y += 22; rainPos[i * 6] = (Math.random() - 0.5) * 60; rainPos[i * 6 + 2] = (Math.random() - 0.5) * 60; }
+      rainPos[i * 6 + 1] = y;
+      rainPos[i * 6 + 3] = rainPos[i * 6] + 0.12; rainPos[i * 6 + 4] = y + 1.1; rainPos[i * 6 + 5] = rainPos[i * 6 + 2];
+    }
+    rainGeo.attributes.position.needsUpdate = true;
+    rainLines.position.set(G.player.x, 0, G.player.z - 6);
+    rainLines.material.opacity = 0.55 * wetK;
+  }
+  hemi.intensity = 0.95 - 0.3 * wetK;
+  if (scene.background && scene.background.copy) {
+    tmpCol.setHex(curTheme.sky).lerp(wetCol, wetK);
+    scene.background.copy(tmpCol); if (scene.fog) scene.fog.color.copy(tmpCol);
+  }
+  for (const f of walkFx) { // 動く歩道の矢印を流す
+    const len = f.w.x1 - f.w.x0;
+    let x = f.m.position.x + f.w.v * dt;
+    if (x > f.w.x1) x -= len; if (x < f.w.x0) x += len;
+    f.m.position.x = x;
+  }
+}
 function updateTrain() { // 着く2秒前に滑り込み、2.5秒停車して去る
   if (!trainG) return;
   const tIn = G.phase === 'play' ? G.nextTrainIn() : -1, since = G.elapsed - lastTrainAt;
@@ -869,6 +1046,7 @@ function animate() {
   adaptQuality(dt);
   syncPersons(now, dt);
   updateTrain();
+  updateWeather(dt);
   updateFx(dt);
   if (camShake > 0) camShake = Math.max(0, camShake - dt);
   const shX = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
