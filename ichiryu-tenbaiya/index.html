@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>転売ヤー・ライフ（仮）｜転売を繰り返すゲーム</title>
+<title>俺は一流転売ヤー</title>
 <meta name="description" content="転売ヤーになって高額転売を繰り返すゲーム。稼げば稼ぐほど、画面も心も、少しずつ汚れていく。">
-<meta property="og:title" content="転売ヤー・ライフ（仮）">
+<meta property="og:title" content="俺は一流転売ヤー">
 <meta property="og:description" content="転売ヤーになって高額転売を繰り返すゲーム。稼げば稼ぐほど、画面も心も、少しずつ汚れていく。">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://red-freegames.github.io/tenbai-life/">
+<meta property="og:url" content="https://red-freegames.github.io/ichiryu-tenbaiya/">
 <meta property="og:site_name" content="RED FREE GAMES">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:image" content="https://red-freegames.github.io/tenbai-life/og.png">
+<meta property="og:image" content="https://red-freegames.github.io/ichiryu-tenbaiya/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://red-freegames.github.io/tenbai-life/og.png">
-<link rel="canonical" href="https://red-freegames.github.io/tenbai-life/">
+<meta name="twitter:image" content="https://red-freegames.github.io/ichiryu-tenbaiya/og.png">
+<link rel="canonical" href="https://red-freegames.github.io/ichiryu-tenbaiya/">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; }
@@ -183,7 +183,7 @@
 <div id="app">
   <nav class="topnav"><button id="btnHome">🏠 HOME</button><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
   <header class="top">
-    <div class="ttl">転売ヤー・ライフ <small>（仮）</small></div>
+    <div class="ttl">俺は一流転売ヤー</div>
     <div class="stats">
       <span>💴 所持金 <b id="stCash">0</b>円</span>
       <span>📈 累計利益 <b id="stProfit">0</b>円</span>
@@ -242,7 +242,7 @@
   <div class="inner">
     <nav class="topnav right"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
     <div class="hcard">
-      <h1>転売ヤー・ライフ <small>（仮）</small></h1>
+      <h1>俺は一流転売ヤー</h1>
       <p class="lead">借金は50万円。返す方法は、転売。<br>限定品を買い占めて、高値で売りさばけ。</p>
       <div class="hbtns">
         <button id="homeCont">▶ 続きから</button>
@@ -1123,7 +1123,7 @@ function drawHomeMock(ctx, x, y, w, h, level, saint){
   ctx.fillRect(x, y, w, 34);
   ctx.fillStyle = "#ffd98a";
   ctx.font = "bold 15px sans-serif";
-  ctx.fillText("転売ヤー・ライフ", x + 10, y + 23);
+  ctx.fillText("俺は一流転売ヤー", x + 10, y + 23);
   ctx.fillStyle = rgb(p.btn);
   ctx.fillRect(x + 12, y + 46, w - 24, 30);
   ctx.fillStyle = "#2b2118"; ctx.font = "bold 14px sans-serif";
@@ -1165,13 +1165,13 @@ function showImageModal(){
   const url = makeResultImage();
   openModal("🖼️ 結果画像", "第1週と今の画面の比較です。画像を保存してXに添付できます。\n（スマホは画像を長押しでも保存できます）", url, [
     { label: "𝕏 でシェア", href: shareUrl() },
-    { label: "💾 画像を保存", href: url, download: "tenbai-life.png" },
+    { label: "💾 画像を保存", href: url, download: "ichiryu-tenbaiya.png" },
     { label: "閉じる", fn: closeModal },
   ]);
 }
-const GAME_URL = "https://red-freegames.github.io/tenbai-life/";
+const GAME_URL = "https://red-freegames.github.io/ichiryu-tenbaiya/";
 function shareUrl(){
-  const text = "【転売ヤー・ライフ】第" + S.week + "週、累計利益" + fmt(S.profit) + "円。\n現在の称号は「" + currentTitle() + "」でした。\n稼げば稼ぐほど、画面も心も汚れていくゲーム。\n#転売ヤーライフ #無料ゲーム";
+  const text = "【俺は一流転売ヤー】第" + S.week + "週、累計利益" + fmt(S.profit) + "円。\n現在の称号は「" + currentTitle() + "」でした。\n稼げば稼ぐほど、画面も心も汚れていくゲーム。\n#俺は一流転売ヤー #無料ゲーム";
   return "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent(GAME_URL);
 }
 /* ================= モーダルとエンディング ================= */
