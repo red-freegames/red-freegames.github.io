@@ -39,6 +39,11 @@ function sInfect(chain) { beep(500 + Math.min(chain, 24) * 32, 0.12, 'sine', 0.1
 function sCure() { beep(320, 0.16, 'square', 0.07, 150); }
 function sCatch() { beep(150, 0.32, 'sawtooth', 0.18, 65); }
 function sClear() { const n = [523, 659, 784, 1047]; for (let i = 0; i < n.length; i++) (function (f, d) { setTimeout(function () { beep(f, 0.2, 'triangle', 0.15); }, d); })(n[i], i * 110); }
+function seq(notes, gap, type, vol, dur) { for (let i = 0; i < notes.length; i++) (function (f, d) { setTimeout(function () { beep(f, dur || 0.22, type || 'triangle', vol || 0.12); }, d); })(notes[i], i * gap); }
+function sTrain() { seq([784, 659], 260, 'sine', 0.13, 0.35); }
+function sBurst() { seq([523, 659, 784, 1047, 1319], 55, 'square', 0.09, 0.16); }
+function sBell() { seq([659, 523, 587, 392], 420, 'sine', 0.14, 0.5); }
+function sEscape() { beep(260, 0.25, 'triangle', 0.1, 180); }
 function sFever() { const n = [659, 880, 1109, 1319]; for (let i = 0; i < n.length; i++) (function (f, d) { setTimeout(function () { beep(f, 0.16, 'square', 0.1); }, d); })(n[i], i * 70); }
 
 // ================= THREE セットアップ =================
@@ -61,6 +66,7 @@ const THEMES = [
   { sky: 0xa9c3e6, ground: 0x4d5c6e, arena: 0x71808f, accent: 0xffcf3f, prop: 'office' },
 ];
 const worldG = new THREE.Group();
+let trainG = null, lastTrainAt = -99;
 scene.add(worldG);
 
 function box(w, h, d, mat, x, y, z) {
@@ -68,6 +74,7 @@ function box(w, h, d, mat, x, y, z) {
   m.position.set(x, y, z); worldG.add(m); return m;
 }
 function buildWorld(idx) {
+  lastTrainAt = -99;
   while (worldG.children.length) worldG.remove(worldG.children[0]);
   const th = THEMES[idx % THEMES.length];
   scene.background = new THREE.Color(th.sky);
@@ -109,6 +116,38 @@ function buildWorld(idx) {
       box(2.4, 0.5, 0.8, trunk, x + 2.6, 0.25, z);
     }
   }
+  // ステージの仕掛けの舞台装置
+  const gm = G && STAGES[idx].gimmick;
+  if (gm === 'train') { // 駅舎・改札・線路
+    box(20, 7, 5, build, 0, 3.5, -37.5);
+    box(20.6, 0.5, 5.6, accMat, 0, 7.2, -37.5);
+    box(56, 0.12, 2.6, new THREE.MeshLambertMaterial({ color: 0x5a4a3a }), 0, 0.06, -31);
+    box(0.35, 2.2, 0.35, tableM, CFG.gate[0] - 3, 1.1, -28.6); box(0.35, 2.2, 0.35, tableM, CFG.gate[0] + 3, 1.1, -28.6);
+    box(6.6, 0.5, 0.4, accMat, CFG.gate[0], 2.3, -28.6);
+  } else if (gm === 'couple') { // 高砂席(新郎新婦の席)とアーチ
+    const tx = CFG.coupleTable[0], tz = CFG.coupleTable[1] - 1.3;
+    box(4.4, 1.0, 1.3, tableM, tx, 0.5, tz);
+    box(4.6, 0.12, 1.5, accMat, tx, 1.05, tz);
+    box(0.3, 3.6, 0.3, tableM, tx - 2.6, 1.8, tz - 0.9); box(0.3, 3.6, 0.3, tableM, tx + 2.6, 1.8, tz - 0.9);
+    box(5.6, 0.45, 0.45, accMat, tx, 3.7, tz - 0.9);
+  } else if (gm === 'bell') { // オフィスの入口
+    const doorM = new THREE.MeshBasicMaterial({ color: 0xffe08a });
+    for (const d of CFG.doors) {
+      box(7, 10, 3, build2, d[0], 5, -31.5);
+      box(2.6, 3.2, 0.3, doorM, d[0], 1.6, -29.9);
+    }
+  }
+  // 電車(駅のみ。位置は毎フレーム updateTrain で動かす)
+  trainG = null;
+  if (gm === 'train') {
+    trainG = new THREE.Group();
+    const body = new THREE.MeshLambertMaterial({ color: 0xe8edf2 }), line = new THREE.MeshLambertMaterial({ color: 0x2f9e5a });
+    for (let c = 0; c < 3; c++) {
+      const car = new THREE.Mesh(new THREE.BoxGeometry(11.4, 2.6, 2.4), body); car.position.set(c * 11.8 - 11.8, 1.45, 0); trainG.add(car);
+      const st = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.35, 2.45), line); st.position.set(c * 11.8 - 11.8, 1.2, 0); trainG.add(st);
+    }
+    trainG.position.set(-200, 0, -31); worldG.add(trainG);
+  }
   // 人だかりの目印: 屋台
   if (G && G.clusters) {
     const stallM = new THREE.MeshLambertMaterial({ color: 0xa9743f });
@@ -141,6 +180,10 @@ const MAT = {
   guardPants: new THREE.MeshLambertMaterial({ color: 0x17171f }),
   cap: new THREE.MeshLambertMaterial({ color: 0xffd400 }),
   band: new THREE.MeshLambertMaterial({ color: 0xf5f5f5 }),
+  djShirt: new THREE.MeshLambertMaterial({ color: 0x39ff6a }),
+  phones: new THREE.MeshLambertMaterial({ color: 0x15151c }),
+  bride: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+  groom: new THREE.MeshLambertMaterial({ color: 0x23232e }),
   playerShirt: new THREE.MeshLambertMaterial({ color: 0xff3355 }),
   playerPants: new THREE.MeshLambertMaterial({ color: 0xffcf3f }),
   shadow: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }),
@@ -196,13 +239,21 @@ function makePerson(o) {
   note.position.y = 2.2; note.scale.set(0.8, 0.8, 1); root.add(note);
   const anger = new THREE.Sprite(new THREE.SpriteMaterial({ map: angerTex, transparent: true, opacity: 0, depthWrite: false }));
   anger.position.y = 2.2; anger.scale.set(0.8, 0.8, 1); root.add(anger);
+  // 特別な通行人用の小物(普段は非表示): DJのヘッドホン、新婦のドレス
+  const phones = new THREE.Group();
+  phones.add(new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.08, 0.12), MAT.phones)); phones.children[0].position.y = 0.43;
+  const cupL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.2), MAT.phones); cupL.position.set(-0.22, 0.24, 0); phones.add(cupL);
+  const cupR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.2), MAT.phones); cupR.position.set(0.22, 0.24, 0); phones.add(cupR);
+  phones.visible = false; headG.add(phones);
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.62, 0.8, 12), MAT.bride);
+  skirt.position.y = 0.42; skirt.visible = false; root.add(skirt);
   let marker = null;
   if (o.marker) {
     marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: markTex, transparent: true, depthWrite: false }));
     marker.position.y = 2.45; marker.scale.set(0.7, 0.7, 1); root.add(marker);
   }
   scene.add(root);
-  return { root: root, groundG: groundG, legL: legL, legR: legR, armL: armL, armR: armR, headG: headG, torso: torso, note: note, anger: anger, ring: ring, marker: marker, wp: Math.random() * 6 };
+  return { phones: phones, skirt: skirt, root: root, groundG: groundG, legL: legL, legR: legR, armL: armL, armR: armR, headG: headG, torso: torso, note: note, anger: anger, ring: ring, marker: marker, wp: Math.random() * 6 };
 }
 const playerPerson = makePerson({ shirt: MAT.playerShirt, pants: MAT.playerPants, skin: MAT.skin[0], ring: 'player', marker: true });
 const npcPersons = [];
@@ -254,37 +305,83 @@ function danceSpinOffset(t) {
   if (cyc >= 12 && cyc < 13) return (cyc - 12) * Math.PI * 2; // 16拍に1回、全員同時に1回転
   return 0;
 }
+// 踊りの型。どの型でも全員が同じ位相 p = t*9.0 で踊る(シンクロが本作のキモ)。
+// 1拍目の決めポーズと8拍目のフリーズは全型共通、16拍に1回の回転も共通。
+let danceStyle = 'basic';
+const GROOVES = {
+  basic: function (P, p, b, cyc) {
+    P.root.position.y = b * 0.12 - 0.03;
+    P.root.rotation.z = Math.sin(p * 0.5) * 0.09;
+    // 基本グルーヴ: 左右非対称にして「変」にする
+    P.armL.rotation.x = Math.sin(p) * 1.6;
+    P.armL.rotation.z = 0.55 + Math.cos(p * 2) * 0.35;
+    P.armR.rotation.x = Math.sin(p + Math.PI) * 1.1 - 0.5;
+    P.armR.rotation.z = -0.35 - Math.cos(p) * 0.5;
+    P.legL.rotation.x = Math.sin(p) * 0.55;
+    P.legR.rotation.x = -Math.sin(p + 0.7) * 0.55;
+    P.torso.rotation.z = Math.sin(p) * 0.13;
+    P.torso.rotation.x = Math.sin(p * 2) * 0.1;
+    P.torso.rotation.y = Math.sin(p * 0.5) * 0.42;
+    P.headG.rotation.z = Math.sin(p + 0.6) * 0.26;
+    P.headG.rotation.x = Math.sin(p * 2) * 0.3;
+    if (cyc >= 4 && cyc < 6) { // 左腕は風車ぐるぐる、右腕は鳥の羽ばたき
+      P.armL.rotation.x = p * 2.2; P.armL.rotation.z = 0.15;
+      P.armR.rotation.x = -0.9;
+      P.armR.rotation.z = -0.9 - Math.abs(Math.sin(p * 3)) * 0.7;
+    }
+  },
+  robot: function (P, p, b, cyc) { // 半拍ごとにカクッと切り替わる
+    const st = Math.floor(cyc * 2) % 4, side = Math.floor(cyc) % 2 ? 1 : -1;
+    P.root.position.y = 0; P.root.rotation.z = 0;
+    const L = [-1.57, 0, -1.57, -3.0][st], R = [0, -1.57, -1.57, 0][st];
+    P.armL.rotation.x = L; P.armL.rotation.z = st === 3 ? 0.2 : 0.05;
+    P.armR.rotation.x = R; P.armR.rotation.z = -0.05;
+    P.legL.rotation.x = st === 1 ? -0.35 : 0; P.legR.rotation.x = st === 3 ? -0.35 : 0;
+    P.torso.rotation.x = 0; P.torso.rotation.z = 0; P.torso.rotation.y = side * 0.35;
+    P.headG.rotation.x = 0; P.headG.rotation.z = 0; P.headG.rotation.y = -side * 0.5;
+  },
+  bon: function (P, p, b, cyc) { // 半分のテンポで、両手を同じ向きへ流す
+    const q = p * 0.5, s = Math.sin(q);
+    P.root.position.y = Math.abs(s) * 0.05; P.root.rotation.z = 0;
+    P.armL.rotation.x = 2.3 + s * 0.25; P.armR.rotation.x = 2.3 - s * 0.25;
+    P.armL.rotation.z = 0.3 + s * 0.6; P.armR.rotation.z = -0.3 + s * 0.6;
+    P.legL.rotation.x = Math.max(0, s) * -0.5; P.legR.rotation.x = Math.max(0, -s) * -0.5;
+    P.torso.rotation.x = 0; P.torso.rotation.z = s * 0.15; P.torso.rotation.y = s * 0.25;
+    P.headG.rotation.x = 0.1; P.headG.rotation.z = s * 0.2;
+  },
+  twist: function (P, p, b, cyc) { // 腰を落として上半身と頭を逆にひねる
+    const s = Math.sin(p);
+    P.root.position.y = b * 0.05 - 0.1; P.root.rotation.z = 0;
+    P.armL.rotation.x = -s * 0.7; P.armR.rotation.x = s * 0.7;
+    P.armL.rotation.z = 1.1 + s * 0.2; P.armR.rotation.z = -1.1 + s * 0.2;
+    P.legL.rotation.x = -0.3 + s * 0.25; P.legR.rotation.x = -0.3 - s * 0.25;
+    P.torso.rotation.x = 0.12; P.torso.rotation.z = 0; P.torso.rotation.y = s * 0.8;
+    P.headG.rotation.x = 0; P.headG.rotation.z = 0; P.headG.rotation.y = -s * 0.5;
+  },
+  mania: function (P, p, b, cyc) { // 両腕逆回転の風車・ヘドバン・大ジャンプ
+    P.root.position.y = b * 0.24 - 0.03; P.root.rotation.z = Math.sin(p) * 0.12;
+    P.armL.rotation.x = p * 2.4; P.armR.rotation.x = -p * 2.4 + Math.PI;
+    P.armL.rotation.z = 0.35; P.armR.rotation.z = -0.35;
+    P.legL.rotation.x = Math.sin(p) * 0.9; P.legR.rotation.x = -Math.sin(p) * 0.9;
+    P.torso.rotation.x = Math.sin(p * 2) * 0.2; P.torso.rotation.z = 0; P.torso.rotation.y = Math.sin(p * 0.5) * 0.6;
+    P.headG.rotation.x = Math.sin(p * 2) * 0.5; P.headG.rotation.z = 0;
+  },
+};
 function dancePose(P, t) {
   const p = t * 9.0;
   const b = Math.abs(Math.sin(p));
   const cyc = (t * 9.0 / Math.PI) % 8;
-  P.root.position.y = b * 0.12 - 0.03;
-  P.root.rotation.z = Math.sin(p * 0.5) * 0.09;
-  // 基本グルーヴ: 左右非対称にして「変」にする
-  P.armL.rotation.x = Math.sin(p) * 1.6;
-  P.armL.rotation.z = 0.55 + Math.cos(p * 2) * 0.35;
-  P.armR.rotation.x = Math.sin(p + Math.PI) * 1.1 - 0.5;
-  P.armR.rotation.z = -0.35 - Math.cos(p) * 0.5;
-  P.legL.rotation.x = Math.sin(p) * 0.55;
-  P.legR.rotation.x = -Math.sin(p + 0.7) * 0.55;
-  P.torso.rotation.z = Math.sin(p) * 0.13;
-  P.torso.rotation.x = Math.sin(p * 2) * 0.1;
-  P.torso.rotation.y = Math.sin(p * 0.5) * 0.42;
-  P.headG.rotation.z = Math.sin(p + 0.6) * 0.26;
-  P.headG.rotation.x = Math.sin(p * 2) * 0.3;
+  P.headG.rotation.y = 0;
+  (GROOVES[danceStyle] || GROOVES.basic)(P, p, b, cyc);
   if (cyc < 1) { // 決めポーズ: 両手を上げる(全員同時)
     P.armL.rotation.x = 2.9 + Math.sin(p * 3) * 0.12; P.armL.rotation.z = 0.22;
     P.armR.rotation.x = 2.9 - Math.sin(p * 3) * 0.12; P.armR.rotation.z = -0.22;
-  } else if (cyc >= 4 && cyc < 6) { // 左腕は風車ぐるぐる、右腕は鳥の羽ばたき
-    P.armL.rotation.x = p * 2.2; P.armL.rotation.z = 0.15;
-    P.armR.rotation.x = -0.9;
-    P.armR.rotation.z = -0.9 - Math.abs(Math.sin(p * 3)) * 0.7;
   } else if (cyc >= 7) { // 全員フリーズ(変なポーズで完全静止)
     P.armL.rotation.x = 2.7; P.armL.rotation.z = 0.9;
     P.armR.rotation.x = -1.3; P.armR.rotation.z = -1.1;
     P.legL.rotation.x = 0.35; P.legR.rotation.x = -0.25;
     P.torso.rotation.y = 0.55; P.torso.rotation.z = 0.2; P.torso.rotation.x = 0;
-    P.headG.rotation.z = 0.42; P.headG.rotation.x = 0.15;
+    P.headG.rotation.z = 0.42; P.headG.rotation.x = 0.15; P.headG.rotation.y = 0;
     P.root.position.y = 0.04; P.root.rotation.z = 0.06;
   }
 }
@@ -296,7 +393,7 @@ function walkPose(P, dt, fast) {
   P.armL.rotation.x = -s * 0.35; P.armR.rotation.x = s * 0.35;
   P.armL.rotation.z = 0.08; P.armR.rotation.z = -0.08;
   P.torso.rotation.z = 0; P.torso.rotation.y = 0; P.torso.rotation.x = 0;
-  P.headG.rotation.z = 0; P.headG.rotation.x = 0; P.root.rotation.z = 0;
+  P.headG.rotation.z = 0; P.headG.rotation.x = 0; P.headG.rotation.y = 0; P.root.rotation.z = 0;
 }
 function idlePose(P, t, id) { // 人だかりで待つ人: きょろきょろしながら屋台を眺める
   P.root.position.y = 0; P.root.rotation.z = 0;
@@ -386,7 +483,7 @@ const el = {
   score: $('hudScore'), fill: $('infectFill'), infText: $('infectText'),
   chain: $('chainPop'), toast: $('toast'), btnSound: $('btnSound'),
   chainWrap: $('chainWrap'), chainFill: $('chainFill'), chainText: $('chainText'),
-  feverFx: $('feverFx'), feverPop: $('feverPop'),
+  feverFx: $('feverFx'), feverPop: $('feverPop'), gimmick: $('hudGimmick'),
 };
 let hudCache = {};
 function setText(key, node, val) { if (hudCache[key] !== val) { hudCache[key] = val; node.textContent = val; } }
@@ -411,8 +508,28 @@ function updateHUD() {
   } else {
     el.chainWrap.style.display = 'none';
   }
+  setText('gim', el.gimmick, gimmickText());
+  el.gimmick.style.display = hudCache.gim ? 'block' : 'none';
   const fv = G.fever > 0 ? 'on' : '';
   if (hudCache.fever !== fv) { hudCache.fever = fv; el.feverFx.className = fv; }
+}
+function gimmickText() {
+  if (G.phase !== 'play') return '';
+  const gm = STAGES[G.stageIdx].gimmick;
+  if (gm === 'train') {
+    const t = G.nextTrainIn();
+    return t >= 0 ? '🚃 次の電車まで ' + Math.ceil(t) + '秒（あと' + G.arrivals.length + '本）　改札から人が増える' : '';
+  }
+  if (gm === 'couple') {
+    const left = G.npcs.some(function (n) { return (n.kind === 'bride' || n.kind === 'groom') && !n.burstUsed; });
+    return left ? '💒 奥の新郎新婦を踊らせると、周りの客が一斉に踊る' : '';
+  }
+  if (gm === 'bell') {
+    const b = G.bellIn();
+    if (b >= 0) return '🔔 昼休み終了まで ' + Math.ceil(b) + '秒';
+    return '🏢 入口に戻られると −' + CFG.escapePenalty + '秒' + (G.escaped ? '（' + G.escaped + '人戻った）' : '') + '　入口で待ち伏せろ！';
+  }
+  return '';
 }
 let toastTimer = 0;
 function showToast(msg) {
@@ -435,23 +552,66 @@ function showFeverPop() {
 }
 
 // ================= ゲームフロー =================
-let G = DM.createGame((Math.random() * 1e9) | 0);
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+let bestScore = parseInt(lsGet('dm_best') || '0', 10) || 0;
+let selDance = lsGet('dm_dance') || 'basic';
+if (bestScore < DM.danceById(selDance).unlock) selDance = 'basic';
+function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance }); }
+function renderDances() {
+  const html = DM.DANCES.map(function (d) {
+    const locked = bestScore < d.unlock;
+    return '<button class="dBtn' + (d.id === selDance ? ' on' : '') + (locked ? ' lock' : '') + '" data-dance="' + d.id + '">' + (locked ? '🔒 ' : '') + d.name + '</button>';
+  }).join('');
+  const d = DM.danceById(selDance);
+  ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.innerHTML = html; });
+  ['danceDesc', 'danceDesc2'].forEach(function (id) { const e = $(id); if (e) e.textContent = '「' + d.name + '」' + d.desc; });
+}
+function onDanceClick(e) {
+  const b = e.target && e.target.closest ? e.target.closest('[data-dance]') : null;
+  if (!b) return;
+  const d = DM.danceById(b.getAttribute('data-dance'));
+  if (bestScore < d.unlock) {
+    const msg = '🔒 ベストスコア ' + d.unlock.toLocaleString() + ' で解放（称号「' + DM.rankFor(d.unlock) + '」）';
+    ['danceDesc', 'danceDesc2'].forEach(function (id) { const x = $(id); if (x) x.textContent = msg; });
+    return;
+  }
+  selDance = d.id; lsSet('dm_dance', selDance);
+  renderDances();
+  danceStyle = selDance; // タイトル背景のプレビューにも反映
+}
+['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
+renderDances();
+// 遊び方: 縦に余裕のある画面では最初から開く(小さいスマホではボタンを優先して畳む)
+if ($('howto') && window.innerHeight >= 760 && window.innerWidth >= 421) $('howto').open = true;
+let G = newGame();
 let started = false;
 let camShake = 0;
 let snapshotURL = null;
 let endTimer = -1;
 
+const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '昼休みが終わる前に！'];
+function stageToast() { showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― ' + STAGE_HINT[G.stageIdx]); }
 function setupStage() {
   buildWorld(G.stageIdx);
   for (let i = 0; i < npcPersons.length; i++) {
     const P = npcPersons[i], n = G.npcs[i];
     if (!n) { P.root.visible = false; P.groundG.visible = false; continue; }
-    P.root.visible = true; P.groundG.visible = true;
-    P.torso.material = n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
+    const vis = n.state !== 'away' && n.state !== 'gone';
+    P.root.visible = vis; P.groundG.visible = vis;
+    P.torso.material = n.kind === 'dj' ? MAT.djShirt : n.kind === 'bride' ? MAT.bride : n.kind === 'groom' ? MAT.groom
+      : n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
+    P.armL.children[0].material = P.armR.children[0].material = P.torso.material;
+    const sc = n.kind === 'kid' ? 0.68 : 1;
+    P.root.scale.set(sc, sc, sc);
+    P.phones.visible = n.kind === 'dj';
+    P.skirt.visible = n.kind === 'bride';
     if (P.ring) P.ring.visible = false;
   }
   for (let i = 0; i < guardPersons.length; i++) { guardPersons[i].root.visible = !!G.guards[i]; guardPersons[i].groundG.visible = !!G.guards[i]; }
   playerPerson.root.visible = true;
+  danceStyle = G.dance.id;
+  shownDJ = false; shownKid = false;
   hudCache = {};
   updateHUD();
 }
@@ -464,6 +624,25 @@ function handleEvents(evs) {
       spawnFx(ev.x, ev.z, 0xffcf3f); spawnNoteFx(ev.x, ev.z);
       sInfect(ev.chain);
       if (ev.chain >= 3) showChain(ev.chain);
+      updateHUD();
+      if (ev.kind === 'dj' && !shownDJ) { shownDJ = true; showToast('🎧 DJが踊り出した！ 感染範囲が広い'); }
+      else if (ev.kind === 'kid' && !shownKid) { shownKid = true; showToast('🧒 子どもが踊りながら走り回る！'); }
+    } else if (ev.type === 'train') {
+      lastTrainAt = G.elapsed; sTrain(); spawnFx(ev.x, ev.z, 0x9fd4ff);
+      showToast('🚃 電車が着いた！ 改札から' + ev.n + '人');
+      updateHUD();
+    } else if (ev.type === 'burst') {
+      sBurst(); camShake = 0.35; buzz([30, 30, 30]);
+      for (let k = 0; k < 3; k++) spawnFx(ev.x + (k - 1) * 1.5, ev.z + 1, 0xff5da2);
+      showToast('💒 ' + (ev.kind === 'bride' ? '新婦' : '新郎') + 'が踊り出した！ 周りの' + ev.n + '人も一斉に！');
+      updateHUD();
+    } else if (ev.type === 'bell') {
+      sBell(); buzz(80);
+      showToast('🔔 昼休み終了！ みんなオフィスに戻り始めた');
+      updateHUD();
+    } else if (ev.type === 'escape') {
+      sEscape(); spawnFx(ev.x, ev.z, 0x9fb6cc);
+      showToast('1人オフィスに戻った…（−' + CFG.escapePenalty + '秒）');
       updateHUD();
     } else if (ev.type === 'fever') {
       sFever(); showFeverPop(); buzz([40, 40, 40]);
@@ -493,6 +672,7 @@ function handleEvents(evs) {
   }
 }
 let pendingEnd = null;
+let shownDJ = false, shownKid = false;
 function showStagePanel(bonus) {
   $('stageStats').innerHTML =
     'クリアボーナス <span class="big">+' + bonus + '</span><br>' +
@@ -530,6 +710,13 @@ function showResult(goal, reason) {
     'スコア <span class="big">' + G.score + '</span><br>' +
     '最大 ' + G.maxChain + ' 連鎖　感染させた人数 のべ ' + G.totalInfectedEver + ' 人';
   $('resultRank').textContent = '「' + DM.rankFor(G.score) + '」';
+  const prevBest = bestScore;
+  if (G.score > bestScore) { bestScore = G.score; lsSet('dm_best', '' + bestScore); }
+  const newly = DM.DANCES.filter(function (d) { return d.unlock > prevBest && d.unlock <= bestScore; });
+  $('unlockMsg').innerHTML = newly.length ? '🎉 新しい踊り「' + newly.map(function (d) { return d.name; }).join('」「') + '」を解放！' : '';
+  $('unlockMsg').style.display = newly.length ? 'block' : 'none';
+  $('bestLine').textContent = 'ベスト ' + bestScore + (G.score >= bestScore && G.score > prevBest ? '（更新！）' : '');
+  renderDances();
   buildResultImage(function (url) {
     const im = $('resultImg');
     if (url) { im.src = url; im.style.display = 'block'; $('btnSaveImg').href = url; }
@@ -548,24 +735,25 @@ $('btnStart').addEventListener('click', function () {
   el.hud.style.display = 'block';
   el.btnSound.style.display = 'block';
   started = true;
+  G = newGame();
   G.startStage(0);
   setupStage();
-  showToast('STAGE 1　' + STAGES[0].name + ' ― 全員踊らせろ！');
+  stageToast();
 });
 $('btnNext').addEventListener('click', function () {
   unlockAudio();
   $('stagePanel').style.display = 'none';
   G.startStage(G.stageIdx + 1);
   setupStage();
-  showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― 全員踊らせろ！');
+  stageToast();
 });
 $('btnRetry').addEventListener('click', function () {
   unlockAudio();
   $('resultPanel').style.display = 'none';
-  G = DM.createGame((Math.random() * 1e9) | 0);
+  G = newGame();
   G.startStage(0);
   setupStage();
-  showToast('STAGE 1　' + STAGES[0].name + ' ― 全員踊らせろ！');
+  stageToast();
 });
 el.btnSound.addEventListener('click', function () {
   soundOn = !soundOn;
@@ -583,19 +771,23 @@ function syncPersons(t, dt) {
   PP.groundG.position.x = P.x; PP.groundG.position.z = P.z;
   PP.root.rotation.y = P.face + danceSpinOffset(t);
   dancePose(PP, t);
-  if (PP.ring) PP.ring.scale.set(rs, 1, rs);
+  const prs = rs * (G.dance.fx.playerRMul || 1);
+  if (PP.ring) PP.ring.scale.set(prs, 1, prs);
   PP.root.visible = P.invuln > 0 ? (Math.floor(t * 12) % 2 === 0) : true;
   MAT.ringP.opacity = 0.52 + Math.sin(t * 4) * 0.16;
   if (PP.marker) PP.marker.position.y = 2.45 + Math.sin(t * 3) * 0.08;
   for (let i = 0; i < G.npcs.length; i++) {
     const n = G.npcs[i], Q = npcPersons[i];
-    if (!Q || !Q.root.visible) continue;
+    if (!Q) continue;
+    const vis = n.state !== 'away' && n.state !== 'gone';
+    Q.root.visible = vis; Q.groundG.visible = vis;
+    if (!vis) continue;
     Q.root.position.x = n.x; Q.root.position.z = n.z;
     Q.groundG.position.x = n.x; Q.groundG.position.z = n.z;
     if (n.state === 'dancer') {
       Q.root.rotation.y = n.dir + danceSpinOffset(t);
       dancePose(Q, t);
-      if (Q.ring) { Q.ring.visible = true; Q.ring.scale.set(rs, 1, rs); }
+      if (Q.ring) { const rr = rs * G.radiusOf(n); Q.ring.visible = true; Q.ring.scale.set(rr, 1, rr); }
       Q.note.material.opacity = 0;
       Q.anger.material.opacity = n.cureProg > 0 ? Math.min(1, n.cureProg + 0.2) : 0;
     } else {
@@ -647,6 +839,15 @@ function adaptQuality(dt) {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 }
+function updateTrain() { // 着く2秒前に滑り込み、2.5秒停車して去る
+  if (!trainG) return;
+  const tIn = G.phase === 'play' ? G.nextTrainIn() : -1, since = G.elapsed - lastTrainAt;
+  let x = -200;
+  if (tIn >= 0 && tIn < 2) x = -70 * Math.pow(tIn / 2, 2);
+  else if (since >= 0 && since < 2.5) x = 0;
+  else if (since >= 2.5 && since < 4) x = 70 * Math.pow((since - 2.5) / 1.5, 2);
+  trainG.position.x = x;
+}
 const camPos = new THREE.Vector3(0, 33 * camDist, 22 + 25 * camDist);
 let lastT = performance.now() / 1000;
 function animate() {
@@ -667,6 +868,7 @@ function animate() {
   }
   adaptQuality(dt);
   syncPersons(now, dt);
+  updateTrain();
   updateFx(dt);
   if (camShake > 0) camShake = Math.max(0, camShake - dt);
   const shX = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
@@ -690,5 +892,5 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { get G() { return G; }, setupStage: setupStage };
+globalThis.__DM_UI__ = { get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();

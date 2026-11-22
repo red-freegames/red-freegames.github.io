@@ -35,6 +35,7 @@
   #chainWrap { margin:6px auto 0; max-width:420px; background:rgba(10,8,24,.62); border:1px solid rgba(255,207,63,.5); border-radius:999px; height:17px; position:relative; overflow:hidden; display:none; }
   #chainFill { height:100%; width:100%; background:linear-gradient(90deg,#53c2c2,#ffcf3f); }
   #chainText { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.8); }
+  #hudGimmick { margin:6px auto 0; max-width:520px; width:max-content; max-width:min(520px, 100%); background:rgba(10,8,24,.62); border:1px solid rgba(83,194,194,.55); border-radius:999px; padding:3px 12px; font-size:11px; font-weight:700; text-align:center; display:none; }
   #feverFx { position:fixed; inset:0; pointer-events:none; z-index:4; opacity:0; transition:opacity .3s; box-shadow:inset 0 0 130px 35px rgba(255,170,0,.5); }
   #feverFx.on { opacity:1; animation:feverPulse .45s infinite alternate; }
   @keyframes feverPulse { from{ box-shadow:inset 0 0 110px 28px rgba(255,170,0,.42);} to{ box-shadow:inset 0 0 165px 58px rgba(255,120,0,.68);} }
@@ -45,7 +46,7 @@
   #chainPop { position:fixed; left:50%; top:26%; transform:translate(-50%,-50%) scale(.6); font-size:44px; font-weight:900; color:#ffcf3f; text-shadow:0 0 18px rgba(255,93,162,.9),0 3px 0 #c2185b; opacity:0; pointer-events:none; z-index:6; white-space:nowrap; }
   #chainPop.show { animation:chainAnim .8s ease-out; }
   @keyframes chainAnim { 0%{opacity:0; transform:translate(-50%,-50%) scale(.5) rotate(-4deg);} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.15) rotate(2deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-60%) scale(1);} }
-  #toast { position:fixed; left:50%; bottom:calc(12% + env(safe-area-inset-bottom)); transform:translateX(-50%); background:rgba(10,8,24,.8); border:1px solid rgba(255,255,255,.25); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:6; white-space:nowrap; }
+  #toast { position:fixed; left:50%; bottom:calc(12% + env(safe-area-inset-bottom)); transform:translateX(-50%); background:rgba(10,8,24,.8); border:1px solid rgba(255,255,255,.25); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:6; white-space:normal; max-width:92vw; width:max-content; text-align:center; line-height:1.45; }
   #toast.show { opacity:1; }
   /* ===== 仮想スティック(ドラッグ中だけ表示) ===== */
   #stick { position:fixed; left:0; top:0; width:110px; height:110px; margin:-55px 0 0 -55px; border-radius:50%; border:2px solid rgba(255,255,255,.45); background:rgba(10,8,24,.25); pointer-events:none; z-index:7; display:none; }
@@ -69,6 +70,20 @@
   #resultImg { width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.25); margin-top:12px; display:none; }
   .rowBtns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
   .history { font-size:11px; opacity:.65; margin-top:14px; line-height:1.6; }
+  .danceSel { margin:10px 0 2px; }
+  .howto { margin-top:10px; text-align:left; }
+  .howto summary { cursor:pointer; font-size:12.5px; font-weight:800; color:#ffcf3f; text-align:center; list-style:none; }
+  .howto summary::-webkit-details-marker { display:none; }
+  .howto summary::after { content:' ▼'; font-size:10px; }
+  .howto[open] summary::after { content:' ▲'; }
+  .danceHead { font-size:12px; font-weight:800; color:#53c2c2; margin-bottom:6px; }
+  .danceList { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .dBtn { font:inherit; font-size:12px; font-weight:700; color:#fff; background:#2e2550; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; cursor:pointer; touch-action:manipulation; }
+  .dBtn.on { background:linear-gradient(90deg,#ff5da2,#ff8a3f); border-color:transparent; }
+  .dBtn.lock { opacity:.5; }
+  .danceDesc { font-size:11.5px; opacity:.85; margin-top:6px; min-height:1.5em; }
+  .unlockMsg { display:none; margin:10px auto 0; padding:6px 12px; border-radius:12px; background:rgba(255,207,63,.15); border:1px solid rgba(255,207,63,.6); color:#ffcf3f; font-size:13px; font-weight:800; }
+  .bestLine { font-size:12px; opacity:.8; margin-top:4px; }
   .panel { padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 
   /* ===== スマホ ===== */
@@ -94,6 +109,8 @@
     .desc { font-size:11.5px; line-height:1.5; margin:6px 0; }
     .btn { margin-top:4px; padding:11px 30px; font-size:15px; }
     .history { margin-top:8px; font-size:10px; }
+    .danceSel { margin:6px 0 0; }
+    .dBtn { padding:5px 9px; font-size:11px; }
   }
   @media (max-height:520px) { /* 横持ちのスマホ */
     .card { padding:10px 18px 12px; max-width:600px; }
@@ -122,6 +139,7 @@
     <div class="hudBox" id="hudRight"><div id="hudScore">0</div><small>SCORE</small></div>
   </div>
   <div id="infectWrap"><div id="infectFill"></div><div id="infectText">感染 0 / 26</div></div>
+  <div id="hudGimmick"></div>
   <div id="chainWrap"><div id="chainFill"></div><div id="chainText"></div></div>
 </div>
 <div id="feverFx"></div>
@@ -142,14 +160,23 @@
       <b>警備員</b>は踊る人を説教して正気に戻し、あなたを捕まえに来る。<br>
       捕まるのは<b>3回まで</b>。時間切れでも終わり。<b>全員を踊らせたらステージクリア！</b>
     </div>
-    <div class="desc">
+    <div class="danceSel">
+      <div class="danceHead">踊りを選ぶ（スコアで解放）</div>
+      <div class="danceList" id="danceList"></div>
+      <div class="danceDesc" id="danceDesc"></div>
+    </div>
+    <button class="btn" id="btnStart">踊り始める</button>
+    <details class="howto" id="howto">
+      <summary>遊び方</summary>
+      <div class="desc">
       🖱️📱 移動：画面のどこでもドラッグ（指を置いた所がスティックになる）/ WASD・矢印キー<br>
       💃 感染：踊っている人の近くに約0.7秒いるだけ（頑固な人は長め）<br>
       👥 屋台の周りの「人だかり」に火をつけると一気に広がる<br>
       🔗 連鎖は2.5秒以内に次を感染させると継続（ゲージ表示あり）<br>
-      🔥 12連鎖でフィーバー：感染範囲が広がり、警備員も踊り出す
+      🔥 12連鎖でフィーバー：感染範囲が広がり、警備員も踊り出す<br>
+      🎧 DJ（緑の服）は感染範囲が広い／🧒 子どもは走り回って遠くまで広げる
     </div>
-    <button class="btn" id="btnStart">踊り始める</button>
+    </details>
     <div class="history">1518年、ストラスブール。1人の女性が踊り始め、1ヶ月で400人が踊り続けた――実在の事件「ダンシングマニア」がモチーフです。</div>
   </div>
 </div>
@@ -169,10 +196,17 @@
     <div class="stats" id="resultStats"></div>
     <div>称号</div>
     <div class="rankName" id="resultRank"></div>
+    <div class="bestLine" id="bestLine"></div>
+    <div class="unlockMsg" id="unlockMsg"></div>
     <img id="resultImg" alt="結果画像">
     <div class="rowBtns">
       <a class="btn sub" id="btnSaveImg" download="dancing-mania-result.png">画像を保存</a>
       <a class="btn sub" id="btnShareX" target="_blank" rel="noopener">Xで共有</a>
+    </div>
+    <div class="danceSel">
+      <div class="danceHead">次に踊る踊り</div>
+      <div class="danceList" id="danceList2"></div>
+      <div class="danceDesc" id="danceDesc2"></div>
     </div>
     <div class="rowBtns">
       <button class="btn" id="btnRetry">もう一度踊る</button>
@@ -208,11 +242,27 @@ function mulberry32(a) {
 
 const ARENA = 27; // 移動可能範囲は ±ARENA の正方形
 
+// gimmick: 'train' = 電車が着くたびに改札から客がまとめて出てくる / 'couple' = 新郎新婦を踊らせると周りが一斉に踊る
+//          'bell' = 昼休み終了のチャイム後、通行人がオフィスの入口へ戻り始める(入られると時間が減る)
 const STAGES = [
-  { name: '駅前広場',        sub: '平日の昼休み',   npc: 26, stubborn: 4,  guards: 1, time: 60, clusters: 3 },
-  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 38, stubborn: 7,  guards: 2, time: 70, clusters: 4 },
-  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 52, stubborn: 11, guards: 3, time: 90, clusters: 5 },
+  { name: '駅前広場',        sub: '平日の昼休み',   npc: 26, stubborn: 4,  guards: 1, time: 60, clusters: 3, dj: 1, kids: 2,
+    gimmick: 'train', arrivals: [{ at: 12, n: 4 }, { at: 27, n: 4 }] },
+  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 38, stubborn: 7,  guards: 2, time: 70, clusters: 4, dj: 1, kids: 3,
+    gimmick: 'couple' },
+  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 52, stubborn: 11, guards: 3, time: 90, clusters: 5, dj: 2, kids: 4,
+    gimmick: 'bell', bellAt: 40 },
 ];
+
+// 踊りの解放: ベストスコアが unlock 以上で選べる。選んだ踊りは全ダンサーが踊る(シンクロは維持)
+const DANCES = [
+  { id: 'basic', name: 'へんな踊り',     unlock: 0,     desc: '効果なし。すべての始まり', fx: {} },
+  { id: 'robot', name: 'ロボットダンス', unlock: 10000, desc: '自分の感染範囲 +12%',     fx: { playerRMul: 1.12 } },
+  { id: 'bon',   name: '盆踊り',         unlock: 28000, desc: '連鎖の猶予 +0.8秒',       fx: { chainAdd: 0.8 } },
+  { id: 'twist', name: 'ツイスト',       unlock: 50000, desc: '移動速度 +8%',            fx: { speedMul: 1.08 } },
+  { id: 'mania', name: 'マニアの舞',     unlock: 75000, desc: 'フィーバー時間 +2秒',     fx: { feverAdd: 2 } },
+];
+function danceById(id) { for (const d of DANCES) if (d.id === id) return d; return DANCES[0]; }
+function unlockedDances(best) { return DANCES.filter(function (d) { return (best || 0) >= d.unlock; }); }
 
 const CFG = {
   playerSpeed: 9.4,
@@ -237,12 +287,24 @@ const CFG = {
   feverRadiusMul: 1.5,  // フィーバー中の感染範囲倍率
   feverExposeMul: 1.6,  // フィーバー中の感染速度倍率
   clusterRatio: 0.45,   // 人だかりに配置する割合の目安
+  // 特別な通行人
+  djRMul: 1.7,          // DJ が踊った時の感染範囲倍率
+  djSpeed: 1.4, djDancerSpeed: 1.0,
+  kidSpeed: 3.6, kidDancerSpeed: 3.0,
+  // ステージの仕掛け
+  coupleBurstR: 9,      // 新郎新婦が踊り出した時に一斉感染させる半径
+  coupleTable: [0, -17],
+  gate: [0, -25.5],     // 駅の改札
+  doors: [[-14, -26], [14, -26]], // オフィスの入口
+  leaveSpeed: 2.6,      // チャイム後に入口へ向かう速さ
+  escapePenalty: 3,     // 入口に入られると減る秒数
 };
 
 function dist2(ax, az, bx, bz) { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; }
 
-function createGame(seed) {
+function createGame(seed, opts) {
   const rng = mulberry32(seed >>> 0 || 1);
+  const dance = danceById(opts && opts.dance);
   const G = {
     phase: 'ready', // ready | play | clear | over | goal
     stageIdx: 0,
@@ -263,6 +325,11 @@ function createGame(seed) {
     events: [],
     totalNpc: 0,
     totalInfectedEver: 0,
+    dance: dance,
+    chainWin: CFG.chainWindow + (dance.fx.chainAdd || 0),
+    arrivals: [],   // 駅: 未到着の電車 [{at, ids}]
+    bellRung: false,
+    escaped: 0,
   };
 
   function ev(type, data) { G.events.push(Object.assign({ type: type }, data || {})); }
@@ -276,11 +343,16 @@ function createGame(seed) {
 
   G.chainTimeLeft = function () {
     if (G.chain <= 0) return 0;
-    return Math.max(0, CFG.chainWindow - (G.elapsed - G.lastInfectAt));
+    return Math.max(0, G.chainWin - (G.elapsed - G.lastInfectAt));
   };
+
+  G.nextTrainIn = function () { return G.arrivals.length ? Math.max(0, G.arrivals[0].at - G.elapsed) : -1; };
+  G.bellIn = function () { const st = STAGES[G.stageIdx]; return st.gimmick === 'bell' && !G.bellRung ? Math.max(0, st.bellAt - G.elapsed) : -1; };
+  G.radiusOf = function (n) { return n.kind === 'dj' ? CFG.djRMul : 1; };
 
   G.startStage = function (idx) {
     const st = STAGES[idx];
+    G.arrivals = []; G.bellRung = false; G.escaped = 0;
     G.stageIdx = idx;
     G.phase = 'play';
     G.hearts = CFG.hearts;
@@ -300,8 +372,34 @@ function createGame(seed) {
         id: i, x: x, z: z, dir: dir, dirT: 1 + rng() * 3,
         state: 'walk', exposure: 0, stubborn: i < st.stubborn, stand: false,
         immune: 0, cureProg: 0, walkPhase: rng() * Math.PI * 2,
-        colorIdx: (rng() * 8) | 0,
+        colorIdx: (rng() * 8) | 0, kind: 'normal', leaving: false, burstUsed: false,
       });
+    }
+    // 特別な通行人: 頑固な人の後ろの番号に DJ・子ども・(披露宴なら)新郎新婦を割り当てる
+    let k = st.stubborn;
+    for (let i = 0; i < (st.dj || 0); i++) G.npcs[k++].kind = 'dj';
+    for (let i = 0; i < (st.kids || 0); i++) { const n = G.npcs[k++]; n.kind = 'kid'; n.dirT = 0.5 + rng(); }
+    if (st.gimmick === 'couple') {
+      const tx = CFG.coupleTable[0], tz = CFG.coupleTable[1];
+      ['bride', 'groom'].forEach(function (kind, j) {
+        const n = G.npcs[k++];
+        n.kind = kind; n.stubborn = true; n.stand = true;
+        n.x = tx + (j ? 0.8 : -0.8); n.z = tz; n.dir = 0; // 客席(南)を向く
+      });
+    }
+    // 駅: 後ろの番号の普通の人を「まだ電車の中」にしておく
+    if (st.gimmick === 'train') {
+      let last = G.npcs.length - 1;
+      for (const a of st.arrivals) {
+        const ids = [];
+        for (let i = 0; i < a.n; i++) {
+          while (last >= 0 && G.npcs[last].kind !== 'normal') last--;
+          const n = G.npcs[last--];
+          n.state = 'away'; n.x = CFG.gate[0]; n.z = -40;
+          ids.push(n.id);
+        }
+        G.arrivals.push({ at: a.at, ids: ids });
+      }
     }
     const homes = [[-22, -22], [22, -22], [0, -24], [-22, 22]];
     G.guards = [];
@@ -320,6 +418,7 @@ function createGame(seed) {
       ct++;
       const cx = (rng() * 2 - 1) * 19, cz = (rng() * 2 - 1) * 19;
       if (dist2(cx, cz, G.player.x, G.player.z) < 64) continue;
+      if (st.gimmick === 'couple' && dist2(cx, cz, CFG.coupleTable[0], CFG.coupleTable[1]) < 100) continue;
       let okC = true;
       for (const c of G.clusters) if (dist2(cx, cz, c.x, c.z) < 121) okC = false;
       if (okC) G.clusters.push({ x: cx, z: cz });
@@ -328,7 +427,7 @@ function createGame(seed) {
       const per = Math.ceil(st.npc * CFG.clusterRatio / G.clusters.length);
       const counts = G.clusters.map(function () { return 0; });
       for (const n of G.npcs) {
-        if (n.stubborn) continue; // 頑固な人は人だかりに入らない
+        if (n.stubborn || n.kind !== 'normal' || n.state !== 'walk') continue; // 頑固な人・特別な人・未到着の人は人だかりに入らない
         let bi = -1;
         for (let k = 0; k < G.clusters.length; k++) if (counts[k] < per && (bi < 0 || counts[k] < counts[bi])) bi = k;
         if (bi < 0 || rng() < 0.25) continue;
@@ -353,17 +452,30 @@ function createGame(seed) {
     npc.state = 'dancer';
     npc.exposure = 0; npc.cureProg = 0;
     G.totalInfectedEver++;
-    if (G.elapsed - G.lastInfectAt <= CFG.chainWindow) G.chain++;
+    if (G.elapsed - G.lastInfectAt <= G.chainWin) G.chain++;
     else G.chain = 1;
     G.lastInfectAt = G.elapsed;
     if (G.chain > G.maxChain) G.maxChain = G.chain;
     if (G.chain === CFG.feverChain && G.fever <= 0) {
-      G.fever = CFG.feverTime;
+      G.fever = CFG.feverTime + (G.dance.fx.feverAdd || 0);
       ev('fever', {});
     }
     const pts = 100 + (G.chain - 1) * 30;
     G.score += pts;
-    ev('infect', { id: npc.id, x: npc.x, z: npc.z, chain: G.chain, pts: pts });
+    ev('infect', { id: npc.id, x: npc.x, z: npc.z, chain: G.chain, pts: pts, kind: npc.kind });
+    // 新郎新婦: 踊り出した瞬間、周りの客が一斉に踊り出す(1人につき1回だけ)
+    if ((npc.kind === 'bride' || npc.kind === 'groom') && !npc.burstUsed) {
+      npc.burstUsed = true;
+      const R2 = CFG.coupleBurstR * CFG.coupleBurstR;
+      const hit = G.npcs.filter(function (o) { return o.state === 'walk' && o.immune <= 0 && dist2(o.x, o.z, npc.x, npc.z) <= R2; });
+      ev('burst', { x: npc.x, z: npc.z, n: hit.length, kind: npc.kind });
+      for (const o of hit) { if (G.phase !== 'play') break; if (o.state === 'walk') infect(o); }
+    }
+    checkClear();
+  }
+
+  function checkClear() {
+    if (G.phase !== 'play' || G.arrivals.length) return;
     if (G.infectedCount() >= G.totalNpc) {
       const bonus = Math.ceil(G.timeLeft) * 10 + G.hearts * 200;
       G.score += bonus;
@@ -394,19 +506,58 @@ function createGame(seed) {
     P.moving = ml > 0.01;
     if (P.moving) {
       mx /= (ml > 1 ? ml : 1); mz /= (ml > 1 ? ml : 1);
-      P.x += mx * CFG.playerSpeed * dt;
-      P.z += mz * CFG.playerSpeed * dt;
+      const ps = CFG.playerSpeed * (G.dance.fx.speedMul || 1);
+      P.x += mx * ps * dt;
+      P.z += mz * ps * dt;
       P.face = Math.atan2(mx, mz);
       clampArena(P);
     }
 
+    // --- ステージの仕掛け ---
+    while (G.arrivals.length && G.elapsed >= G.arrivals[0].at) { // 電車が着いた
+      const a = G.arrivals.shift();
+      a.ids.forEach(function (id, j) {
+        const n = G.npcs[id];
+        n.state = 'walk'; n.exposure = 0; n.stand = false;
+        n.x = CFG.gate[0] + (j - (a.ids.length - 1) / 2) * 1.3; n.z = CFG.gate[1];
+        n.dir = Math.PI + (rng() - 0.5) * 0.9; // 南(広場の中)へ
+        n.dirT = 2 + rng() * 2;
+      });
+      ev('train', { n: a.ids.length, x: CFG.gate[0], z: CFG.gate[1], left: G.arrivals.length });
+    }
+    const st = STAGES[G.stageIdx];
+    if (st.gimmick === 'bell' && !G.bellRung && G.elapsed >= st.bellAt) {
+      G.bellRung = true;
+      for (const n of G.npcs) if (n.state === 'walk') { n.leaving = true; n.stand = false; }
+      ev('bell', {});
+    }
+
     // --- NPC移動 ---
     for (const n of G.npcs) {
+      if (n.state === 'away' || n.state === 'gone') continue;
       n.dirT -= dt;
-      if (n.dirT <= 0) { n.dir = rng() * Math.PI * 2; n.dirT = 1.5 + rng() * 3; }
+      if (n.dirT <= 0) { n.dir = rng() * Math.PI * 2; n.dirT = n.kind === 'kid' ? 0.6 + rng() * 1.4 : 1.5 + rng() * 3; }
       if (n.immune > 0) n.immune -= dt;
+      if (G.bellRung && n.state === 'walk' && n.kind !== 'bride' && n.kind !== 'groom') { // チャイム後: 最寄りの入口へ
+        n.leaving = true; n.stand = false;
+        let dx = 0, dz = 0, bd = Infinity;
+        for (const d of CFG.doors) { const q = dist2(n.x, n.z, d[0], d[1]); if (q < bd) { bd = q; dx = d[0]; dz = d[1]; } }
+        if (bd < 1.44) {
+          n.state = 'gone'; G.totalNpc--; G.escaped++;
+          G.timeLeft -= CFG.escapePenalty;
+          ev('escape', { id: n.id, x: n.x, z: n.z });
+          continue;
+        }
+        n.dir = Math.atan2(dx - n.x, dz - n.z);
+        const ls = n.kind === 'kid' ? CFG.kidSpeed : CFG.leaveSpeed;
+        n.x += Math.sin(n.dir) * ls * dt; n.z += Math.cos(n.dir) * ls * dt;
+        continue;
+      }
       if (n.stand && n.state === 'walk') continue; // 人だかりの人はその場に留まる
-      const sp = n.state === 'dancer' ? CFG.dancerSpeed : CFG.npcSpeed;
+      const dancing = n.state === 'dancer';
+      const sp = n.kind === 'kid' ? (dancing ? CFG.kidDancerSpeed : CFG.kidSpeed)
+        : n.kind === 'dj' ? (dancing ? CFG.djDancerSpeed : CFG.djSpeed)
+        : (dancing ? CFG.dancerSpeed : CFG.npcSpeed);
       n.x += Math.sin(n.dir) * sp * dt;
       n.z += Math.cos(n.dir) * sp * dt;
       if (n.x < -ARENA + 0.6) { n.x = -ARENA + 0.6; n.dir = Math.PI / 2 + (rng() - 0.5); }
@@ -418,6 +569,7 @@ function createGame(seed) {
     for (let i = 0; i < G.npcs.length; i++) {
       for (let j = i + 1; j < G.npcs.length; j++) {
         const a = G.npcs[i], b = G.npcs[j];
+        if (a.state === 'away' || a.state === 'gone' || b.state === 'away' || b.state === 'gone') continue;
         const d2 = dist2(a.x, a.z, b.x, b.z);
         if (d2 < 0.81 && d2 > 0.0001) {
           const d = Math.sqrt(d2), push = (0.9 - d) / 2;
@@ -431,14 +583,13 @@ function createGame(seed) {
     }
 
     // --- 感染判定 ---
-    const sources = [{ x: P.x, z: P.z }];
-    for (const n of G.npcs) if (n.state === 'dancer') sources.push(n);
     const fR = CFG.infectR * (G.fever > 0 ? CFG.feverRadiusMul : 1);
-    const R2 = fR * fR;
+    const sources = [{ x: P.x, z: P.z, r2: Math.pow(fR * (G.dance.fx.playerRMul || 1), 2) }];
+    for (const n of G.npcs) if (n.state === 'dancer') sources.push({ x: n.x, z: n.z, r2: Math.pow(fR * G.radiusOf(n), 2) });
     for (const n of G.npcs) {
       if (n.state !== 'walk' || n.immune > 0) continue;
       let near = false;
-      for (const s of sources) { if (dist2(n.x, n.z, s.x, s.z) <= R2) { near = true; break; } }
+      for (const s of sources) { if (dist2(n.x, n.z, s.x, s.z) <= s.r2) { near = true; break; } }
       const need = n.stubborn ? CFG.stubbornNeed : CFG.exposeNeed;
       if (near) {
         n.exposure += dt / need * (G.fever > 0 ? CFG.feverExposeMul : 1);
@@ -448,6 +599,14 @@ function createGame(seed) {
       }
     }
     if (G.phase !== 'play') return; // 全員感染でクリアした場合
+    if (G.timeLeft <= 0) { // 入口に入られて時間が尽きた
+      G.timeLeft = 0;
+      G.phase = 'over'; G.overReason = 'time';
+      ev('over', { reason: 'time' });
+      return;
+    }
+    checkClear(); // 最後の通行人が入口に入り、残り全員が踊っている場合
+    if (G.phase !== 'play') return;
 
     // --- 警備員AI ---
     for (const g of G.guards) {
@@ -547,7 +706,7 @@ function rankFor(score) {
   return 'ただの通行人';
 }
 
-globalThis.__DM__ = { STAGES: STAGES, CFG: CFG, ARENA: ARENA, createGame: createGame, rankFor: rankFor, mulberry32: mulberry32 };
+globalThis.__DM__ = { STAGES: STAGES, CFG: CFG, ARENA: ARENA, DANCES: DANCES, danceById: danceById, unlockedDances: unlockedDances, createGame: createGame, rankFor: rankFor, mulberry32: mulberry32 };
 })();
 
 </script>
@@ -593,6 +752,11 @@ function sInfect(chain) { beep(500 + Math.min(chain, 24) * 32, 0.12, 'sine', 0.1
 function sCure() { beep(320, 0.16, 'square', 0.07, 150); }
 function sCatch() { beep(150, 0.32, 'sawtooth', 0.18, 65); }
 function sClear() { const n = [523, 659, 784, 1047]; for (let i = 0; i < n.length; i++) (function (f, d) { setTimeout(function () { beep(f, 0.2, 'triangle', 0.15); }, d); })(n[i], i * 110); }
+function seq(notes, gap, type, vol, dur) { for (let i = 0; i < notes.length; i++) (function (f, d) { setTimeout(function () { beep(f, dur || 0.22, type || 'triangle', vol || 0.12); }, d); })(notes[i], i * gap); }
+function sTrain() { seq([784, 659], 260, 'sine', 0.13, 0.35); }
+function sBurst() { seq([523, 659, 784, 1047, 1319], 55, 'square', 0.09, 0.16); }
+function sBell() { seq([659, 523, 587, 392], 420, 'sine', 0.14, 0.5); }
+function sEscape() { beep(260, 0.25, 'triangle', 0.1, 180); }
 function sFever() { const n = [659, 880, 1109, 1319]; for (let i = 0; i < n.length; i++) (function (f, d) { setTimeout(function () { beep(f, 0.16, 'square', 0.1); }, d); })(n[i], i * 70); }
 
 // ================= THREE セットアップ =================
@@ -615,6 +779,7 @@ const THEMES = [
   { sky: 0xa9c3e6, ground: 0x4d5c6e, arena: 0x71808f, accent: 0xffcf3f, prop: 'office' },
 ];
 const worldG = new THREE.Group();
+let trainG = null, lastTrainAt = -99;
 scene.add(worldG);
 
 function box(w, h, d, mat, x, y, z) {
@@ -622,6 +787,7 @@ function box(w, h, d, mat, x, y, z) {
   m.position.set(x, y, z); worldG.add(m); return m;
 }
 function buildWorld(idx) {
+  lastTrainAt = -99;
   while (worldG.children.length) worldG.remove(worldG.children[0]);
   const th = THEMES[idx % THEMES.length];
   scene.background = new THREE.Color(th.sky);
@@ -663,6 +829,38 @@ function buildWorld(idx) {
       box(2.4, 0.5, 0.8, trunk, x + 2.6, 0.25, z);
     }
   }
+  // ステージの仕掛けの舞台装置
+  const gm = G && STAGES[idx].gimmick;
+  if (gm === 'train') { // 駅舎・改札・線路
+    box(20, 7, 5, build, 0, 3.5, -37.5);
+    box(20.6, 0.5, 5.6, accMat, 0, 7.2, -37.5);
+    box(56, 0.12, 2.6, new THREE.MeshLambertMaterial({ color: 0x5a4a3a }), 0, 0.06, -31);
+    box(0.35, 2.2, 0.35, tableM, CFG.gate[0] - 3, 1.1, -28.6); box(0.35, 2.2, 0.35, tableM, CFG.gate[0] + 3, 1.1, -28.6);
+    box(6.6, 0.5, 0.4, accMat, CFG.gate[0], 2.3, -28.6);
+  } else if (gm === 'couple') { // 高砂席(新郎新婦の席)とアーチ
+    const tx = CFG.coupleTable[0], tz = CFG.coupleTable[1] - 1.3;
+    box(4.4, 1.0, 1.3, tableM, tx, 0.5, tz);
+    box(4.6, 0.12, 1.5, accMat, tx, 1.05, tz);
+    box(0.3, 3.6, 0.3, tableM, tx - 2.6, 1.8, tz - 0.9); box(0.3, 3.6, 0.3, tableM, tx + 2.6, 1.8, tz - 0.9);
+    box(5.6, 0.45, 0.45, accMat, tx, 3.7, tz - 0.9);
+  } else if (gm === 'bell') { // オフィスの入口
+    const doorM = new THREE.MeshBasicMaterial({ color: 0xffe08a });
+    for (const d of CFG.doors) {
+      box(7, 10, 3, build2, d[0], 5, -31.5);
+      box(2.6, 3.2, 0.3, doorM, d[0], 1.6, -29.9);
+    }
+  }
+  // 電車(駅のみ。位置は毎フレーム updateTrain で動かす)
+  trainG = null;
+  if (gm === 'train') {
+    trainG = new THREE.Group();
+    const body = new THREE.MeshLambertMaterial({ color: 0xe8edf2 }), line = new THREE.MeshLambertMaterial({ color: 0x2f9e5a });
+    for (let c = 0; c < 3; c++) {
+      const car = new THREE.Mesh(new THREE.BoxGeometry(11.4, 2.6, 2.4), body); car.position.set(c * 11.8 - 11.8, 1.45, 0); trainG.add(car);
+      const st = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.35, 2.45), line); st.position.set(c * 11.8 - 11.8, 1.2, 0); trainG.add(st);
+    }
+    trainG.position.set(-200, 0, -31); worldG.add(trainG);
+  }
   // 人だかりの目印: 屋台
   if (G && G.clusters) {
     const stallM = new THREE.MeshLambertMaterial({ color: 0xa9743f });
@@ -695,6 +893,10 @@ const MAT = {
   guardPants: new THREE.MeshLambertMaterial({ color: 0x17171f }),
   cap: new THREE.MeshLambertMaterial({ color: 0xffd400 }),
   band: new THREE.MeshLambertMaterial({ color: 0xf5f5f5 }),
+  djShirt: new THREE.MeshLambertMaterial({ color: 0x39ff6a }),
+  phones: new THREE.MeshLambertMaterial({ color: 0x15151c }),
+  bride: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+  groom: new THREE.MeshLambertMaterial({ color: 0x23232e }),
   playerShirt: new THREE.MeshLambertMaterial({ color: 0xff3355 }),
   playerPants: new THREE.MeshLambertMaterial({ color: 0xffcf3f }),
   shadow: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }),
@@ -750,13 +952,21 @@ function makePerson(o) {
   note.position.y = 2.2; note.scale.set(0.8, 0.8, 1); root.add(note);
   const anger = new THREE.Sprite(new THREE.SpriteMaterial({ map: angerTex, transparent: true, opacity: 0, depthWrite: false }));
   anger.position.y = 2.2; anger.scale.set(0.8, 0.8, 1); root.add(anger);
+  // 特別な通行人用の小物(普段は非表示): DJのヘッドホン、新婦のドレス
+  const phones = new THREE.Group();
+  phones.add(new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.08, 0.12), MAT.phones)); phones.children[0].position.y = 0.43;
+  const cupL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.2), MAT.phones); cupL.position.set(-0.22, 0.24, 0); phones.add(cupL);
+  const cupR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.2), MAT.phones); cupR.position.set(0.22, 0.24, 0); phones.add(cupR);
+  phones.visible = false; headG.add(phones);
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.62, 0.8, 12), MAT.bride);
+  skirt.position.y = 0.42; skirt.visible = false; root.add(skirt);
   let marker = null;
   if (o.marker) {
     marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: markTex, transparent: true, depthWrite: false }));
     marker.position.y = 2.45; marker.scale.set(0.7, 0.7, 1); root.add(marker);
   }
   scene.add(root);
-  return { root: root, groundG: groundG, legL: legL, legR: legR, armL: armL, armR: armR, headG: headG, torso: torso, note: note, anger: anger, ring: ring, marker: marker, wp: Math.random() * 6 };
+  return { phones: phones, skirt: skirt, root: root, groundG: groundG, legL: legL, legR: legR, armL: armL, armR: armR, headG: headG, torso: torso, note: note, anger: anger, ring: ring, marker: marker, wp: Math.random() * 6 };
 }
 const playerPerson = makePerson({ shirt: MAT.playerShirt, pants: MAT.playerPants, skin: MAT.skin[0], ring: 'player', marker: true });
 const npcPersons = [];
@@ -808,37 +1018,83 @@ function danceSpinOffset(t) {
   if (cyc >= 12 && cyc < 13) return (cyc - 12) * Math.PI * 2; // 16拍に1回、全員同時に1回転
   return 0;
 }
+// 踊りの型。どの型でも全員が同じ位相 p = t*9.0 で踊る(シンクロが本作のキモ)。
+// 1拍目の決めポーズと8拍目のフリーズは全型共通、16拍に1回の回転も共通。
+let danceStyle = 'basic';
+const GROOVES = {
+  basic: function (P, p, b, cyc) {
+    P.root.position.y = b * 0.12 - 0.03;
+    P.root.rotation.z = Math.sin(p * 0.5) * 0.09;
+    // 基本グルーヴ: 左右非対称にして「変」にする
+    P.armL.rotation.x = Math.sin(p) * 1.6;
+    P.armL.rotation.z = 0.55 + Math.cos(p * 2) * 0.35;
+    P.armR.rotation.x = Math.sin(p + Math.PI) * 1.1 - 0.5;
+    P.armR.rotation.z = -0.35 - Math.cos(p) * 0.5;
+    P.legL.rotation.x = Math.sin(p) * 0.55;
+    P.legR.rotation.x = -Math.sin(p + 0.7) * 0.55;
+    P.torso.rotation.z = Math.sin(p) * 0.13;
+    P.torso.rotation.x = Math.sin(p * 2) * 0.1;
+    P.torso.rotation.y = Math.sin(p * 0.5) * 0.42;
+    P.headG.rotation.z = Math.sin(p + 0.6) * 0.26;
+    P.headG.rotation.x = Math.sin(p * 2) * 0.3;
+    if (cyc >= 4 && cyc < 6) { // 左腕は風車ぐるぐる、右腕は鳥の羽ばたき
+      P.armL.rotation.x = p * 2.2; P.armL.rotation.z = 0.15;
+      P.armR.rotation.x = -0.9;
+      P.armR.rotation.z = -0.9 - Math.abs(Math.sin(p * 3)) * 0.7;
+    }
+  },
+  robot: function (P, p, b, cyc) { // 半拍ごとにカクッと切り替わる
+    const st = Math.floor(cyc * 2) % 4, side = Math.floor(cyc) % 2 ? 1 : -1;
+    P.root.position.y = 0; P.root.rotation.z = 0;
+    const L = [-1.57, 0, -1.57, -3.0][st], R = [0, -1.57, -1.57, 0][st];
+    P.armL.rotation.x = L; P.armL.rotation.z = st === 3 ? 0.2 : 0.05;
+    P.armR.rotation.x = R; P.armR.rotation.z = -0.05;
+    P.legL.rotation.x = st === 1 ? -0.35 : 0; P.legR.rotation.x = st === 3 ? -0.35 : 0;
+    P.torso.rotation.x = 0; P.torso.rotation.z = 0; P.torso.rotation.y = side * 0.35;
+    P.headG.rotation.x = 0; P.headG.rotation.z = 0; P.headG.rotation.y = -side * 0.5;
+  },
+  bon: function (P, p, b, cyc) { // 半分のテンポで、両手を同じ向きへ流す
+    const q = p * 0.5, s = Math.sin(q);
+    P.root.position.y = Math.abs(s) * 0.05; P.root.rotation.z = 0;
+    P.armL.rotation.x = 2.3 + s * 0.25; P.armR.rotation.x = 2.3 - s * 0.25;
+    P.armL.rotation.z = 0.3 + s * 0.6; P.armR.rotation.z = -0.3 + s * 0.6;
+    P.legL.rotation.x = Math.max(0, s) * -0.5; P.legR.rotation.x = Math.max(0, -s) * -0.5;
+    P.torso.rotation.x = 0; P.torso.rotation.z = s * 0.15; P.torso.rotation.y = s * 0.25;
+    P.headG.rotation.x = 0.1; P.headG.rotation.z = s * 0.2;
+  },
+  twist: function (P, p, b, cyc) { // 腰を落として上半身と頭を逆にひねる
+    const s = Math.sin(p);
+    P.root.position.y = b * 0.05 - 0.1; P.root.rotation.z = 0;
+    P.armL.rotation.x = -s * 0.7; P.armR.rotation.x = s * 0.7;
+    P.armL.rotation.z = 1.1 + s * 0.2; P.armR.rotation.z = -1.1 + s * 0.2;
+    P.legL.rotation.x = -0.3 + s * 0.25; P.legR.rotation.x = -0.3 - s * 0.25;
+    P.torso.rotation.x = 0.12; P.torso.rotation.z = 0; P.torso.rotation.y = s * 0.8;
+    P.headG.rotation.x = 0; P.headG.rotation.z = 0; P.headG.rotation.y = -s * 0.5;
+  },
+  mania: function (P, p, b, cyc) { // 両腕逆回転の風車・ヘドバン・大ジャンプ
+    P.root.position.y = b * 0.24 - 0.03; P.root.rotation.z = Math.sin(p) * 0.12;
+    P.armL.rotation.x = p * 2.4; P.armR.rotation.x = -p * 2.4 + Math.PI;
+    P.armL.rotation.z = 0.35; P.armR.rotation.z = -0.35;
+    P.legL.rotation.x = Math.sin(p) * 0.9; P.legR.rotation.x = -Math.sin(p) * 0.9;
+    P.torso.rotation.x = Math.sin(p * 2) * 0.2; P.torso.rotation.z = 0; P.torso.rotation.y = Math.sin(p * 0.5) * 0.6;
+    P.headG.rotation.x = Math.sin(p * 2) * 0.5; P.headG.rotation.z = 0;
+  },
+};
 function dancePose(P, t) {
   const p = t * 9.0;
   const b = Math.abs(Math.sin(p));
   const cyc = (t * 9.0 / Math.PI) % 8;
-  P.root.position.y = b * 0.12 - 0.03;
-  P.root.rotation.z = Math.sin(p * 0.5) * 0.09;
-  // 基本グルーヴ: 左右非対称にして「変」にする
-  P.armL.rotation.x = Math.sin(p) * 1.6;
-  P.armL.rotation.z = 0.55 + Math.cos(p * 2) * 0.35;
-  P.armR.rotation.x = Math.sin(p + Math.PI) * 1.1 - 0.5;
-  P.armR.rotation.z = -0.35 - Math.cos(p) * 0.5;
-  P.legL.rotation.x = Math.sin(p) * 0.55;
-  P.legR.rotation.x = -Math.sin(p + 0.7) * 0.55;
-  P.torso.rotation.z = Math.sin(p) * 0.13;
-  P.torso.rotation.x = Math.sin(p * 2) * 0.1;
-  P.torso.rotation.y = Math.sin(p * 0.5) * 0.42;
-  P.headG.rotation.z = Math.sin(p + 0.6) * 0.26;
-  P.headG.rotation.x = Math.sin(p * 2) * 0.3;
+  P.headG.rotation.y = 0;
+  (GROOVES[danceStyle] || GROOVES.basic)(P, p, b, cyc);
   if (cyc < 1) { // 決めポーズ: 両手を上げる(全員同時)
     P.armL.rotation.x = 2.9 + Math.sin(p * 3) * 0.12; P.armL.rotation.z = 0.22;
     P.armR.rotation.x = 2.9 - Math.sin(p * 3) * 0.12; P.armR.rotation.z = -0.22;
-  } else if (cyc >= 4 && cyc < 6) { // 左腕は風車ぐるぐる、右腕は鳥の羽ばたき
-    P.armL.rotation.x = p * 2.2; P.armL.rotation.z = 0.15;
-    P.armR.rotation.x = -0.9;
-    P.armR.rotation.z = -0.9 - Math.abs(Math.sin(p * 3)) * 0.7;
   } else if (cyc >= 7) { // 全員フリーズ(変なポーズで完全静止)
     P.armL.rotation.x = 2.7; P.armL.rotation.z = 0.9;
     P.armR.rotation.x = -1.3; P.armR.rotation.z = -1.1;
     P.legL.rotation.x = 0.35; P.legR.rotation.x = -0.25;
     P.torso.rotation.y = 0.55; P.torso.rotation.z = 0.2; P.torso.rotation.x = 0;
-    P.headG.rotation.z = 0.42; P.headG.rotation.x = 0.15;
+    P.headG.rotation.z = 0.42; P.headG.rotation.x = 0.15; P.headG.rotation.y = 0;
     P.root.position.y = 0.04; P.root.rotation.z = 0.06;
   }
 }
@@ -850,7 +1106,7 @@ function walkPose(P, dt, fast) {
   P.armL.rotation.x = -s * 0.35; P.armR.rotation.x = s * 0.35;
   P.armL.rotation.z = 0.08; P.armR.rotation.z = -0.08;
   P.torso.rotation.z = 0; P.torso.rotation.y = 0; P.torso.rotation.x = 0;
-  P.headG.rotation.z = 0; P.headG.rotation.x = 0; P.root.rotation.z = 0;
+  P.headG.rotation.z = 0; P.headG.rotation.x = 0; P.headG.rotation.y = 0; P.root.rotation.z = 0;
 }
 function idlePose(P, t, id) { // 人だかりで待つ人: きょろきょろしながら屋台を眺める
   P.root.position.y = 0; P.root.rotation.z = 0;
@@ -940,7 +1196,7 @@ const el = {
   score: $('hudScore'), fill: $('infectFill'), infText: $('infectText'),
   chain: $('chainPop'), toast: $('toast'), btnSound: $('btnSound'),
   chainWrap: $('chainWrap'), chainFill: $('chainFill'), chainText: $('chainText'),
-  feverFx: $('feverFx'), feverPop: $('feverPop'),
+  feverFx: $('feverFx'), feverPop: $('feverPop'), gimmick: $('hudGimmick'),
 };
 let hudCache = {};
 function setText(key, node, val) { if (hudCache[key] !== val) { hudCache[key] = val; node.textContent = val; } }
@@ -965,8 +1221,28 @@ function updateHUD() {
   } else {
     el.chainWrap.style.display = 'none';
   }
+  setText('gim', el.gimmick, gimmickText());
+  el.gimmick.style.display = hudCache.gim ? 'block' : 'none';
   const fv = G.fever > 0 ? 'on' : '';
   if (hudCache.fever !== fv) { hudCache.fever = fv; el.feverFx.className = fv; }
+}
+function gimmickText() {
+  if (G.phase !== 'play') return '';
+  const gm = STAGES[G.stageIdx].gimmick;
+  if (gm === 'train') {
+    const t = G.nextTrainIn();
+    return t >= 0 ? '🚃 次の電車まで ' + Math.ceil(t) + '秒（あと' + G.arrivals.length + '本）　改札から人が増える' : '';
+  }
+  if (gm === 'couple') {
+    const left = G.npcs.some(function (n) { return (n.kind === 'bride' || n.kind === 'groom') && !n.burstUsed; });
+    return left ? '💒 奥の新郎新婦を踊らせると、周りの客が一斉に踊る' : '';
+  }
+  if (gm === 'bell') {
+    const b = G.bellIn();
+    if (b >= 0) return '🔔 昼休み終了まで ' + Math.ceil(b) + '秒';
+    return '🏢 入口に戻られると −' + CFG.escapePenalty + '秒' + (G.escaped ? '（' + G.escaped + '人戻った）' : '') + '　入口で待ち伏せろ！';
+  }
+  return '';
 }
 let toastTimer = 0;
 function showToast(msg) {
@@ -989,23 +1265,66 @@ function showFeverPop() {
 }
 
 // ================= ゲームフロー =================
-let G = DM.createGame((Math.random() * 1e9) | 0);
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+let bestScore = parseInt(lsGet('dm_best') || '0', 10) || 0;
+let selDance = lsGet('dm_dance') || 'basic';
+if (bestScore < DM.danceById(selDance).unlock) selDance = 'basic';
+function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance }); }
+function renderDances() {
+  const html = DM.DANCES.map(function (d) {
+    const locked = bestScore < d.unlock;
+    return '<button class="dBtn' + (d.id === selDance ? ' on' : '') + (locked ? ' lock' : '') + '" data-dance="' + d.id + '">' + (locked ? '🔒 ' : '') + d.name + '</button>';
+  }).join('');
+  const d = DM.danceById(selDance);
+  ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.innerHTML = html; });
+  ['danceDesc', 'danceDesc2'].forEach(function (id) { const e = $(id); if (e) e.textContent = '「' + d.name + '」' + d.desc; });
+}
+function onDanceClick(e) {
+  const b = e.target && e.target.closest ? e.target.closest('[data-dance]') : null;
+  if (!b) return;
+  const d = DM.danceById(b.getAttribute('data-dance'));
+  if (bestScore < d.unlock) {
+    const msg = '🔒 ベストスコア ' + d.unlock.toLocaleString() + ' で解放（称号「' + DM.rankFor(d.unlock) + '」）';
+    ['danceDesc', 'danceDesc2'].forEach(function (id) { const x = $(id); if (x) x.textContent = msg; });
+    return;
+  }
+  selDance = d.id; lsSet('dm_dance', selDance);
+  renderDances();
+  danceStyle = selDance; // タイトル背景のプレビューにも反映
+}
+['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
+renderDances();
+// 遊び方: 縦に余裕のある画面では最初から開く(小さいスマホではボタンを優先して畳む)
+if ($('howto') && window.innerHeight >= 760 && window.innerWidth >= 421) $('howto').open = true;
+let G = newGame();
 let started = false;
 let camShake = 0;
 let snapshotURL = null;
 let endTimer = -1;
 
+const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '昼休みが終わる前に！'];
+function stageToast() { showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― ' + STAGE_HINT[G.stageIdx]); }
 function setupStage() {
   buildWorld(G.stageIdx);
   for (let i = 0; i < npcPersons.length; i++) {
     const P = npcPersons[i], n = G.npcs[i];
     if (!n) { P.root.visible = false; P.groundG.visible = false; continue; }
-    P.root.visible = true; P.groundG.visible = true;
-    P.torso.material = n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
+    const vis = n.state !== 'away' && n.state !== 'gone';
+    P.root.visible = vis; P.groundG.visible = vis;
+    P.torso.material = n.kind === 'dj' ? MAT.djShirt : n.kind === 'bride' ? MAT.bride : n.kind === 'groom' ? MAT.groom
+      : n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
+    P.armL.children[0].material = P.armR.children[0].material = P.torso.material;
+    const sc = n.kind === 'kid' ? 0.68 : 1;
+    P.root.scale.set(sc, sc, sc);
+    P.phones.visible = n.kind === 'dj';
+    P.skirt.visible = n.kind === 'bride';
     if (P.ring) P.ring.visible = false;
   }
   for (let i = 0; i < guardPersons.length; i++) { guardPersons[i].root.visible = !!G.guards[i]; guardPersons[i].groundG.visible = !!G.guards[i]; }
   playerPerson.root.visible = true;
+  danceStyle = G.dance.id;
+  shownDJ = false; shownKid = false;
   hudCache = {};
   updateHUD();
 }
@@ -1018,6 +1337,25 @@ function handleEvents(evs) {
       spawnFx(ev.x, ev.z, 0xffcf3f); spawnNoteFx(ev.x, ev.z);
       sInfect(ev.chain);
       if (ev.chain >= 3) showChain(ev.chain);
+      updateHUD();
+      if (ev.kind === 'dj' && !shownDJ) { shownDJ = true; showToast('🎧 DJが踊り出した！ 感染範囲が広い'); }
+      else if (ev.kind === 'kid' && !shownKid) { shownKid = true; showToast('🧒 子どもが踊りながら走り回る！'); }
+    } else if (ev.type === 'train') {
+      lastTrainAt = G.elapsed; sTrain(); spawnFx(ev.x, ev.z, 0x9fd4ff);
+      showToast('🚃 電車が着いた！ 改札から' + ev.n + '人');
+      updateHUD();
+    } else if (ev.type === 'burst') {
+      sBurst(); camShake = 0.35; buzz([30, 30, 30]);
+      for (let k = 0; k < 3; k++) spawnFx(ev.x + (k - 1) * 1.5, ev.z + 1, 0xff5da2);
+      showToast('💒 ' + (ev.kind === 'bride' ? '新婦' : '新郎') + 'が踊り出した！ 周りの' + ev.n + '人も一斉に！');
+      updateHUD();
+    } else if (ev.type === 'bell') {
+      sBell(); buzz(80);
+      showToast('🔔 昼休み終了！ みんなオフィスに戻り始めた');
+      updateHUD();
+    } else if (ev.type === 'escape') {
+      sEscape(); spawnFx(ev.x, ev.z, 0x9fb6cc);
+      showToast('1人オフィスに戻った…（−' + CFG.escapePenalty + '秒）');
       updateHUD();
     } else if (ev.type === 'fever') {
       sFever(); showFeverPop(); buzz([40, 40, 40]);
@@ -1047,6 +1385,7 @@ function handleEvents(evs) {
   }
 }
 let pendingEnd = null;
+let shownDJ = false, shownKid = false;
 function showStagePanel(bonus) {
   $('stageStats').innerHTML =
     'クリアボーナス <span class="big">+' + bonus + '</span><br>' +
@@ -1084,6 +1423,13 @@ function showResult(goal, reason) {
     'スコア <span class="big">' + G.score + '</span><br>' +
     '最大 ' + G.maxChain + ' 連鎖　感染させた人数 のべ ' + G.totalInfectedEver + ' 人';
   $('resultRank').textContent = '「' + DM.rankFor(G.score) + '」';
+  const prevBest = bestScore;
+  if (G.score > bestScore) { bestScore = G.score; lsSet('dm_best', '' + bestScore); }
+  const newly = DM.DANCES.filter(function (d) { return d.unlock > prevBest && d.unlock <= bestScore; });
+  $('unlockMsg').innerHTML = newly.length ? '🎉 新しい踊り「' + newly.map(function (d) { return d.name; }).join('」「') + '」を解放！' : '';
+  $('unlockMsg').style.display = newly.length ? 'block' : 'none';
+  $('bestLine').textContent = 'ベスト ' + bestScore + (G.score >= bestScore && G.score > prevBest ? '（更新！）' : '');
+  renderDances();
   buildResultImage(function (url) {
     const im = $('resultImg');
     if (url) { im.src = url; im.style.display = 'block'; $('btnSaveImg').href = url; }
@@ -1102,24 +1448,25 @@ $('btnStart').addEventListener('click', function () {
   el.hud.style.display = 'block';
   el.btnSound.style.display = 'block';
   started = true;
+  G = newGame();
   G.startStage(0);
   setupStage();
-  showToast('STAGE 1　' + STAGES[0].name + ' ― 全員踊らせろ！');
+  stageToast();
 });
 $('btnNext').addEventListener('click', function () {
   unlockAudio();
   $('stagePanel').style.display = 'none';
   G.startStage(G.stageIdx + 1);
   setupStage();
-  showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― 全員踊らせろ！');
+  stageToast();
 });
 $('btnRetry').addEventListener('click', function () {
   unlockAudio();
   $('resultPanel').style.display = 'none';
-  G = DM.createGame((Math.random() * 1e9) | 0);
+  G = newGame();
   G.startStage(0);
   setupStage();
-  showToast('STAGE 1　' + STAGES[0].name + ' ― 全員踊らせろ！');
+  stageToast();
 });
 el.btnSound.addEventListener('click', function () {
   soundOn = !soundOn;
@@ -1137,19 +1484,23 @@ function syncPersons(t, dt) {
   PP.groundG.position.x = P.x; PP.groundG.position.z = P.z;
   PP.root.rotation.y = P.face + danceSpinOffset(t);
   dancePose(PP, t);
-  if (PP.ring) PP.ring.scale.set(rs, 1, rs);
+  const prs = rs * (G.dance.fx.playerRMul || 1);
+  if (PP.ring) PP.ring.scale.set(prs, 1, prs);
   PP.root.visible = P.invuln > 0 ? (Math.floor(t * 12) % 2 === 0) : true;
   MAT.ringP.opacity = 0.52 + Math.sin(t * 4) * 0.16;
   if (PP.marker) PP.marker.position.y = 2.45 + Math.sin(t * 3) * 0.08;
   for (let i = 0; i < G.npcs.length; i++) {
     const n = G.npcs[i], Q = npcPersons[i];
-    if (!Q || !Q.root.visible) continue;
+    if (!Q) continue;
+    const vis = n.state !== 'away' && n.state !== 'gone';
+    Q.root.visible = vis; Q.groundG.visible = vis;
+    if (!vis) continue;
     Q.root.position.x = n.x; Q.root.position.z = n.z;
     Q.groundG.position.x = n.x; Q.groundG.position.z = n.z;
     if (n.state === 'dancer') {
       Q.root.rotation.y = n.dir + danceSpinOffset(t);
       dancePose(Q, t);
-      if (Q.ring) { Q.ring.visible = true; Q.ring.scale.set(rs, 1, rs); }
+      if (Q.ring) { const rr = rs * G.radiusOf(n); Q.ring.visible = true; Q.ring.scale.set(rr, 1, rr); }
       Q.note.material.opacity = 0;
       Q.anger.material.opacity = n.cureProg > 0 ? Math.min(1, n.cureProg + 0.2) : 0;
     } else {
@@ -1201,6 +1552,15 @@ function adaptQuality(dt) {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 }
+function updateTrain() { // 着く2秒前に滑り込み、2.5秒停車して去る
+  if (!trainG) return;
+  const tIn = G.phase === 'play' ? G.nextTrainIn() : -1, since = G.elapsed - lastTrainAt;
+  let x = -200;
+  if (tIn >= 0 && tIn < 2) x = -70 * Math.pow(tIn / 2, 2);
+  else if (since >= 0 && since < 2.5) x = 0;
+  else if (since >= 2.5 && since < 4) x = 70 * Math.pow((since - 2.5) / 1.5, 2);
+  trainG.position.x = x;
+}
 const camPos = new THREE.Vector3(0, 33 * camDist, 22 + 25 * camDist);
 let lastT = performance.now() / 1000;
 function animate() {
@@ -1221,6 +1581,7 @@ function animate() {
   }
   adaptQuality(dt);
   syncPersons(now, dt);
+  updateTrain();
   updateFx(dt);
   if (camShake > 0) camShake = Math.max(0, camShake - dt);
   const shX = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
@@ -1244,7 +1605,7 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { get G() { return G; }, setupStage: setupStage };
+globalThis.__DM_UI__ = { get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();
 
 </script>

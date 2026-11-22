@@ -108,5 +108,28 @@ let sawInfect = false, frames = 0;
   for (let i = 0; i < 90; i++) frame();
   await new Promise(r => setTimeout(r, 10));
   for (let i = 0; i < 30; i++) frame();
+
+  // 全ステージの仕掛けと全部の踊りを、実際の描画ループで回す
+  const DM = globalThis.__DM__;
+  const seen = {};
+  for (const d of DM.DANCES) {
+    for (let s = 0; s < DM.STAGES.length; s++) {
+      const g = DM.createGame(100 + s, { dance: d.id });
+      g.startStage(s);
+      UI.setGame(g); UI.setupStage();
+      ok(UI.danceStyle === d.id, 'dance style applied: ' + d.id);
+      const st = DM.STAGES[s];
+      if (st.gimmick === 'bell') g.elapsed = st.bellAt - 0.5;
+      for (let i = 0; i < 30 * 20 && g.phase === 'play'; i++) {
+        botKeys(); frame();
+        for (const n of g.npcs) if (n.state === 'walk' && i % 90 === 0 && n.kind !== 'normal') { n.x = g.player.x + 1; n.z = g.player.z; } // 特別な人も踊らせる
+      }
+      seen[st.gimmick] = (seen[st.gimmick] || 0) + 1;
+      if (st.gimmick === 'train') ok(g.arrivals.length < st.arrivals.length || g.phase !== 'play', 'a train arrived during UI play');
+      if (st.gimmick === 'bell') ok(g.bellRung, 'bell rang during UI play');
+    }
+  }
+  ok(Object.keys(seen).length === 3, 'all gimmicks exercised');
+  for (let i = 0; i < 30; i++) frame();
   console.log(fails === 0 ? 'SMOKE TEST PASS' : fails + ' FAILURES');
 })();

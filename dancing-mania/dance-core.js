@@ -13,11 +13,27 @@ function mulberry32(a) {
 
 const ARENA = 27; // 移動可能範囲は ±ARENA の正方形
 
+// gimmick: 'train' = 電車が着くたびに改札から客がまとめて出てくる / 'couple' = 新郎新婦を踊らせると周りが一斉に踊る
+//          'bell' = 昼休み終了のチャイム後、通行人がオフィスの入口へ戻り始める(入られると時間が減る)
 const STAGES = [
-  { name: '駅前広場',        sub: '平日の昼休み',   npc: 26, stubborn: 4,  guards: 1, time: 60, clusters: 3 },
-  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 38, stubborn: 7,  guards: 2, time: 70, clusters: 4 },
-  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 52, stubborn: 11, guards: 3, time: 90, clusters: 5 },
+  { name: '駅前広場',        sub: '平日の昼休み',   npc: 26, stubborn: 4,  guards: 1, time: 60, clusters: 3, dj: 1, kids: 2,
+    gimmick: 'train', arrivals: [{ at: 12, n: 4 }, { at: 27, n: 4 }] },
+  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 38, stubborn: 7,  guards: 2, time: 70, clusters: 4, dj: 1, kids: 3,
+    gimmick: 'couple' },
+  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 52, stubborn: 11, guards: 3, time: 90, clusters: 5, dj: 2, kids: 4,
+    gimmick: 'bell', bellAt: 40 },
 ];
+
+// 踊りの解放: ベストスコアが unlock 以上で選べる。選んだ踊りは全ダンサーが踊る(シンクロは維持)
+const DANCES = [
+  { id: 'basic', name: 'へんな踊り',     unlock: 0,     desc: '効果なし。すべての始まり', fx: {} },
+  { id: 'robot', name: 'ロボットダンス', unlock: 10000, desc: '自分の感染範囲 +12%',     fx: { playerRMul: 1.12 } },
+  { id: 'bon',   name: '盆踊り',         unlock: 28000, desc: '連鎖の猶予 +0.8秒',       fx: { chainAdd: 0.8 } },
+  { id: 'twist', name: 'ツイスト',       unlock: 50000, desc: '移動速度 +8%',            fx: { speedMul: 1.08 } },
+  { id: 'mania', name: 'マニアの舞',     unlock: 75000, desc: 'フィーバー時間 +2秒',     fx: { feverAdd: 2 } },
+];
+function danceById(id) { for (const d of DANCES) if (d.id === id) return d; return DANCES[0]; }
+function unlockedDances(best) { return DANCES.filter(function (d) { return (best || 0) >= d.unlock; }); }
 
 const CFG = {
   playerSpeed: 9.4,
@@ -42,12 +58,24 @@ const CFG = {
   feverRadiusMul: 1.5,  // フィーバー中の感染範囲倍率
   feverExposeMul: 1.6,  // フィーバー中の感染速度倍率
   clusterRatio: 0.45,   // 人だかりに配置する割合の目安
+  // 特別な通行人
+  djRMul: 1.7,          // DJ が踊った時の感染範囲倍率
+  djSpeed: 1.4, djDancerSpeed: 1.0,
+  kidSpeed: 3.6, kidDancerSpeed: 3.0,
+  // ステージの仕掛け
+  coupleBurstR: 9,      // 新郎新婦が踊り出した時に一斉感染させる半径
+  coupleTable: [0, -17],
+  gate: [0, -25.5],     // 駅の改札
+  doors: [[-14, -26], [14, -26]], // オフィスの入口
+  leaveSpeed: 2.6,      // チャイム後に入口へ向かう速さ
+  escapePenalty: 3,     // 入口に入られると減る秒数
 };
 
 function dist2(ax, az, bx, bz) { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; }
 
-function createGame(seed) {
+function createGame(seed, opts) {
   const rng = mulberry32(seed >>> 0 || 1);
+  const dance = danceById(opts && opts.dance);
   const G = {
     phase: 'ready', // ready | play | clear | over | goal
     stageIdx: 0,
@@ -68,6 +96,11 @@ function createGame(seed) {
     events: [],
     totalNpc: 0,
     totalInfectedEver: 0,
+    dance: dance,
+    chainWin: CFG.chainWindow + (dance.fx.chainAdd || 0),
+    arrivals: [],   // 駅: 未到着の電車 [{at, ids}]
+    bellRung: false,
+    escaped: 0,
   };
 
   function ev(type, data) { G.events.push(Object.assign({ type: type }, data || {})); }
@@ -81,11 +114,16 @@ function createGame(seed) {
 
   G.chainTimeLeft = function () {
     if (G.chain <= 0) return 0;
-    return Math.max(0, CFG.chainWindow - (G.elapsed - G.lastInfectAt));
+    return Math.max(0, G.chainWin - (G.elapsed - G.lastInfectAt));
   };
+
+  G.nextTrainIn = function () { return G.arrivals.length ? Math.max(0, G.arrivals[0].at - G.elapsed) : -1; };
+  G.bellIn = function () { const st = STAGES[G.stageIdx]; return st.gimmick === 'bell' && !G.bellRung ? Math.max(0, st.bellAt - G.elapsed) : -1; };
+  G.radiusOf = function (n) { return n.kind === 'dj' ? CFG.djRMul : 1; };
 
   G.startStage = function (idx) {
     const st = STAGES[idx];
+    G.arrivals = []; G.bellRung = false; G.escaped = 0;
     G.stageIdx = idx;
     G.phase = 'play';
     G.hearts = CFG.hearts;
@@ -105,8 +143,34 @@ function createGame(seed) {
         id: i, x: x, z: z, dir: dir, dirT: 1 + rng() * 3,
         state: 'walk', exposure: 0, stubborn: i < st.stubborn, stand: false,
         immune: 0, cureProg: 0, walkPhase: rng() * Math.PI * 2,
-        colorIdx: (rng() * 8) | 0,
+        colorIdx: (rng() * 8) | 0, kind: 'normal', leaving: false, burstUsed: false,
       });
+    }
+    // 特別な通行人: 頑固な人の後ろの番号に DJ・子ども・(披露宴なら)新郎新婦を割り当てる
+    let k = st.stubborn;
+    for (let i = 0; i < (st.dj || 0); i++) G.npcs[k++].kind = 'dj';
+    for (let i = 0; i < (st.kids || 0); i++) { const n = G.npcs[k++]; n.kind = 'kid'; n.dirT = 0.5 + rng(); }
+    if (st.gimmick === 'couple') {
+      const tx = CFG.coupleTable[0], tz = CFG.coupleTable[1];
+      ['bride', 'groom'].forEach(function (kind, j) {
+        const n = G.npcs[k++];
+        n.kind = kind; n.stubborn = true; n.stand = true;
+        n.x = tx + (j ? 0.8 : -0.8); n.z = tz; n.dir = 0; // 客席(南)を向く
+      });
+    }
+    // 駅: 後ろの番号の普通の人を「まだ電車の中」にしておく
+    if (st.gimmick === 'train') {
+      let last = G.npcs.length - 1;
+      for (const a of st.arrivals) {
+        const ids = [];
+        for (let i = 0; i < a.n; i++) {
+          while (last >= 0 && G.npcs[last].kind !== 'normal') last--;
+          const n = G.npcs[last--];
+          n.state = 'away'; n.x = CFG.gate[0]; n.z = -40;
+          ids.push(n.id);
+        }
+        G.arrivals.push({ at: a.at, ids: ids });
+      }
     }
     const homes = [[-22, -22], [22, -22], [0, -24], [-22, 22]];
     G.guards = [];
@@ -125,6 +189,7 @@ function createGame(seed) {
       ct++;
       const cx = (rng() * 2 - 1) * 19, cz = (rng() * 2 - 1) * 19;
       if (dist2(cx, cz, G.player.x, G.player.z) < 64) continue;
+      if (st.gimmick === 'couple' && dist2(cx, cz, CFG.coupleTable[0], CFG.coupleTable[1]) < 100) continue;
       let okC = true;
       for (const c of G.clusters) if (dist2(cx, cz, c.x, c.z) < 121) okC = false;
       if (okC) G.clusters.push({ x: cx, z: cz });
@@ -133,7 +198,7 @@ function createGame(seed) {
       const per = Math.ceil(st.npc * CFG.clusterRatio / G.clusters.length);
       const counts = G.clusters.map(function () { return 0; });
       for (const n of G.npcs) {
-        if (n.stubborn) continue; // 頑固な人は人だかりに入らない
+        if (n.stubborn || n.kind !== 'normal' || n.state !== 'walk') continue; // 頑固な人・特別な人・未到着の人は人だかりに入らない
         let bi = -1;
         for (let k = 0; k < G.clusters.length; k++) if (counts[k] < per && (bi < 0 || counts[k] < counts[bi])) bi = k;
         if (bi < 0 || rng() < 0.25) continue;
@@ -158,17 +223,30 @@ function createGame(seed) {
     npc.state = 'dancer';
     npc.exposure = 0; npc.cureProg = 0;
     G.totalInfectedEver++;
-    if (G.elapsed - G.lastInfectAt <= CFG.chainWindow) G.chain++;
+    if (G.elapsed - G.lastInfectAt <= G.chainWin) G.chain++;
     else G.chain = 1;
     G.lastInfectAt = G.elapsed;
     if (G.chain > G.maxChain) G.maxChain = G.chain;
     if (G.chain === CFG.feverChain && G.fever <= 0) {
-      G.fever = CFG.feverTime;
+      G.fever = CFG.feverTime + (G.dance.fx.feverAdd || 0);
       ev('fever', {});
     }
     const pts = 100 + (G.chain - 1) * 30;
     G.score += pts;
-    ev('infect', { id: npc.id, x: npc.x, z: npc.z, chain: G.chain, pts: pts });
+    ev('infect', { id: npc.id, x: npc.x, z: npc.z, chain: G.chain, pts: pts, kind: npc.kind });
+    // 新郎新婦: 踊り出した瞬間、周りの客が一斉に踊り出す(1人につき1回だけ)
+    if ((npc.kind === 'bride' || npc.kind === 'groom') && !npc.burstUsed) {
+      npc.burstUsed = true;
+      const R2 = CFG.coupleBurstR * CFG.coupleBurstR;
+      const hit = G.npcs.filter(function (o) { return o.state === 'walk' && o.immune <= 0 && dist2(o.x, o.z, npc.x, npc.z) <= R2; });
+      ev('burst', { x: npc.x, z: npc.z, n: hit.length, kind: npc.kind });
+      for (const o of hit) { if (G.phase !== 'play') break; if (o.state === 'walk') infect(o); }
+    }
+    checkClear();
+  }
+
+  function checkClear() {
+    if (G.phase !== 'play' || G.arrivals.length) return;
     if (G.infectedCount() >= G.totalNpc) {
       const bonus = Math.ceil(G.timeLeft) * 10 + G.hearts * 200;
       G.score += bonus;
@@ -199,19 +277,58 @@ function createGame(seed) {
     P.moving = ml > 0.01;
     if (P.moving) {
       mx /= (ml > 1 ? ml : 1); mz /= (ml > 1 ? ml : 1);
-      P.x += mx * CFG.playerSpeed * dt;
-      P.z += mz * CFG.playerSpeed * dt;
+      const ps = CFG.playerSpeed * (G.dance.fx.speedMul || 1);
+      P.x += mx * ps * dt;
+      P.z += mz * ps * dt;
       P.face = Math.atan2(mx, mz);
       clampArena(P);
     }
 
+    // --- ステージの仕掛け ---
+    while (G.arrivals.length && G.elapsed >= G.arrivals[0].at) { // 電車が着いた
+      const a = G.arrivals.shift();
+      a.ids.forEach(function (id, j) {
+        const n = G.npcs[id];
+        n.state = 'walk'; n.exposure = 0; n.stand = false;
+        n.x = CFG.gate[0] + (j - (a.ids.length - 1) / 2) * 1.3; n.z = CFG.gate[1];
+        n.dir = Math.PI + (rng() - 0.5) * 0.9; // 南(広場の中)へ
+        n.dirT = 2 + rng() * 2;
+      });
+      ev('train', { n: a.ids.length, x: CFG.gate[0], z: CFG.gate[1], left: G.arrivals.length });
+    }
+    const st = STAGES[G.stageIdx];
+    if (st.gimmick === 'bell' && !G.bellRung && G.elapsed >= st.bellAt) {
+      G.bellRung = true;
+      for (const n of G.npcs) if (n.state === 'walk') { n.leaving = true; n.stand = false; }
+      ev('bell', {});
+    }
+
     // --- NPC移動 ---
     for (const n of G.npcs) {
+      if (n.state === 'away' || n.state === 'gone') continue;
       n.dirT -= dt;
-      if (n.dirT <= 0) { n.dir = rng() * Math.PI * 2; n.dirT = 1.5 + rng() * 3; }
+      if (n.dirT <= 0) { n.dir = rng() * Math.PI * 2; n.dirT = n.kind === 'kid' ? 0.6 + rng() * 1.4 : 1.5 + rng() * 3; }
       if (n.immune > 0) n.immune -= dt;
+      if (G.bellRung && n.state === 'walk' && n.kind !== 'bride' && n.kind !== 'groom') { // チャイム後: 最寄りの入口へ
+        n.leaving = true; n.stand = false;
+        let dx = 0, dz = 0, bd = Infinity;
+        for (const d of CFG.doors) { const q = dist2(n.x, n.z, d[0], d[1]); if (q < bd) { bd = q; dx = d[0]; dz = d[1]; } }
+        if (bd < 1.44) {
+          n.state = 'gone'; G.totalNpc--; G.escaped++;
+          G.timeLeft -= CFG.escapePenalty;
+          ev('escape', { id: n.id, x: n.x, z: n.z });
+          continue;
+        }
+        n.dir = Math.atan2(dx - n.x, dz - n.z);
+        const ls = n.kind === 'kid' ? CFG.kidSpeed : CFG.leaveSpeed;
+        n.x += Math.sin(n.dir) * ls * dt; n.z += Math.cos(n.dir) * ls * dt;
+        continue;
+      }
       if (n.stand && n.state === 'walk') continue; // 人だかりの人はその場に留まる
-      const sp = n.state === 'dancer' ? CFG.dancerSpeed : CFG.npcSpeed;
+      const dancing = n.state === 'dancer';
+      const sp = n.kind === 'kid' ? (dancing ? CFG.kidDancerSpeed : CFG.kidSpeed)
+        : n.kind === 'dj' ? (dancing ? CFG.djDancerSpeed : CFG.djSpeed)
+        : (dancing ? CFG.dancerSpeed : CFG.npcSpeed);
       n.x += Math.sin(n.dir) * sp * dt;
       n.z += Math.cos(n.dir) * sp * dt;
       if (n.x < -ARENA + 0.6) { n.x = -ARENA + 0.6; n.dir = Math.PI / 2 + (rng() - 0.5); }
@@ -223,6 +340,7 @@ function createGame(seed) {
     for (let i = 0; i < G.npcs.length; i++) {
       for (let j = i + 1; j < G.npcs.length; j++) {
         const a = G.npcs[i], b = G.npcs[j];
+        if (a.state === 'away' || a.state === 'gone' || b.state === 'away' || b.state === 'gone') continue;
         const d2 = dist2(a.x, a.z, b.x, b.z);
         if (d2 < 0.81 && d2 > 0.0001) {
           const d = Math.sqrt(d2), push = (0.9 - d) / 2;
@@ -236,14 +354,13 @@ function createGame(seed) {
     }
 
     // --- 感染判定 ---
-    const sources = [{ x: P.x, z: P.z }];
-    for (const n of G.npcs) if (n.state === 'dancer') sources.push(n);
     const fR = CFG.infectR * (G.fever > 0 ? CFG.feverRadiusMul : 1);
-    const R2 = fR * fR;
+    const sources = [{ x: P.x, z: P.z, r2: Math.pow(fR * (G.dance.fx.playerRMul || 1), 2) }];
+    for (const n of G.npcs) if (n.state === 'dancer') sources.push({ x: n.x, z: n.z, r2: Math.pow(fR * G.radiusOf(n), 2) });
     for (const n of G.npcs) {
       if (n.state !== 'walk' || n.immune > 0) continue;
       let near = false;
-      for (const s of sources) { if (dist2(n.x, n.z, s.x, s.z) <= R2) { near = true; break; } }
+      for (const s of sources) { if (dist2(n.x, n.z, s.x, s.z) <= s.r2) { near = true; break; } }
       const need = n.stubborn ? CFG.stubbornNeed : CFG.exposeNeed;
       if (near) {
         n.exposure += dt / need * (G.fever > 0 ? CFG.feverExposeMul : 1);
@@ -253,6 +370,14 @@ function createGame(seed) {
       }
     }
     if (G.phase !== 'play') return; // 全員感染でクリアした場合
+    if (G.timeLeft <= 0) { // 入口に入られて時間が尽きた
+      G.timeLeft = 0;
+      G.phase = 'over'; G.overReason = 'time';
+      ev('over', { reason: 'time' });
+      return;
+    }
+    checkClear(); // 最後の通行人が入口に入り、残り全員が踊っている場合
+    if (G.phase !== 'play') return;
 
     // --- 警備員AI ---
     for (const g of G.guards) {
@@ -352,5 +477,5 @@ function rankFor(score) {
   return 'ただの通行人';
 }
 
-globalThis.__DM__ = { STAGES: STAGES, CFG: CFG, ARENA: ARENA, createGame: createGame, rankFor: rankFor, mulberry32: mulberry32 };
+globalThis.__DM__ = { STAGES: STAGES, CFG: CFG, ARENA: ARENA, DANCES: DANCES, danceById: danceById, unlockedDances: unlockedDances, createGame: createGame, rankFor: rankFor, mulberry32: mulberry32 };
 })();
