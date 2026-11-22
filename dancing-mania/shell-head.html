@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ダンシングマニア（仮） | 変な踊りは、感染する。</title>
+<meta property="og:title" content="ダンシングマニア（仮）">
+<meta property="og:description" content="変な踊りが人から人へ感染していく3Dゲーム。あなたは患者ゼロ。全員踊らせろ。">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#14101f; font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif; color:#fff; }
+  #game { position:fixed; inset:0; }
+  #game canvas { display:block; touch-action:none; }
+
+  /* ===== HUD ===== */
+  #hud { position:fixed; top:0; left:0; right:0; padding:8px 10px; display:none; pointer-events:none; z-index:5; }
+  #hudTop { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .hudBox { background:rgba(10,8,24,.62); border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:6px 12px; backdrop-filter:blur(3px); }
+  #hudStage { font-size:13px; font-weight:700; letter-spacing:.04em; }
+  #hudStage small { display:block; font-size:10px; font-weight:400; opacity:.75; }
+  #hudMid { text-align:center; }
+  #hudTime { font-size:24px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums; }
+  #hudTime.warn { color:#ff5d7a; animation:blink .5s infinite alternate; }
+  @keyframes blink { from{opacity:1} to{opacity:.45} }
+  #hudHearts { font-size:14px; letter-spacing:2px; margin-top:2px; }
+  #hudRight { text-align:right; }
+  #hudScore { font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
+  #hudScore small { display:block; font-size:10px; font-weight:400; opacity:.75; }
+  #infectWrap { margin:8px auto 0; max-width:520px; background:rgba(10,8,24,.62); border:1px solid rgba(255,255,255,.18); border-radius:999px; height:22px; position:relative; overflow:hidden; }
+  #infectFill { height:100%; width:0%; background:linear-gradient(90deg,#ffcf3f,#ff5da2); transition:width .25s; }
+  #infectText { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  #chainWrap { margin:6px auto 0; max-width:420px; background:rgba(10,8,24,.62); border:1px solid rgba(255,207,63,.5); border-radius:999px; height:17px; position:relative; overflow:hidden; display:none; }
+  #chainFill { height:100%; width:100%; background:linear-gradient(90deg,#53c2c2,#ffcf3f); }
+  #chainText { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.8); }
+  #feverFx { position:fixed; inset:0; pointer-events:none; z-index:4; opacity:0; transition:opacity .3s; box-shadow:inset 0 0 130px 35px rgba(255,170,0,.5); }
+  #feverFx.on { opacity:1; animation:feverPulse .45s infinite alternate; }
+  @keyframes feverPulse { from{ box-shadow:inset 0 0 110px 28px rgba(255,170,0,.42);} to{ box-shadow:inset 0 0 165px 58px rgba(255,120,0,.68);} }
+  #feverPop { position:fixed; left:50%; top:37%; transform:translate(-50%,-50%) scale(.6); font-size:40px; font-weight:900; color:#ff8a3f; text-shadow:0 0 20px rgba(255,207,63,.95),0 3px 0 #a13d00; opacity:0; pointer-events:none; z-index:6; white-space:nowrap; }
+  #feverPop.show { animation:chainAnim .9s ease-out; }
+  #btnSound { position:fixed; right:10px; bottom:10px; z-index:6; pointer-events:auto; background:rgba(10,8,24,.62); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; display:none; }
+
+  #chainPop { position:fixed; left:50%; top:26%; transform:translate(-50%,-50%) scale(.6); font-size:44px; font-weight:900; color:#ffcf3f; text-shadow:0 0 18px rgba(255,93,162,.9),0 3px 0 #c2185b; opacity:0; pointer-events:none; z-index:6; white-space:nowrap; }
+  #chainPop.show { animation:chainAnim .8s ease-out; }
+  @keyframes chainAnim { 0%{opacity:0; transform:translate(-50%,-50%) scale(.5) rotate(-4deg);} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.15) rotate(2deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-60%) scale(1);} }
+  #toast { position:fixed; left:50%; bottom:12%; transform:translateX(-50%); background:rgba(10,8,24,.8); border:1px solid rgba(255,255,255,.25); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:6; white-space:nowrap; }
+  #toast.show { opacity:1; }
+
+  /* ===== パネル ===== */
+  .panel { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(8,6,18,.55); z-index:10; padding:16px; }
+  .card { background:linear-gradient(160deg,#241b3f,#171130); border:2px solid rgba(255,207,63,.55); border-radius:20px; padding:26px 24px; max-width:430px; width:100%; text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.6); max-height:92dvh; overflow-y:auto; }
+  .card h1 { font-size:32px; font-weight:900; letter-spacing:.02em; background:linear-gradient(90deg,#ffcf3f,#ff5da2); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .card h2 { font-size:24px; font-weight:900; margin-bottom:6px; }
+  .kaku { font-size:11px; opacity:.6; }
+  .tagline { margin:8px 0 4px; font-size:15px; font-weight:700; color:#ffcf3f; }
+  .desc { font-size:13px; line-height:1.75; opacity:.92; text-align:left; margin:12px 2px; }
+  .desc b { color:#ffcf3f; }
+  .btn { display:inline-block; background:linear-gradient(90deg,#ff5da2,#ff8a3f); color:#fff; border:none; border-radius:999px; padding:14px 38px; font-size:17px; font-weight:900; cursor:pointer; box-shadow:0 6px 0 #a12c5e; margin-top:10px; text-decoration:none; }
+  .btn:active { transform:translateY(4px); box-shadow:0 2px 0 #a12c5e; }
+  .btn.sub { background:#3a2f5e; box-shadow:0 6px 0 #241b3f; font-size:14px; padding:11px 26px; }
+  .stats { margin:14px auto 4px; font-size:14px; line-height:2; }
+  .stats .big { font-size:26px; font-weight:900; color:#ffcf3f; }
+  .rankName { font-size:22px; font-weight:900; color:#ff5da2; }
+  #resultImg { width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.25); margin-top:12px; display:none; }
+  .rowBtns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
+  .history { font-size:11px; opacity:.65; margin-top:14px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud">
+  <div id="hudTop">
+    <div class="hudBox" id="hudStage">STAGE 1<small></small></div>
+    <div class="hudBox" id="hudMid"><div id="hudTime">90</div><div id="hudHearts">❤❤❤</div></div>
+    <div class="hudBox" id="hudRight"><div id="hudScore">0</div><small>SCORE</small></div>
+  </div>
+  <div id="infectWrap"><div id="infectFill"></div><div id="infectText">感染 0 / 26</div></div>
+  <div id="chainWrap"><div id="chainFill"></div><div id="chainText"></div></div>
+</div>
+<div id="feverFx"></div>
+<button id="btnSound">🔊 音ON</button>
+<div id="chainPop"></div>
+<div id="feverPop"></div>
+<div id="toast"></div>
+
+<div class="panel" id="titlePanel">
+  <div class="card">
+    <h1>ダンシングマニア</h1>
+    <div class="kaku">（仮タイトル）</div>
+    <div class="tagline">変な踊りは、感染する。</div>
+    <div class="desc">
+      あなたは<b>患者ゼロ</b>――最初に踊り出す1人。<br>
+      踊りながら人のそばにいると、その人も踊り出す。踊り出した人は、また次の人を踊らせる。<br>
+      <b>警備員</b>は踊る人を説教して正気に戻し、あなたを捕まえに来る。<br>
+      捕まるのは<b>3回まで</b>。時間切れでも終わり。<b>全員を踊らせたらステージクリア！</b>
+    </div>
+    <div class="desc">
+      🖱️📱 移動：ドラッグ / WASD・矢印キー<br>
+      💃 感染：踊っている人の近くに約0.7秒いるだけ（頑固な人は長め）<br>
+      👥 屋台の周りの「人だかり」に火をつけると一気に広がる<br>
+      🔗 連鎖は2.5秒以内に次を感染させると継続（ゲージ表示あり）<br>
+      🔥 12連鎖でフィーバー：感染範囲が広がり、警備員も踊り出す
+    </div>
+    <button class="btn" id="btnStart">踊り始める</button>
+    <div class="history">1518年、ストラスブール。1人の女性が踊り始め、1ヶ月で400人が踊り続けた――実在の事件「ダンシングマニア」がモチーフです。</div>
+  </div>
+</div>
+
+<div class="panel" id="stagePanel" style="display:none;">
+  <div class="card">
+    <h2 id="stageClearTitle">STAGE CLEAR!</h2>
+    <div class="desc" style="text-align:center;">全員、踊り出しました。</div>
+    <div class="stats" id="stageStats"></div>
+    <button class="btn" id="btnNext">次のステージへ</button>
+  </div>
+</div>
+
+<div class="panel" id="resultPanel" style="display:none;">
+  <div class="card">
+    <h2 id="resultTitle">全ステージ制覇！</h2>
+    <div class="stats" id="resultStats"></div>
+    <div>称号</div>
+    <div class="rankName" id="resultRank"></div>
+    <img id="resultImg" alt="結果画像">
+    <div class="rowBtns">
+      <a class="btn sub" id="btnSaveImg" download="dancing-mania-result.png">画像を保存</a>
+      <a class="btn sub" id="btnShareX" target="_blank" rel="noopener">Xで共有</a>
+    </div>
+    <div class="rowBtns">
+      <button class="btn" id="btnRetry">もう一度踊る</button>
+    </div>
+  </div>
+</div>
