@@ -166,7 +166,7 @@ body.night .boardbar .info{color:#93a1c2}
       <div class="day"><small>DAY</small><b id="hD">1</b><small>/ 10</small></div>
       <div class="gauge">🏢 会社の体力 <span id="hHpN"></span><div class="bar"><i id="hHp"></i></div></div>
       <div class="money">💴 使えるお金<b id="hMo"></b></div>
-      <div class="gauge">😤 社員の不満 <span id="hFrN"></span><div class="bar"><i id="hFr"></i></div></div>
+      <div class="money">💥 通した攻撃<b id="hLk"></b></div>
       <div class="money">🛡 撃退した攻撃<b id="hKo"></b></div>
     </div>
   </div>
@@ -185,90 +185,75 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.f
 
 /* ============ 盤面の形（0〜1の座標） ============ */
 const LANES = [
-  { x: .125, ic: "📧", n: "メール" },
-  { x: .375, ic: "🔐", n: "ログイン" },
-  { x: .625, ic: "🚪", n: "VPN" },
-  { x: .875, ic: "☎️", n: "電話" },
+  { x: 1 / 6, ic: "📧", n: "メール" },
+  { x: .5,    ic: "🔐", n: "ログイン" },
+  { x: 5 / 6, ic: "🚪", n: "VPN" },
 ];
-const TOP = .07, BOUND = .5, GOAL = .95;
+const TOP = .08, BOUND = .5, GOAL = .95;
+const WALK = .075;   // 攻撃はレーンの右寄りを歩く。枠は左寄り
+// 枠：各レーンの入口に2つ・社内に2つ。対策は「自分のレーン」の「自分のゾーン」にいる攻撃だけを狙う
 const SLOTS = [];
-[[.17, "entry"], [.29, "entry"], [.41, "entry"], [.61, "inside"], [.73, "inside"], [.85, "inside"]].forEach(([y, zone]) =>
-  [.25, .5, .75].forEach(x => SLOTS.push({ x, y, zone })));
-const RANGE = .19;   // 横幅に対する射程
+[[.22, "entry"], [.37, "entry"], [.65, "inside"], [.8, "inside"]].forEach(([y, zone]) =>
+  LANES.forEach((l, lane) => SLOTS.push({ x: l.x - .07, y, zone, lane })));
 
 /* ============ 攻撃 ============
    入口の攻撃は、社内との境界を越えると「社内の姿」に変わる */
 const EN = {
-  sms:   { ic: "📦", n: "宅配SMS", lane: 1, hp: 4, spd: .05, to: "acct",
-           d: "偽の不在通知でパスワードを盗み、本人のふりをしてログインしてくる。" },
-  reuse: { ic: "🔑", n: "使い回しパスワード", lane: 1, hp: 4, spd: .056, to: "acct",
-           d: "よそのサービスから漏れたパスワードで、片っ端からログインを試してくる。" },
-  phish: { ic: "📧", n: "フィッシングメール", lane: 0, hp: 6, spd: .045, to: "mal",
+  pw:    { ic: "🔑", n: "盗まれたパスワード", lane: 1, hp: 5, spd: .05, to: "acct",
+           d: "偽のSMSやメールで盗んだパスワード、よそのサービスから漏れたパスワードで、本人のふりをしてログインしてくる。" },
+  phish: { ic: "📧", n: "フィッシングメール", lane: 0, hp: 7, spd: .045, to: "mal",
            d: "請求書を装った添付ファイル。開くとPCがマルウェアに感染する。" },
-  vpn:   { ic: "🚪", n: "VPN機器の弱点", lane: 2, hp: 9, spd: .042, to: "mal",
-           d: "更新されていない機器の弱点を突いて、正面から社内に入ってくる。企業のランサムウェア被害で特に多い入口。" },
-  bec:   { ic: "🎙️", n: "社長なりすまし", lane: 3, hp: 5, spd: .05, to: "wire",
-           d: "社長のふりをして経理に電話してくる。AIで声までそっくりにしてくることも。" },
+  vpn:   { ic: "🚪", n: "機器の弱点", lane: 2, hp: 11, spd: .04, to: "mal",
+           d: "更新されていないVPN機器の弱点を突いて、正面から社内に入ってくる。企業のランサムウェア被害で特に多い入口。" },
   usb:   { ic: "🔌", n: "持ち込まれた感染源", to: "mal",
            d: "拾ったUSBメモリや、更新の止まった古いPC。入口を通らず、いきなり社内に現れる。" },
-  acct:  { ic: "👤", n: "乗っ取りアカウント", hp: 6, spd: .045, inside: true, goal: "情報流出", dmg: 5,
+  acct:  { ic: "👤", n: "乗っ取りアカウント", hp: 8, spd: .045, inside: true, goal: "情報流出", dmg: 6,
            d: "本物の社員のアカウントで、社内のデータを次々に見て回る。" },
-  mal:   { ic: "🦠", n: "マルウェア", hp: 8, spd: .04, inside: true, goal: "ランサムウェア", dmg: 12,
+  mal:   { ic: "🦠", n: "マルウェア", hp: 12, spd: .04, inside: true, goal: "ランサムウェア", dmg: 14,
            d: "社内のPCに広がり、最後はデータを暗号化して身代金を要求する。" },
-  wire:  { ic: "💸", n: "偽の送金指示", hp: 6, spd: .05, inside: true, goal: "送金詐欺", dmg: 9,
-           d: "「至急この口座に振り込んでくれ」という指示が、経理に届く。" },
 };
-const OUTER = ["sms", "reuse", "phish", "vpn", "bec"];
+const OUTER = ["pw", "phish", "vpn"];
 
 /* ============ 対策 ============
-   hits に入っている攻撃にだけ効く。zone は置ける場所 */
+   1つの対策は1種類の攻撃にだけ効く。入口用と社内用がある */
 const TW = {
-  mfa:    { ic: "📱", n: "二段階認証", zone: "entry", cost: 15, dmg: 2, rate: 1, hits: ["sms", "reuse"], people: true, fr: 2,
+  mfa:    { ic: "📱", n: "二段階認証", zone: "entry", cost: 12, dmg: 1.4, hits: ["pw"],
             d: "パスワードが盗まれても、本人のスマホがないとログインできない" },
-  pm:     { ic: "🗝️", n: "パスワード管理アプリ", zone: "entry", cost: 8, dmg: 3, rate: 1, hits: ["reuse"], people: true, fr: 1,
-            d: "サービスごとに別々のパスワードに。よそで漏れても使い回せない" },
-  filter: { ic: "📨", n: "迷惑メールフィルタ", zone: "entry", cost: 12, dmg: 2, rate: 1.2, hits: ["phish"],
+  filter: { ic: "📨", n: "迷惑メールフィルタ", zone: "entry", cost: 12, dmg: 1.4, hits: ["phish"],
             d: "怪しいメールを、受信箱に届く前に止める" },
-  train:  { ic: "🎓", n: "社員研修", zone: "entry", cost: 6, dmg: 1, rate: 1, hits: ["sms", "phish", "bec"], people: true, fr: 1,
-            d: "怪しい連絡に気づく力をつける。幅広く効くが、威力は弱い" },
-  patch:  { ic: "🔧", n: "機器の更新", zone: "entry", cost: 15, dmg: 6, rate: 1, hits: ["vpn"],
-            d: "弱点をふさぐ。新しい弱点が見つかったら、また更新が必要" },
-  edr:    { ic: "🛡️", n: "監視ソフト", zone: "inside", cost: 15, dmg: 2, rate: 1, hits: ["mal"],
-            d: "PCの不審な動きを見つけて止める" },
-  seg:    { ic: "🧱", n: "ネットワーク分離", zone: "inside", cost: 12, dmg: 1, rate: .6, hits: ["mal", "acct"], slow: true,
-            d: "部署ごとにネットワークを区切る。範囲内の攻撃が広がる速さを半分にする" },
-  perm:   { ic: "🗂️", n: "権限の整理", zone: "inside", cost: 10, dmg: 2, rate: 1, hits: ["acct"], fr: 1,
+  patch:  { ic: "🔧", n: "機器の更新", zone: "entry", cost: 15, dmg: 2.6, hits: ["vpn"],
+            d: "弱点をふさぐ。新しい弱点が見つかったら、また当て直しが必要" },
+  perm:   { ic: "🗂️", n: "権限の整理", zone: "inside", cost: 10, dmg: 1.4, hits: ["acct"],
             d: "必要な人だけが、必要なデータを見られるようにする" },
-  rule:   { ic: "☎️", n: "折り返し確認ルール", zone: "inside", cost: 4, dmg: 3, rate: 1, hits: ["wire"], people: true, fr: 2,
-            d: "お金の指示は、一度切って自分から折り返して確かめる" },
+  edr:    { ic: "🛡️", n: "監視ソフト", zone: "inside", cost: 15, dmg: 1.4, hits: ["mal"],
+            d: "PCの不審な動きを見つけて止める" },
 };
 
 /* ============ 夜ごとの攻撃 ============ */
 const WAVES = {
-  1: { sms: 4 },
-  2: { sms: 3, reuse: 4 },
-  3: { sms: 3, reuse: 3, phish: 4 },
-  4: { reuse: 3, phish: 4, vpn: 2 },
-  5: { sms: 3, phish: 4, vpn: 2, bec: 3 },
-  6: { sms: 4, reuse: 4, phish: 5, vpn: 2, bec: 2 },
-  7: { sms: 5, phish: 6, vpn: 3, bec: 3 },
-  8: { reuse: 5, phish: 5, vpn: 3, bec: 4 },
-  9: { sms: 5, reuse: 5, phish: 6, vpn: 3, bec: 3 },
-  10: { sms: 6, reuse: 6, phish: 7, vpn: 4, bec: 4 },
+  1: { pw: 4 },
+  2: { pw: 6 },
+  3: { pw: 4, phish: 4 },
+  4: { pw: 4, phish: 4, vpn: 2 },
+  5: { pw: 6, phish: 6, vpn: 3 },
+  6: { pw: 7, phish: 7, vpn: 3 },
+  7: { pw: 8, phish: 7, vpn: 4 },
+  8: { pw: 8, phish: 8, vpn: 4 },
+  9: { pw: 9, phish: 9, vpn: 4 },
+  10: { pw: 10, phish: 10, vpn: 5 },
 };
 const NEWS = {
+  3: "請求書を装ったメールが社内に届き始めた。開くとPCが感染する。",
   4: "VPN機器を狙う攻撃が増えている。更新していない機器は、正面玄関の鍵が開いているのと同じ。",
-  7: "AIで作った自然な日本語の詐欺メールやSMSが急増。研修だけでは見抜きにくくなった（研修の効き目が半分に）。",
-  8: "AIで声をまねる「なりすまし電話」が出回り始めた。声だけでは見分けられない（研修がなりすましに効かなくなる）。",
+  6: "AIで作った自然な日本語の詐欺メールが急増。フィッシングメールが手強くなった。",
 };
 const VULN_DAYS = [7, 9];
 
 let S;
 function fresh() {
-  S = { day: 1, hp: 100, money: 0, budget: 40, fr: 10, towers: [], backup: false, flags: {}, ko: 0, leaks: 0,
-        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {}, place: null, selT: null, lunched: false };
+  S = { day: 1, hp: 100, money: 0, budget: 40, towers: [], backup: false, flags: {}, ko: 0, leaks: 0,
+        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {}, place: null, selT: null };
 }
-const pe = () => 1 - S.fr / 160;
 const dayScale = () => 1 + (S.day - 1) * .08;
 
 /* ============ 共通 ============ */
@@ -284,9 +269,7 @@ function hud() {
   $("hHpN").textContent = Math.max(0, Math.round(S.hp));
   const hp = $("hHp"); hp.style.width = clamp(S.hp, 0, 100) + "%";
   hp.style.background = S.hp > 60 ? "var(--ok)" : S.hp > 30 ? "var(--warn)" : "var(--ng)";
-  $("hFrN").textContent = Math.round(S.fr);
-  const fr = $("hFr"); fr.style.width = clamp(S.fr, 0, 100) + "%";
-  fr.style.background = S.fr < 40 ? "var(--ok)" : S.fr < 70 ? "var(--warn)" : "var(--ng)";
+  $("hLk").textContent = S.leaks + "件";
   $("hMo").textContent = S.money + "万円";
   $("hKo").textContent = S.ko + "件";
 }
@@ -314,8 +297,9 @@ G.title = () => {
     <div class="rules">
       <b>☀️ 朝</b>：社長と話して予算をもらい、今夜の予報を見て<b>対策を買って配置</b>する<br>
       <b>🌙 夜</b>：寝ている間に攻撃が押し寄せる。対策は<b>決まった相手にしか効かない</b><br>
-      <b>🚪 入口で止める</b>：二段階認証、メールフィルタ、機器の更新……<br>
-      <b>🧱 社内で広げない</b>：入口を抜けた攻撃は社内で姿を変える。監視ソフトや権限の整理で食い止めろ<br>
+      <b>🚪 入口で止める</b>：📱二段階認証・📨メールフィルタ・🔧機器の更新<br>
+      <b>🧱 社内で広げない</b>：入口を抜けた攻撃は社内で姿を変える。🗂️権限の整理・🛡️監視ソフトで食い止めろ<br>
+      対策は<b>同じレーン</b>に来た<b>決まった相手</b>にしか効かない<br>
       <b>📞 緊急対応</b>：夜中に2回だけ、攻撃をタップして止められる<br><br>
       10日間、会社の体力を守り抜け。
     </div>
@@ -338,13 +322,12 @@ G.morning = () => {
   const L = S.last;
   let boss, angry = false, report = "";
   if (!L) {
-    boss = "君が新しいIT担当か。ITのことはよくわからんから、全部任せる。今日の予算は40万。……そういえば最近、宅配業者を名乗る変なSMSが社員に届いてるらしいぞ。";
+    boss = "君が新しいIT担当か。ITのことはよくわからんから、全部任せる。今日の予算は40万。……そういえば最近、社員のパスワードが盗まれる事件が多いらしいぞ。";
   } else {
     const dmg = L.dmg;
     if (dmg >= 25) { angry = true; boss = pick(["昨夜のアレはなんだ！取引先から電話が鳴りっぱなしだぞ！……予算は出す。二度と起こすな。", "朝から警察と保険会社の対応だよ。何のための対策なんだ？……わかった、予算は増やそう。"]); }
     else if (dmg > 0) { angry = true; boss = pick(["昨夜、少しやられたそうじゃないか。説明してくれ。……まあいい、予算は少し増やす。", "「ちょっとした被害」で済んでよかったな、とは言わんぞ。今日の予算は増やしておく。"]); }
     else boss = pick(["昨夜も何も起きなかったな。……というか、本当に攻撃なんて来てるのか？予算は少し減らすぞ。", "平和なのはいいことだ。ということは、もう対策は足りてるんだろう？今日の予算は減らす。", "何も起きないなら、その予算は営業に回したいんだがね。"]);
-    if (S.fr >= 70) boss += "　それと、社員から「IT担当のルールが面倒すぎる」と苦情が来てるぞ。";
     report = `<div class="card"><h2>📋 昨夜の報告<small>撃退 ${L.ko}件・被害 ${L.leak.length}件</small></h2>
       ${L.leak.length ? L.leak.map(x => `<div class="leak"><span class="ic">${EN[x.from].ic}→${EN[x.as].ic}</span><div>${EN[x.from].n}が入口を抜け、${EN[x.as].n}になって${EN[x.as].goal}を起こした${x.mit ? "（バックアップで軽減）" : ""}
           <small>📘 入口なら ${counters(x.from).join("・") || "—（入口を通らない）"}／社内なら ${counters(x.as).join("・")}</small></div><span class="d">-${x.dmg}</span></div>`).join("")
@@ -373,7 +356,7 @@ const EV = [
   { id: "usb", min: 3, kick: "社員", title: "拾ったUSBメモリ",
     q: "「駐車場でUSBメモリを拾いました。誰のか、中身を見て確かめてもいいですか？」",
     o: [["見ていいよ", () => { S.extra.push("mal", "mal"); return "中には「給与一覧.xlsx」。開いた瞬間、何かが動いた気がする……。（今夜、🦠マルウェアが社内に直接2体現れる。入口の対策では止められない）"; }],
-        ["触らずに捨てさせる", () => { S.fr += 3; return "「なんでですか、もったいない」少し不満そうだ。拾ったUSBは挿さないのが鉄則。（不満 +3）"; }]] },
+        ["触らずに捨てさせる", () => "「もったいない……」と言いつつ、捨ててくれた。拾ったUSBは挿さないのが鉄則。"]] },
   { id: "snake", min: 3, kick: "営業電話", title: "「100%防ぐ」製品",
     q: "「AIがあらゆる攻撃を100%防ぐ『完全防御ボックス』！今なら20万円です。社長さんにもご案内済みです」",
     o: [["買う", () => { S.money = Math.max(0, S.money - 20); return "届いた箱の中身は、古いメールフィルタだった。20万円が消えた。「100%防ぐ」製品は存在しない。"; }],
@@ -382,18 +365,18 @@ const EV = [
     q: "経理「取引先から『振込先の口座が変わりました』とメールが来ました。来週の支払いから変えておきますね」",
     o: [["そのまま任せる", () => { S.hp -= 10; return "……取引先になりすました詐欺メールだった。支払ったお金は戻ってこない。（体力 -10）"; }],
         ["取引先に電話で確認させる", () => "取引先は口座を変えていなかった。詐欺メールだった。メールに書かれた番号ではなく、元から知っている番号にかけるのがコツ。"]] },
+  { id: "ceo", min: 5, kick: "経理", title: "社長からの電話",
+    q: "経理「さっき社長から電話があって、『極秘の買収で、今日中に500万振り込んでくれ』と。声も社長そのものでした。振り込みますね」",
+    o: [["急ぎなら振り込ませる", () => { S.hp -= 15; return "社長はその時間、ゴルフ場にいた。AIで声をまねた詐欺だった。（体力 -15）"; }],
+        ["一度切って、社長の携帯に折り返させる", () => "社長は何も知らなかった。声はAIでまねできても、こちらからの折り返しまではまねできない。"]] },
   { id: "byod", min: 4, cond: () => !S.flags.byod, kick: "社員", title: "在宅勤務の相談",
     q: "「家の私物パソコンでも仕事できるようにしてほしいです。みんなそう言ってます」",
-    o: [["許可する", () => { S.flags.byod = true; S.fr -= 12; return "社員は大喜びだ。ただ、守れていないPCが社内につながるようになった。（不満 -12、🚪VPN狙いの攻撃が強くなる）"; }],
-        ["却下する", () => { S.fr += 8; return "「時代遅れですよ」……空気が悪くなった。（不満 +8）"; }]] },
+    o: [["許可する", () => { S.flags.byod = true; return "社員は大喜びだ。ただ、守れていないPCが社内につながるようになった。（🚪機器の弱点を狙う攻撃が強くなる）"; }],
+        ["却下する", () => { S.flags.lazy = true; return "「時代遅れですよ」……社員のやる気が下がり、二段階認証を面倒がる人が増えた。（📱二段階認証の威力が少し下がる）"; }]] },
   { id: "oldpc", min: 4, kick: "社員", title: "古いパソコン",
     q: "「総務のパソコン、もうサポートが切れたWindowsらしいです。でも動くし、いいですよね？」",
     o: [["買い替える（8万円）", () => { S.money = Math.max(0, S.money - 8); return "新しいPCに入れ替えた。更新が届かないPCは、それだけで穴になる。"; }],
         ["動くならそのままで", () => { S.extra.push("mal"); return "更新されないPCは、攻撃者にとって鍵の開いたドアだ。（今夜、🦠マルウェアが社内に直接現れる）"; }]] },
-  { id: "drill", min: 3, kick: "提案", title: "訓練メール",
-    q: "偽の詐欺メールを社員に送って、引っかかるか試す訓練ができる。費用は3万円。",
-    o: [["実施する", () => { S.money = Math.max(0, S.money - 3); S.flags.drill = (S.flags.drill || 0) + 1; S.fr += 3; return "30人中7人がリンクを踏んだ。社員は少しムッとしたが、次は気をつけるはずだ。（🎓社員研修の威力が上がる、不満 +3）"; }],
-        ["やめておく", () => "今回は見送った。"]] },
 ];
 function pickEvent() {
   if (S.day < 2) return null;
@@ -410,7 +393,6 @@ function showEvent(e) {
 }
 G.ev = (i) => {
   const r = S.curEv.o[i][1]();
-  S.fr = clamp(S.fr, 0, 100);
   hud();
   $("evo").innerHTML = `<button disabled style="border-color:var(--accent)">${S.curEv.o[i][0]}</button>`;
   $("evr").innerHTML = `<div class="res">${r}</div><button class="go" onclick="${S.hp <= 0 ? "G.end(false)" : "G.prep()"}">${S.hp <= 0 ? "……" : "対策を準備する ▶"}</button>`;
@@ -445,7 +427,7 @@ function drawShop() {
     const t = TW[k], n = S.towers.filter(x => x.k === k).length;
     const hits = t.hits.map(h => `<i class="hit">${EN[h].ic}${EN[h].n}</i>`).join("");
     return `<div class="def ${n ? "on" : ""}"><div class="ic">${t.ic}</div><div class="tx"><b>${t.n}${n ? `<span style="font-size:11px;color:var(--ok)"> ×${n}</span>` : ""}</b><small>${t.d}</small>
-      <div class="tags"><i class="z ${t.zone === "inside" ? "in" : ""}">${t.zone === "entry" ? "入口に置く" : "社内に置く"}</i>効く：${hits}${t.fr ? `<i class="f">不満+${t.fr}/日</i>` : ""}</div></div>
+      <div class="tags"><i class="z ${t.zone === "inside" ? "in" : ""}">${t.zone === "entry" ? "入口に置く" : "社内に置く"}</i>効く：${hits}</div></div>
       <button class="act" ${S.money < t.cost ? "disabled" : ""} onclick="G.buy('${k}')">買う<small>${t.cost}万円</small></button></div>`;
   });
   if (S.vuln && S.towers.some(t => t.k === "patch"))
@@ -453,8 +435,6 @@ function drawShop() {
       <button class="act" ${S.money < 3 ? "disabled" : ""} onclick="G.repatch()">更新<small>3万円</small></button></div>`);
   rows.push(`<div class="def ${S.backup ? "on" : ""}"><div class="ic">💾</div><div class="tx"><b>オフラインバックアップ</b><small>ネットから切り離してデータを保管。🦠マルウェアの被害（ランサムウェア）を1/4にする。防ぐ力はない</small></div>
     ${S.backup ? `<button class="act off" disabled>導入済</button>` : `<button class="act" ${S.money < 15 ? "disabled" : ""} onclick="G.backup()">導入<small>15万円</small></button>`}</div>`);
-  rows.push(`<div class="def"><div class="ic">🍱</div><div class="tx"><b>ランチ付き説明会</b><small>対策の理由をきちんと説明する。社員の不満 -15（不満が高いと、人が守る対策の威力が落ちる）</small></div>
-    <button class="act" ${S.money < 5 || S.lunched ? "disabled" : ""} onclick="G.lunch()">${S.lunched ? "実施済" : "開く"}<small>5万円</small></button></div>`);
   $("shop").innerHTML = rows.join("");
   $("shopLeft").textContent = `残り ${S.money}万円`;
 }
@@ -463,14 +443,13 @@ G.buy = (k) => {
   if (S.money < TW[k].cost) return;
   if (!SLOTS.some((s, i) => s.zone === TW[k].zone && !S.towers.some(t => t.slot === i))) return;
   S.place = k; S.selT = null; $("selbox").innerHTML = "";
-  $("placebar").innerHTML = `<div class="placing"><span>${TW[k].ic} ${TW[k].n}を置く場所をタップ（${TW[k].zone === "entry" ? "入口" : "社内"}の青い枠）</span><button onclick="G.cancelPlace()">やめる</button></div>`;
+  $("placebar").innerHTML = `<div class="placing"><span>${TW[k].ic} ${TW[k].n}を置く場所をタップ（${TW[k].zone === "entry" ? "入口" : "社内"}の青い枠。${TW[k].hits.map(h => EN[h].ic).join("")}が通るレーンに）</span><button onclick="G.cancelPlace()">やめる</button></div>`;
   drawBoard();
   $("cv").scrollIntoView({ behavior: "smooth", block: "center" });
 };
 G.cancelPlace = () => { S.place = null; $("placebar").innerHTML = ""; drawBoard(); };
 G.repatch = () => { if (S.money < 3) return; spend(3); S.vuln = false; drawShop(); drawBoard(); };
 G.backup = () => { if (S.money < 15) return; spend(15); S.backup = true; drawShop(); };
-G.lunch = () => { if (S.money < 5 || S.lunched) return; spend(5); S.fr = Math.max(0, S.fr - 15); S.lunched = true; hud(); drawShop(); };
 function slotAt(px, py) {
   const { w, h } = CV;
   let best = -1, bd = 1e9;
@@ -533,7 +512,8 @@ function drawBoard(N) {
   ctx.fillStyle = col.bg; rr(ctx, 0, 0, w, h, 16); ctx.fill();
   ctx.fillStyle = col.zoneIn; ctx.fillRect(0, BOUND * h, w, (GOAL - BOUND) * h);
   ctx.fillStyle = col.goal; ctx.fillRect(0, GOAL * h, w, h - GOAL * h);
-  LANES.forEach(l => { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w * .07, TOP * h, w * .14, (GOAL - TOP) * h); });
+  LANES.forEach((l, i) => { if (i % 2 === 0) { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w / 6, TOP * h, w / 3, (GOAL - TOP) * h); } });
+  LANES.forEach(l => { ctx.strokeStyle = col.slot; ctx.setLineDash([2, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo((l.x + WALK) * w, TOP * h); ctx.lineTo((l.x + WALK) * w, GOAL * h); ctx.stroke(); ctx.setLineDash([]); });
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   LANES.forEach(l => {
     ctx.fillStyle = "#000"; ctx.font = `${Math.round(w * .048)}px sans-serif`; ctx.fillText(l.ic, l.x * w, .027 * h);
@@ -541,18 +521,17 @@ function drawBoard(N) {
   });
   ctx.fillStyle = col.txt; ctx.font = `900 ${Math.round(w * .027)}px sans-serif`;
   ctx.textAlign = "left";
-  ctx.fillText("🚪入口で止める", 6, .1 * h);
+  ctx.fillText("🚪入口で止める", 6, .115 * h);
   ctx.fillText("🧱社内で広げない", 6, (BOUND + .03) * h);
   ctx.textAlign = "center";
   ctx.fillText("💼 会社のデータ・お金", w / 2, (GOAL + .025) * h);
   ctx.strokeStyle = col.line; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(0, BOUND * h); ctx.lineTo(w, BOUND * h); ctx.stroke(); ctx.setLineDash([]);
-  const sz = w * .12;
+  const sz = w * .13;
   SLOTS.forEach((s, i) => {
     const x = s.x * w, y = s.y * h;
     const t = S.towers.find(t => t.slot === i);
     const can = S.place && TW[S.place].zone === s.zone && !t;
-    if (t && S.selT === t) { ctx.fillStyle = "rgba(10,100,216,.12)"; ctx.beginPath(); ctx.arc(x, y, RANGE * w, 0, 7); ctx.fill(); }
     if (!t) {
       ctx.lineWidth = can ? 2.5 : 1.5; ctx.strokeStyle = can ? "#0a64d8" : col.slot;
       ctx.setLineDash([4, 4]); rr(ctx, x - sz / 2, y - sz / 2, sz, sz, 10); ctx.stroke(); ctx.setLineDash([]);
@@ -574,7 +553,6 @@ function drawBoard(N) {
     const x = e.x * w, y = e.y * h, r = w * .042;
     ctx.fillStyle = e.inside ? "rgba(215,38,61,.92)" : "rgba(255,255,255,.95)";
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-    if (e.slow > 0) { ctx.strokeStyle = "#7fb3ff"; ctx.lineWidth = 3; ctx.stroke(); }
     ctx.fillStyle = "#000"; ctx.font = `${Math.round(r * 1.2)}px sans-serif`; ctx.fillText(EN[e.t].ic, x, y + 1);
     ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(x - r, y - r - 7, r * 2, 4);
     ctx.fillStyle = e.inside ? "#ffb3bd" : "#2fe3a5"; ctx.fillRect(x - r, y - r - 7, r * 2 * clamp(e.hp / e.max, 0, 1), 4);
@@ -604,18 +582,12 @@ function buildNight() {
   spawns.sort((a, b) => a.at - b.at);
   return { t: 0, spawns, en: [], shots: [], pops: [], emerg: 2, speed: 1, ko: 0, leak: [], dmg: 0, notes: new Set(), done: false, id: 0, cds: {} };
 }
-function towerDmg(k, type) {
-  const t = TW[k];
-  let d = t.dmg;
-  if (k === "mfa" && S.flags.no2fa) d -= .6;
-  if (k === "train") {
-    d += (S.flags.drill || 0) * .5;
-    if (S.day >= 7 && (type === "phish" || type === "sms")) d *= .5;
-    if (S.day >= 8 && type === "bec") d = 0;
-  }
+function towerDmg(k) {
+  let d = TW[k].dmg;
+  if (k === "mfa" && S.flags.no2fa) d -= .4;
+  if (k === "mfa" && S.flags.lazy) d -= .3;
   if (k === "patch" && S.vuln) d = 0;
-  if (t.people) d *= pe();
-  return d * 1.25;
+  return d;
 }
 function pop(N, x, y, t, kind) {
   const C = { ok: ["#14935a", "#fff"], ng: ["#d7263d", "#fff"], dim: ["rgba(90,100,125,.9)", "#fff"], warn: ["#c27c00", "#fff"] }[kind];
@@ -630,7 +602,8 @@ function nightStep(N, dt) {
     const lane = inside ? pick([0, 1, 2]) : EN[s.k].lane;
     let hp = EN[s.k].hp * dayScale();
     if (s.k === "vpn" && S.flags.byod) hp += 4;
-    N.en.push({ id: N.id++, t: s.k, from: inside ? "usb" : s.k, lane, x: LANES[lane].x, y: inside ? BOUND + .01 : TOP, hp, max: hp, inside, slow: 0, noted: {} });
+    if (s.k === "phish" && S.day >= 6) hp *= 1.3;
+    N.en.push({ id: N.id++, t: s.k, from: inside ? "usb" : s.k, lane, x: LANES[lane].x + WALK, y: inside ? BOUND + .01 : TOP, hp, max: hp, inside, noted: {} });
   }
   for (const tw of S.towers) {
     const T = TW[tw.k], sl = SLOTS[tw.slot];
@@ -639,20 +612,19 @@ function nightStep(N, dt) {
     N.cds[key] = (N.cds[key] || 0) - dt;
     let target = null;
     for (const e of N.en) {
-      if (Math.hypot(e.x * w - sx, e.y * h - sy) > RANGE * w) continue;
+      if (e.lane !== sl.lane || e.inside !== (sl.zone === "inside")) continue;
       if (!T.hits.includes(e.t)) {
-        if (!e.noted[key]) {
+        if (!e.noted[key] && Math.abs(e.y - sl.y) < .08) {
           e.noted[key] = true;
           pop(N, sl.x, sl.y - .045, `${T.ic}効かない`, "dim");
           N.notes.add(`${T.ic}${T.n}は ${EN[e.t].ic}${EN[e.t].n} には効かない。${EN[e.t].ic}に効くのは ${counters(e.t).join("・")}`);
         }
         continue;
       }
-      if (T.slow) e.slow = .25;
       if (!target || e.y > target.y) target = e;
     }
     if (target && N.cds[key] <= 0) {
-      const d = towerDmg(tw.k, target.t);
+      const d = towerDmg(tw.k);
       if (d > 0) {
         target.hp -= d;
         N.shots.push({ x1: sx, y1: sy, x2: target.x * w, y2: target.y * h, life: .25 });
@@ -660,18 +632,19 @@ function nightStep(N, dt) {
         target.noted["z" + key] = true;
         pop(N, sl.x, sl.y - .045, tw.k === "patch" ? "🔧弱点が未更新" : `${T.ic}効き目なし`, "warn");
       }
-      N.cds[key] = 1 / T.rate;
+      N.cds[key] = 1;
     }
   }
   for (const e of N.en) {
     if (e.hp <= 0) continue;
-    e.y += EN[e.t].spd * (e.slow > 0 ? .5 : 1) * dt;
-    e.slow -= dt;
+    e.y += EN[e.t].spd * dt;
     if (!e.inside && e.y >= BOUND) {
       e.inside = true; e.t = EN[e.from].to;
       e.hp = e.max = EN[e.t].hp * dayScale();
       e.noted = {};
-      pop(N, e.x, BOUND, `侵入！→${EN[e.t].ic}`, "ng");
+      // 入られた時点で、調査や対応に手間がかかる
+      S.hp -= 1; N.dmg += 1; N.breach = (N.breach || 0) + 1;
+      pop(N, e.x, BOUND, `侵入！-1 →${EN[e.t].ic}`, "ng");
     }
     if (e.y >= GOAL) {
       let dmg = Math.round(EN[e.t].dmg * (1 + (S.day - 1) * .06));
@@ -694,8 +667,6 @@ function nightStep(N, dt) {
 }
 G.night = () => {
   S.place = null; S.selT = null;
-  S.towers.forEach(t => S.fr += TW[t.k].fr || 0);
-  S.fr = clamp(S.fr - 6, 0, 100);
   document.body.className = "night";
   hud();
   render(`<div class="scene" style="color:#7fb3ff">🌙 DAY ${S.day} ・ 夜 ・ 自宅で就寝中</div>
@@ -739,7 +710,6 @@ function nightTap(ev) {
   N.emerg--;
   best.hp = 0;
   pop(N, best.x, best.y - .03, "📞緊急対応", "warn");
-  S.fr = clamp(S.fr + 1, 0, 100);
   updInfo();
 }
 function endNight() {
@@ -754,7 +724,6 @@ function endNight() {
   else S.budget = Math.max(20, Math.round(S.budget * .85));
   S.day++;
   S.money += S.budget;
-  S.lunched = false;
   if (VULN_DAYS.includes(S.day) && S.towers.some(t => t.k === "patch")) S.vuln = true;
   G.morning();
 }
