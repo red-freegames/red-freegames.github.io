@@ -165,7 +165,7 @@ DM.STAGES.forEach(function (st, i) {
 
 // --- 踊りの効果 ---
 {
-  ok(DM.unlockedDances(0).length === 1 && DM.unlockedDances(999999).length === DM.DANCES.length, 'unlock by best score');
+  ok(DM.unlockedDances(0).length === 1 && DM.unlockedDances(1e9).length === DM.DANCES.length, 'unlock by best score');
   const a = DM.createGame(1, { dance: 'bon' }); ok(a.chainWin === DM.CFG.chainWindow + 0.8, 'bon extends chain window');
   const b = DM.createGame(1, { dance: 'twist' }); b.startStage(0); parkGuards(b);
   const c = DM.createGame(1); c.startStage(0); parkGuards(c);

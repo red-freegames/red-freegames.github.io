@@ -356,8 +356,99 @@ function makePerson(o) {
   return { phones: phones, skirt: skirt, root: root, groundG: groundG, legL: legL, legR: legR, armL: armL, armR: armR, headG: headG, torso: torso, note: note, anger: anger, ring: ring, marker: marker, wp: Math.random() * 6 };
 }
 const playerPerson = makePerson({ shirt: MAT.playerShirt, pants: MAT.playerPants, skin: MAT.skin[0], ring: 'player', marker: true });
-const npcPersons = [];
-for (let i = 0; i < 52; i++) npcPersons.push(makePerson({ shirt: MAT.shirt[i % 8], pants: MAT.pants[i % 4], skin: MAT.skin[i % 3], ring: 'dancer' }));
+// ================= 群衆(通行人)のインスタンス描画 =================
+// 通行人は最大 NPC_MAX 人。部位ごとに InstancedMesh を1つ持つので、描画の呼び出しは人数に関係なく部位の数だけ。
+// 姿勢は makePerson と同じ構造の「骨組み」1体(RIG)に dancePose/walkPose/idlePose を当て、各部位のワールド行列をコピーする。
+const NPC_MAX = 140;
+const crowdMat = new THREE.MeshLambertMaterial({ color: 0xffffff }); // 色はインスタンスごと
+function crowdMesh(geo, mat) {
+  const m = new THREE.InstancedMesh(geo, mat, NPC_MAX);
+  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; // count は色の器を作ってから0にする
+  scene.add(m); return m;
+}
+const CROWD = {
+  legL: crowdMesh(geoLeg, crowdMat), legR: crowdMesh(geoLeg, crowdMat), torso: crowdMesh(geoBody, crowdMat),
+  armL: crowdMesh(geoArm, crowdMat), armR: crowdMesh(geoArm, crowdMat), head: crowdMesh(geoHead, crowdMat),
+  phones: crowdMesh(new THREE.BoxGeometry(0.5, 0.2, 0.24), MAT.phones),
+  skirt: crowdMesh(new THREE.CylinderGeometry(0.3, 0.62, 0.8, 12), MAT.bride),
+  shadow: crowdMesh(geoShadow, MAT.shadow),
+  rim: crowdMesh(geoRingD, MAT.ringD), fill: crowdMesh(geoDisc, MAT.ringFillD),
+};
+const COLOR_PARTS = ['legL', 'legR', 'torso', 'armL', 'armR', 'head'];
+// 色の器(instanceColor)は setColorAt の初回に「その時の count 分」だけ作られるので、count = NPC_MAX のうちに作る
+(function () { const w = new THREE.Color(0xffffff); for (const k of COLOR_PARTS) for (let i = 0; i < NPC_MAX; i++) CROWD[k].setColorAt(i, w); for (const k in CROWD) CROWD[k].count = 0; })();
+const RIG = (function () {
+  const o = function (x, y, z, parent) { const n = new THREE.Object3D(); n.position.set(x, y, z); parent.add(n); return n; };
+  const root = new THREE.Object3D();
+  const headG = o(0, 1.38, 0, root);
+  return { root: root, legL: o(-0.16, 0.6, 0, root), legR: o(0.16, 0.6, 0, root), torso: o(0, 0.99, 0, root),
+    armL: o(-0.41, 1.3, 0, root), armR: o(0.41, 1.3, 0, root), headG: headG, head: o(0, 0.2, 0, headG),
+    phones: o(0, 0.32, 0, headG), skirt: o(0, 0.42, 0, root), wp: 0 };
+})();
+const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
+const tmpO = new THREE.Object3D();
+const crowdWp = new Float32Array(NPC_MAX);
+for (let i = 0; i < NPC_MAX; i++) crowdWp[i] = Math.random() * 6;
+function crowdGround(mesh, idx, x, y, z, sc) { // 地面に寝かせた円・影の行列
+  tmpO.position.set(x, y, z); tmpO.rotation.set(-Math.PI / 2, 0, 0); tmpO.scale.set(sc, sc, 1); tmpO.updateMatrix();
+  mesh.setMatrixAt(idx, tmpO.matrix);
+}
+// 頭上の♪(感染しかけ)と💢(説教中)は数が限られるので使い回しの小さなプール
+const crowdNotes = [], crowdAnger = [];
+for (let i = 0; i < 40; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTex, transparent: true, depthWrite: false })); sp.visible = false; scene.add(sp); crowdNotes.push(sp); }
+for (let i = 0; i < 16; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: angerTex, transparent: true, depthWrite: false })); sp.visible = false; sp.scale.set(0.8, 0.8, 1); scene.add(sp); crowdAnger.push(sp); }
+function setupCrowdColors() {
+  const c = new THREE.Color();
+  for (let i = 0; i < G.npcs.length && i < NPC_MAX; i++) {
+    const n = G.npcs[i];
+    const shirt = n.kind === 'dj' ? MAT.djShirt : n.kind === 'bride' ? MAT.bride : n.kind === 'groom' ? MAT.groom : n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
+    c.copy(shirt.color); CROWD.torso.setColorAt(i, c); CROWD.armL.setColorAt(i, c); CROWD.armR.setColorAt(i, c);
+    c.copy(MAT.pants[i % 4].color); CROWD.legL.setColorAt(i, c); CROWD.legR.setColorAt(i, c);
+    c.copy(MAT.skin[i % 3].color); CROWD.head.setColorAt(i, c);
+  }
+  for (const k of COLOR_PARTS) CROWD[k].instanceColor.needsUpdate = true;
+}
+function syncCrowd(t, dt, rs) {
+  const R = RIG, N = Math.min(G.npcs.length, NPC_MAX);
+  let ri = 0, pi = 0, si = 0, ni = 0, ai = 0;
+  for (let i = 0; i < N; i++) {
+    const n = G.npcs[i];
+    if (n.state === 'away' || n.state === 'gone') {
+      for (const k of COLOR_PARTS) CROWD[k].setMatrixAt(i, ZERO_M);
+      CROWD.shadow.setMatrixAt(i, ZERO_M);
+      continue;
+    }
+    const sc = n.kind === 'kid' ? 0.68 : 1;
+    R.root.position.set(n.x, 0, n.z); R.root.scale.set(sc, sc, sc);
+    if (n.state === 'dancer') {
+      R.root.rotation.set(0, n.dir + danceSpinOffset(t), 0);
+      dancePose(R, t);
+      const rr = rs * G.radiusOf(n);
+      crowdGround(CROWD.rim, ri, n.x, 0.05, n.z, rr); crowdGround(CROWD.fill, ri, n.x, 0.04, n.z, rr); ri++;
+      if (n.cureProg > 0 && ai < crowdAnger.length) { const a = crowdAnger[ai++]; a.visible = true; a.position.set(n.x, 2.2 * sc, n.z); a.material.opacity = Math.min(1, n.cureProg + 0.2); }
+    } else {
+      R.root.rotation.set(0, n.dir, 0);
+      if (n.stand) idlePose(R, t, n.id); else { R.wp = crowdWp[i]; walkPose(R, dt, false); crowdWp[i] = R.wp; }
+      if (n.exposure > 0.02 && ni < crowdNotes.length) {
+        const s = 0.55 + n.exposure * 0.55, sp = crowdNotes[ni++];
+        sp.visible = true; sp.material.opacity = Math.min(1, n.exposure + 0.2); sp.scale.set(s, s, 1);
+        sp.position.set(n.x, 2.2 * sc + Math.sin(t * 6 + n.id) * 0.06, n.z);
+      }
+    }
+    R.root.updateMatrixWorld(true);
+    for (const k of COLOR_PARTS) CROWD[k].setMatrixAt(i, R[k].matrixWorld);
+    if (n.kind === 'dj') CROWD.phones.setMatrixAt(pi++, R.phones.matrixWorld);
+    if (n.kind === 'bride') CROWD.skirt.setMatrixAt(si++, R.skirt.matrixWorld);
+    crowdGround(CROWD.shadow, i, n.x, 0.02, n.z, sc);
+  }
+  for (const k of COLOR_PARTS) { CROWD[k].count = N; CROWD[k].instanceMatrix.needsUpdate = true; }
+  CROWD.shadow.count = N; CROWD.shadow.instanceMatrix.needsUpdate = true;
+  CROWD.rim.count = ri; CROWD.fill.count = ri; CROWD.rim.instanceMatrix.needsUpdate = true; CROWD.fill.instanceMatrix.needsUpdate = true;
+  CROWD.phones.count = pi; CROWD.phones.instanceMatrix.needsUpdate = true;
+  CROWD.skirt.count = si; CROWD.skirt.instanceMatrix.needsUpdate = true;
+  for (let k = ni; k < crowdNotes.length; k++) crowdNotes[k].visible = false;
+  for (let k = ai; k < crowdAnger.length; k++) crowdAnger[k].visible = false;
+}
 const bandPersons = [];
 for (let i = 0; i < 3; i++) {
   const bp = makePerson({ shirt: MAT.bandShirt, pants: MAT.guardPants, skin: MAT.skin[(i + 1) % 3] });
@@ -712,7 +803,7 @@ function renderStages() {
   $('stageList').innerHTML = STAGES.map(function (st, i) {
     return '<button class="dBtn sBtn' + (i === startIdx ? ' on' : '') + (i > reach ? ' lock' : '') + '" data-stage="' + i + '" title="' + st.name + '">' + (i + 1) + '</button>';
   }).join('');
-  $('stageName').textContent = 'STAGE ' + (startIdx + 1) + '　' + STAGES[startIdx].name + (startIdx > 0 ? '（スコアはここから）' : '');
+  $('stageName').textContent = 'STAGE ' + (startIdx + 1) + '　' + STAGES[startIdx].name + (startIdx > 0 ? ' から始める（スコアは0から数え直し）' : ' から始める');
 }
 function onStageClick(e) {
   const b = e.target && e.target.closest ? e.target.closest('[data-stage]') : null;
@@ -781,20 +872,7 @@ function stageToast() { showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G
 function setupStage() {
   snapshotURL = null; finale = 0; slowMo = 0;
   buildWorld(G.stageIdx);
-  for (let i = 0; i < npcPersons.length; i++) {
-    const P = npcPersons[i], n = G.npcs[i];
-    if (!n) { P.root.visible = false; P.groundG.visible = false; continue; }
-    const vis = n.state !== 'away' && n.state !== 'gone';
-    P.root.visible = vis; P.groundG.visible = vis;
-    P.torso.material = n.kind === 'dj' ? MAT.djShirt : n.kind === 'bride' ? MAT.bride : n.kind === 'groom' ? MAT.groom
-      : n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
-    P.armL.children[0].material = P.armR.children[0].material = P.torso.material;
-    const sc = n.kind === 'kid' ? 0.68 : 1;
-    P.root.scale.set(sc, sc, sc);
-    P.phones.visible = n.kind === 'dj';
-    P.skirt.visible = n.kind === 'bride';
-    if (P.ring) P.ring.visible = false;
-  }
+  setupCrowdColors();
   for (let i = 0; i < guardPersons.length; i++) { guardPersons[i].root.visible = !!G.guards[i]; guardPersons[i].groundG.visible = !!G.guards[i]; }
   playerPerson.root.visible = true;
   danceStyle = G.dance.id;
@@ -909,7 +987,7 @@ const GAME_URL = 'https://red-freegames.github.io/dancing-mania/';
 function showResult(goal, reason) {
   $('resultTitle').textContent = goal ? '🎉 全ステージ制覇！' : (reason === 'caught' ? '警備員に捕まった…' : '時間切れ…');
   $('resultStats').innerHTML =
-    '到達： STAGE ' + (G.stageIdx + 1) + ' / ' + STAGES.length + (G.startIdx ? '（STAGE ' + (G.startIdx + 1) + ' から）' : '') + '<br>' +
+    '到達： STAGE ' + (G.stageIdx + 1) + ' / ' + STAGES.length + (G.startIdx ? '（STAGE ' + (G.startIdx + 1) + ' から挑戦）' : '') + '<br>' +
     'スコア <span class="big">' + G.score + '</span><br>' +
     '最大 ' + G.maxChain + ' 連鎖　感染させた人数 のべ ' + G.totalInfectedEver + ' 人';
   $('resultRank').textContent = '「' + DM.rankFor(G.score) + '」';
@@ -1009,33 +1087,7 @@ function syncPersons(t, dt) {
   PP.root.visible = P.invuln > 0 ? (Math.floor(t * 12) % 2 === 0) : true;
   MAT.ringP.opacity = 0.52 + Math.sin(t * 4) * 0.16;
   if (PP.marker) PP.marker.position.y = 2.45 + Math.sin(t * 3) * 0.08;
-  for (let i = 0; i < G.npcs.length; i++) {
-    const n = G.npcs[i], Q = npcPersons[i];
-    if (!Q) continue;
-    const vis = n.state !== 'away' && n.state !== 'gone';
-    Q.root.visible = vis; Q.groundG.visible = vis;
-    if (!vis) continue;
-    Q.root.position.x = n.x; Q.root.position.z = n.z;
-    Q.groundG.position.x = n.x; Q.groundG.position.z = n.z;
-    if (n.state === 'dancer') {
-      Q.root.rotation.y = n.dir + danceSpinOffset(t);
-      dancePose(Q, t);
-      if (Q.ring) { const rr = rs * G.radiusOf(n); Q.ring.visible = true; Q.ring.scale.set(rr, 1, rr); }
-      Q.note.material.opacity = 0;
-      Q.anger.material.opacity = n.cureProg > 0 ? Math.min(1, n.cureProg + 0.2) : 0;
-    } else {
-      Q.root.rotation.y = n.dir;
-      if (n.stand) idlePose(Q, t, n.id); else walkPose(Q, dt, false);
-      if (Q.ring) Q.ring.visible = false;
-      Q.anger.material.opacity = 0;
-      if (n.exposure > 0.02) {
-        Q.note.material.opacity = Math.min(1, n.exposure + 0.2);
-        const s = 0.55 + n.exposure * 0.55;
-        Q.note.scale.set(s, s, 1);
-        Q.note.position.y = 2.2 + Math.sin(t * 6 + n.id) * 0.06;
-      } else Q.note.material.opacity = 0;
-    }
-  }
+  syncCrowd(t, dt, rs);
   for (let i = 0; i < bandPersons.length; i++) {
     const b = G.band[i], Q = bandPersons[i];
     Q.root.visible = Q.groundG.visible = !!b;
@@ -1186,5 +1238,5 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { setMode: function (m) { chainMode = m; }, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
+globalThis.__DM_UI__ = { CROWD: CROWD, setMode: function (m) { chainMode = m; }, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();

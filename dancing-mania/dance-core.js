@@ -23,29 +23,30 @@ const ARENA = 27; // 移動可能範囲は ±ARENA の正方形
 //   'bell'    昼休み終了のチャイム後、通行人がオフィスの入口へ戻り始める(入られると時間が減る)
 //   'band'    雇われた楽団が広場を回り、近くの人を踊らせる
 // obstacles: [x, z, 半径] の円柱障害物
+// 人数は描画プール NPC_MAX(dance-ui.js) 以下にすること
 const STAGES = [
-  { name: '駅前広場',        sub: '平日の昼休み',   npc: 26, stubborn: 4,  guards: 1, time: 60, clusters: 3, dj: 1, kids: 2,
-    gimmick: 'train', arrivals: [{ at: 12, n: 4 }, { at: 27, n: 4 }] },
-  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 38, stubborn: 7,  guards: 2, time: 70, clusters: 4, dj: 1, kids: 3,
+  { name: '駅前広場',        sub: '平日の昼休み',   npc: 60, stubborn: 9,  guards: 1, time: 65, clusters: 3, dj: 1, kids: 3,
+    gimmick: 'train', arrivals: [{ at: 12, n: 8 }, { at: 27, n: 8 }] },
+  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 80, stubborn: 12, guards: 2, time: 75, clusters: 4, dj: 2, kids: 4,
     gimmick: 'couple' },
-  { name: '夏祭りの境内',    sub: '盆踊りの夜',     npc: 42, stubborn: 8,  guards: 2, time: 75, clusters: 3, dj: 1, kids: 5,
+  { name: '夏祭りの境内',    sub: '盆踊りの夜',     npc: 90, stubborn: 14, guards: 2, time: 75, clusters: 3, dj: 2, kids: 6,
     gimmick: 'yagura', obstacles: [[0, 0, 2.6]], clusterRatio: 0.25, orbitRatio: 0.7, drumFirst: 6, drumEvery: 9, drumDur: 2.4, drumMul: 1.45 },
-  { name: '雨の商店街',      sub: 'にわか雨にご注意', npc: 46, stubborn: 9, guards: 2, time: 80, clusters: 2, dj: 1, kids: 3,
+  { name: '雨の商店街',      sub: 'にわか雨にご注意', npc: 100, stubborn: 15, guards: 2, time: 80, clusters: 2, dj: 2, kids: 5,
     gimmick: 'rain', shelters: [[-23, -12], [-23, 12], [23, -12], [23, 12]], rainFirst: 8, rainDry: 12, rainWet: 7 },
-  { name: '空港ロビー',      sub: '搭乗まであと少し', npc: 48, stubborn: 10, guards: 3, time: 85, clusters: 3, dj: 2, kids: 3,
+  { name: '空港ロビー',      sub: '搭乗まであと少し', npc: 110, stubborn: 17, guards: 2, time: 85, clusters: 3, dj: 3, kids: 5,
     gimmick: 'walkway', walkways: [{ z: -9, x0: -23, x1: 23, w: 3.2, v: 6 }, { z: 9, x0: -23, x1: 23, w: 3.2, v: -6 }] },
-  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 52, stubborn: 11, guards: 3, time: 90, clusters: 5, dj: 2, kids: 4,
+  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 120, stubborn: 18, guards: 3, time: 90, clusters: 5, dj: 3, kids: 6,
     gimmick: 'bell', bellAt: 40 },
-  { name: '1518年 大聖堂前広場', sub: '楽団が呼ばれた', npc: 52, stubborn: 12, guards: 4, time: 100, clusters: 3, dj: 2, kids: 4,
-    gimmick: 'band', obstacles: [[0, 0, 2.2]], bandR: 15, bandSpeed: 2.4, bandInfectR: 5 },
+  { name: '1518年 大聖堂前広場', sub: '楽団が呼ばれた', npc: 130, stubborn: 20, guards: 3, time: 100, clusters: 3, dj: 3, kids: 6,
+    gimmick: 'band', obstacles: [[0, 0, 2.2]], bandR: 15, bandSpeed: 2.4, bandInfectR: 4 },
 ];
 
-// 称号(高い順)。7ステージ制覇でボットの中央値が約18万点。
+// 称号(高い順)。人数増(60〜130人)後、7ステージ通しのボットの中央値が約100万点・最大約118万点。
 const RANKS = [
-  { min: 200000, name: 'ダンシングマニア' },
-  { min: 140000, name: '踊りの感染源' },
-  { min: 80000,  name: '広場のスター' },
-  { min: 30000,  name: 'かけだしダンサー' },
+  { min: 1100000, name: 'ダンシングマニア' },
+  { min: 750000,  name: '踊りの感染源' },
+  { min: 400000,  name: '広場のスター' },
+  { min: 150000,  name: 'かけだしダンサー' },
   { min: 0,      name: 'ただの通行人' },
 ];
 // 踊りの解放: ベストスコアが unlock(=称号のライン) 以上で選べる。選んだ踊りは全ダンサーが踊る(シンクロは維持)
@@ -63,15 +64,15 @@ const CFG = {
   playerSpeed: 9.4,
   npcSpeed: 2.3,
   dancerSpeed: 1.35,
-  guardSpeed: 7.5,
+  guardSpeed: 7.0,
   guardPatrolSpeed: 3.2,
-  infectR: 4.3,
+  infectR: 3.0,
   exposeNeed: 0.7,        // 通常の人が感染するまでの滞在秒数
   stubbornNeed: 1.8,      // 頑固な人
   exposeDecay: 1.6,       // 範囲外での減衰(秒換算)
   chainWindow: 2.5,
   catchR: 1.3,
-  chaseSense: 14,         // 警備員がプレイヤーを追い始める距離
+  chaseSense: 11,         // 警備員がプレイヤーを追い始める距離
   cureR: 2.2,
   cureTime: 2.0,
   immunityTime: 5,
@@ -268,7 +269,7 @@ function createGame(seed, opts) {
         let bi = -1;
         for (let k = 0; k < G.clusters.length; k++) if (counts[k] < per && (bi < 0 || counts[k] < counts[bi])) bi = k;
         if (bi < 0 || rng() < 0.25) continue;
-        const c = G.clusters[bi], ang = rng() * Math.PI * 2, rad = 1.1 + rng() * 1.4;
+        const c = G.clusters[bi], ang = rng() * Math.PI * 2, rad = 1.1 + rng() * (0.6 + Math.sqrt(per) * 0.45); // 人数が多いほど人だかりも広く
         n.x = Math.max(-ARENA + 1, Math.min(ARENA - 1, c.x + Math.sin(ang) * rad));
         n.z = Math.max(-ARENA + 1, Math.min(ARENA - 1, c.z + Math.cos(ang) * rad));
         n.dir = Math.atan2(c.x - n.x, c.z - n.z);

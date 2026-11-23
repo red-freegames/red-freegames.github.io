@@ -11,12 +11,13 @@ function parkGuards(G) { for (const g of G.guards) { g.x = 25; g.z = 25; g.hx = 
   const G = DM.createGame(1, { wave: true }); G.startStage(1);
   const line = G.npcs.filter(n => !n.stubborn && n.kind === 'normal').slice(0, 8);
   for (const n of G.npcs) { if (!line.includes(n)) { n.x = 24; n.z = -24; n.stand = true; n.immune = 999; } }
-  line.forEach((n, i) => { n.x = -20 + i * 3.5; n.z = 0; n.stand = true; n.dirT = 999; });
-  G.player.x = -23; G.player.z = 0;
+  const gap = DM.CFG.infectR * 0.8; // 隣にだけ届く間隔
+  line.forEach((n, i) => { n.x = -20 + i * gap; n.z = 0; n.stand = true; n.dirT = 999; });
+  G.player.x = -20 - gap; G.player.z = 0;
   const times = [];
   for (let f = 0; f < 30 * 6 && G.phase === 'play'; f++) {
     parkGuards(G); G.update(1 / 30, { x: 0, z: 0 });
-    G.player.x = -23; G.player.z = 0; // プレイヤーは端で止まる(最初の1人だけ触る)
+    G.player.x = -20 - gap; G.player.z = 0; // プレイヤーは端で止まる(最初の1人だけ触る)
     line.forEach((n, i) => { if (n.state === 'dancer' && times[i] === undefined) times[i] = G.elapsed; });
   }
   ok(line.every(n => n.state === 'dancer'), 'whole line danced: ' + line.filter(n => n.state === 'dancer').length + '/8');
@@ -30,8 +31,9 @@ function parkGuards(G) { for (const g of G.guards) { g.x = 25; g.z = 25; g.hx = 
   const G = DM.createGame(1); G.startStage(1);
   ok(!G.wave, 'wave off by default');
   const line = G.npcs.filter(n => !n.stubborn && n.kind === 'normal').slice(0, 8);
-  line.forEach((n, i) => { n.x = -20 + i * 3.5; n.z = 0; n.stand = true; });
-  G.player.x = -23; G.player.z = 0;
+  const gap = DM.CFG.infectR * 0.8;
+  line.forEach((n, i) => { n.x = -20 + i * gap; n.z = 0; n.stand = true; });
+  G.player.x = -20 - gap; G.player.z = 0;
   let pulses = 0;
   for (let f = 0; f < 30; f++) { parkGuards(G); G.update(1 / 30, { x: 0, z: 0 }); for (const e of G.drainEvents()) if (e.type === 'pulse') pulses++; }
   ok(pulses === 0, 'no pulses in normal mode');
@@ -87,5 +89,5 @@ function bot(wave) {
 const a = bot(false), b = bot(true);
 console.log('normal:', JSON.stringify(a));
 console.log('wave  :', JSON.stringify(b));
-ok(b.maxChainMedian > a.maxChainMedian, 'chains are longer in wave mode');
+ok(parseInt(b.playerShare) < parseInt(a.playerShare), 'wave mode: fewer people need the player directly (' + a.playerShare + ' -> ' + b.playerShare + ')');
 console.log(fails === 0 ? 'ALL WAVE TESTS PASS' : fails + ' FAILURES');
