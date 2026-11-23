@@ -295,7 +295,7 @@ const TACTICS = [
   { id:"liner", icon:"🧍", name:"並ばせ屋の動員", unlockAt:350000,
     desc:"SNSで雇ったバイトに行列させる。購入上限が5倍。ただし目立つ。" },
   { id:"bot", icon:"🤖", name:"Bot自動購入", unlockAt:450000,
-    desc:"週の初めに自動で買い占める。最も稼げて、最も汚い。" },
+    desc:"週の初めに、自分の購入枠とは別に自動で買い占める。最も稼げて、最も汚い。" },
 ];
 let pendingUnlocks = [];
 function checkUnlocks(){
@@ -571,6 +571,8 @@ S.rumor = makeRumor(picks);
 if (S.tactics.bot){
 ITEMS.filter(it => !it.illegal).sort((a,b) => S.items[b.id].mult - S.items[a.id].mult).forEach(it => {
 const got = doBuy(it, canBuy(it));
+/* Botの購入は別枠：プレイヤー自身の今週の購入上限は減らさない */
+S.items[it.id].boughtThisWeek -= got;
 if (got > 0) pushLog("🤖 Botが「" + nm(it) + "」を " + got + "個 自動購入", "");
 });
 }
