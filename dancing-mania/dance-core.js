@@ -25,19 +25,19 @@ const ARENA = 27; // 移動可能範囲は ±ARENA の正方形
 // obstacles: [x, z, 半径] の円柱障害物
 // 人数は描画プール NPC_MAX(dance-ui.js) 以下にすること
 const STAGES = [
-  { name: '駅前広場',        sub: '平日の昼休み',   npc: 60, stubborn: 9,  guards: 1, time: 65, clusters: 3, dj: 1, kids: 3,
+  { name: '駅前広場',        sub: '平日の昼休み',   npc: 60, stubborn: 9,  guards: 1, time: 70, clusters: 3, dj: 1, kids: 3,
     gimmick: 'train', arrivals: [{ at: 12, n: 8 }, { at: 27, n: 8 }] },
-  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 80, stubborn: 12, guards: 2, time: 75, clusters: 4, dj: 2, kids: 4,
+  { name: '結婚式の披露宴',  sub: 'ご両家とも困惑', npc: 80, stubborn: 12, guards: 2, time: 85, clusters: 4, dj: 2, kids: 4,
     gimmick: 'couple' },
-  { name: '夏祭りの境内',    sub: '盆踊りの夜',     npc: 90, stubborn: 14, guards: 2, time: 75, clusters: 3, dj: 2, kids: 6,
+  { name: '夏祭りの境内',    sub: '盆踊りの夜',     npc: 90, stubborn: 14, guards: 3, time: 85, clusters: 3, dj: 2, kids: 6,
     gimmick: 'yagura', obstacles: [[0, 0, 2.6]], clusterRatio: 0.25, orbitRatio: 0.7, drumFirst: 6, drumEvery: 9, drumDur: 2.4, drumMul: 1.45 },
-  { name: '雨の商店街',      sub: 'にわか雨にご注意', npc: 100, stubborn: 15, guards: 2, time: 80, clusters: 2, dj: 2, kids: 5,
+  { name: '雨の商店街',      sub: 'にわか雨にご注意', npc: 100, stubborn: 15, guards: 3, time: 90, clusters: 2, dj: 2, kids: 5,
     gimmick: 'rain', shelters: [[-23, -12], [-23, 12], [23, -12], [23, 12]], rainFirst: 8, rainDry: 12, rainWet: 7 },
-  { name: '空港ロビー',      sub: '搭乗まであと少し', npc: 110, stubborn: 17, guards: 2, time: 85, clusters: 3, dj: 3, kids: 5,
+  { name: '空港ロビー',      sub: '搭乗まであと少し', npc: 110, stubborn: 17, guards: 3, time: 95, clusters: 3, dj: 3, kids: 5,
     gimmick: 'walkway', walkways: [{ z: -9, x0: -23, x1: 23, w: 3.2, v: 6 }, { z: 9, x0: -23, x1: 23, w: 3.2, v: -6 }] },
-  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 120, stubborn: 18, guards: 3, time: 90, clusters: 5, dj: 3, kids: 6,
+  { name: 'オフィス街の広場', sub: '昼休み終了間近', npc: 120, stubborn: 18, guards: 4, time: 100, clusters: 5, dj: 3, kids: 6,
     gimmick: 'bell', bellAt: 40 },
-  { name: '1518年 大聖堂前広場', sub: '楽団が呼ばれた', npc: 130, stubborn: 20, guards: 3, time: 100, clusters: 3, dj: 3, kids: 6,
+  { name: '1518年 大聖堂前広場', sub: '楽団が呼ばれた', npc: 130, stubborn: 20, guards: 4, time: 110, clusters: 3, dj: 3, kids: 6,
     gimmick: 'band', obstacles: [[0, 0, 2.2]], bandR: 15, bandSpeed: 2.4, bandInfectR: 4 },
 ];
 
@@ -64,18 +64,18 @@ const CFG = {
   playerSpeed: 9.4,
   npcSpeed: 2.3,
   dancerSpeed: 1.35,
-  guardSpeed: 7.0,
+  guardSpeed: 5.5,       // 遅いが数が多い(人数増・難化の調整)
   guardPatrolSpeed: 3.2,
   infectR: 3.0,
-  exposeNeed: 0.7,        // 通常の人が感染するまでの滞在秒数
-  stubbornNeed: 1.8,      // 頑固な人
+  exposeNeed: 0.9,        // 通常の人が感染するまでの滞在秒数
+  stubbornNeed: 2.2,      // 頑固な人
   exposeDecay: 1.6,       // 範囲外での減衰(秒換算)
   chainWindow: 2.5,
   catchR: 1.3,
   chaseSense: 11,         // 警備員がプレイヤーを追い始める距離
   cureR: 2.2,
   cureTime: 2.0,
-  immunityTime: 5,
+  immunityTime: 2.5,      // 説教で戻された人がうつらない秒数(長いと終盤に膠着する)
   invulnTime: 2.5,
   hearts: 3,
   feverChain: 12,       // この連鎖数に到達でフィーバー
@@ -100,7 +100,7 @@ const CFG = {
   waveDelay: 0.2,        // 踊り出してからパルスまでの秒数(波の進む速さ)
   wavePulseMul: 1.0,     // パルスの半径(感染範囲に対する倍率)
   waveStubbornHit: 0.5,  // 頑固な人はパルス1回でこれだけ溜まる(2回で踊る)
-  waveDancerRate: 1.0,   // 波モードでの、踊っている通行人の「近くにいる」感染の速さ(1=いつもどおり。波は上乗せ)
+  waveDancerRate: 0.3,   // 波モードでの、踊っている通行人の「近くにいる」感染の速さ。低いほど連鎖の火種はプレイヤー頼みになる(0だとボットはほぼクリア不能)
 };
 
 function dist2(ax, az, bx, bz) { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; }
@@ -150,6 +150,8 @@ function createGame(seed, opts) {
     waveSize: {},             // 波ごとの人数 {waveId: n}
     maxWave: 0,               // このプレイで一番大きかった波
     stats: { player: 0, pulse: 0, dancer: 0, other: 0 }, // 何で踊り出したか(調整用)
+    origin: { player: 0, dancer: 0, other: 0 }, // その人が入った連鎖(波)の起点が何だったか(調整用: プレイヤーが起こした連鎖の割合)
+    waveOrigin: {},
   };
 
   function ev(type, data) { G.events.push(Object.assign({ type: type }, data || {})); }
@@ -183,7 +185,7 @@ function createGame(seed, opts) {
   G.startStage = function (idx) {
     const st = STAGES[idx];
     G.arrivals = []; G.bellRung = false; G.escaped = 0;
-    G.pulses = []; G.waveSize = {};
+    G.pulses = []; G.waveSize = {}; G.waveOrigin = {};
     G.drum = 0; G.nextDrumAt = st.drumFirst || 0;
     G.rain = 0; G.nextRainAt = st.rainFirst || 0;
     G.band = [];
@@ -237,7 +239,7 @@ function createGame(seed, opts) {
         G.arrivals.push({ at: a.at, ids: ids });
       }
     }
-    const homes = [[-22, -22], [22, -22], [0, -24], [-22, 22]];
+    const homes = [[-22, -22], [22, -22], [0, -24], [-22, 22], [24, 2], [-24, 2]]; // 警備員の持ち場(最大6人)
     G.guards = [];
     for (let i = 0; i < st.guards; i++) {
       G.guards.push({
@@ -299,7 +301,8 @@ function createGame(seed, opts) {
     npc.exposure = 0; npc.cureProg = 0;
     G.totalInfectedEver++;
     G.stats[cause || 'other']++;
-    if (waveId === undefined) waveId = ++waveSeq;
+    if (waveId === undefined) { waveId = ++waveSeq; G.waveOrigin[waveId] = cause === 'player' ? 'player' : cause === 'dancer' ? 'dancer' : 'other'; }
+    G.origin[G.waveOrigin[waveId] || 'other']++;
     npc.waveId = waveId;
     const wn = G.waveSize[waveId] = (G.waveSize[waveId] || 0) + 1;
     if (wn > G.maxWave) G.maxWave = wn;

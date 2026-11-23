@@ -458,7 +458,7 @@ for (let i = 0; i < 3; i++) {
   bandPersons.push(bp);
 }
 const guardPersons = [];
-for (let i = 0; i < 4; i++) guardPersons.push(makePerson({ shirt: MAT.guardShirt, pants: MAT.guardPants, skin: MAT.skin[i % 3], cap: true, band: true }));
+for (let i = 0; i < 6; i++) guardPersons.push(makePerson({ shirt: MAT.guardShirt, pants: MAT.guardPants, skin: MAT.skin[i % 3], cap: true, band: true }));
 
 // ================= エフェクト =================
 const fxPool = [];
