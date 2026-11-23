@@ -137,7 +137,7 @@ let sawInfect = false, frames = 0;
   const seen = {};
   for (const d of DM.DANCES) {
     for (let s = 0; s < DM.STAGES.length; s++) {
-      const g = DM.createGame(100 + s, { dance: d.id });
+      const g = DM.createGame(100 + s, { dance: d.id, wave: (s + DM.DANCES.indexOf(d)) % 2 === 1 }); // 波モードも半分回す
       g.startStage(s);
       UI.setGame(g); UI.setupStage();
       ok(UI.danceStyle === d.id, 'dance style applied: ' + d.id);
@@ -155,6 +155,16 @@ let sawInfect = false, frames = 0;
       if (st.gimmick === 'rain') ok(g.nextRainAt > st.rainFirst || g.phase !== 'play', 'rain fell during UI play');
       if (st.gimmick === 'band') ok(g.band.length === 3, 'band present in UI play');
     }
+  }
+  // 波モード: パルスが出て、クリア時の決めポーズ演出を経て結果へ進む
+  {
+    const g = DM.createGame(7, { wave: true }); g.startStage(1);
+    UI.setGame(g); UI.setupStage();
+    for (const n of g.npcs) { n.x = g.player.x + (Math.random() - 0.5) * 10; n.z = g.player.z + (Math.random() - 0.5) * 10; n.stand = true; }
+    let frames2 = 0; while (g.phase === 'play' && frames2 < 30 * 30) { frame(); frames2++; }
+    ok(g.stats.pulse > 0, 'wave pulses fired in UI: ' + g.stats.pulse);
+    ok(g.maxWave >= 5, 'a wave formed in UI: ' + g.maxWave);
+    for (let i = 0; i < 90; i++) frame();
   }
   ok(Object.keys(seen).length === DM.STAGES.length, 'all gimmicks exercised: ' + Object.keys(seen).join(','));
   for (let i = 0; i < 30; i++) frame();

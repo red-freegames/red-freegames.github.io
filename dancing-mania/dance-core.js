@@ -93,6 +93,13 @@ const CFG = {
   doors: [[-14, -26], [14, -26]], // オフィスの入口
   leaveSpeed: 2.6,      // チャイム後に入口へ向かう速さ
   escapePenalty: 3,     // 入口に入られると減る秒数
+  // 波モード(試作, createGame(seed, { wave: true })):
+  // 新しく踊り出した人は waveDelay 秒後に1回だけ「パルス」を出し、円の中の通行人を即座に踊らせる。
+  // 踊り出した人がまたパルスを出すので、ドミノのように波が広がる。
+  waveDelay: 0.2,        // 踊り出してからパルスまでの秒数(波の進む速さ)
+  wavePulseMul: 1.0,     // パルスの半径(感染範囲に対する倍率)
+  waveStubbornHit: 0.5,  // 頑固な人はパルス1回でこれだけ溜まる(2回で踊る)
+  waveDancerRate: 1.0,   // 波モードでの、踊っている通行人の「近くにいる」感染の速さ(1=いつもどおり。波は上乗せ)
 };
 
 function dist2(ax, az, bx, bz) { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; }
@@ -108,6 +115,7 @@ function onWalkway(o, w) { return Math.abs(o.z - w.z) < w.w / 2 && o.x >= w.x0 &
 function createGame(seed, opts) {
   const rng = mulberry32(seed >>> 0 || 1);
   const dance = danceById(opts && opts.dance);
+  let waveSeq = 0;
   const G = {
     phase: 'ready', // ready | play | clear | over | goal
     stageIdx: 0,
@@ -136,6 +144,11 @@ function createGame(seed, opts) {
     drum: 0, nextDrumAt: 0,   // 夏祭り: 太鼓の残り秒 / 次の太鼓
     rain: 0, nextRainAt: 0,   // 商店街: 雨の残り秒 / 次の雨
     band: [],                 // 大聖堂: 楽団 [{x, z, a}]
+    wave: !!(opts && opts.wave), // 波モード(試作)
+    pulses: [],               // 波モード: 予約されたパルス [{id, at, waveId}]
+    waveSize: {},             // 波ごとの人数 {waveId: n}
+    maxWave: 0,               // このプレイで一番大きかった波
+    stats: { player: 0, pulse: 0, dancer: 0, other: 0 }, // 何で踊り出したか(調整用)
   };
 
   function ev(type, data) { G.events.push(Object.assign({ type: type }, data || {})); }
@@ -169,6 +182,7 @@ function createGame(seed, opts) {
   G.startStage = function (idx) {
     const st = STAGES[idx];
     G.arrivals = []; G.bellRung = false; G.escaped = 0;
+    G.pulses = []; G.waveSize = {};
     G.drum = 0; G.nextDrumAt = st.drumFirst || 0;
     G.rain = 0; G.nextRainAt = st.rainFirst || 0;
     G.band = [];
@@ -278,10 +292,17 @@ function createGame(seed, opts) {
     if (o.z < -lim) o.z = -lim; if (o.z > lim) o.z = lim;
   }
 
-  function infect(npc) {
+  // cause: 'player' | 'dancer' | 'pulse' | 'other'。waveId は同じ波の仲間(省略で新しい波)
+  function infect(npc, cause, waveId) {
     npc.state = 'dancer';
     npc.exposure = 0; npc.cureProg = 0;
     G.totalInfectedEver++;
+    G.stats[cause || 'other']++;
+    if (waveId === undefined) waveId = ++waveSeq;
+    npc.waveId = waveId;
+    const wn = G.waveSize[waveId] = (G.waveSize[waveId] || 0) + 1;
+    if (wn > G.maxWave) G.maxWave = wn;
+    if (G.wave) G.pulses.push({ id: npc.id, at: G.elapsed + CFG.waveDelay, waveId: waveId });
     if (G.elapsed - G.lastInfectAt <= G.chainWin) G.chain++;
     else G.chain = 1;
     G.lastInfectAt = G.elapsed;
@@ -292,14 +313,14 @@ function createGame(seed, opts) {
     }
     const pts = 100 + (G.chain - 1) * 30;
     G.score += pts;
-    ev('infect', { id: npc.id, x: npc.x, z: npc.z, chain: G.chain, pts: pts, kind: npc.kind });
+    ev('infect', { id: npc.id, x: npc.x, z: npc.z, chain: G.chain, pts: pts, kind: npc.kind, wave: wn });
     // 新郎新婦: 踊り出した瞬間、周りの客が一斉に踊り出す(1人につき1回だけ)
     if ((npc.kind === 'bride' || npc.kind === 'groom') && !npc.burstUsed) {
       npc.burstUsed = true;
       const R2 = CFG.coupleBurstR * CFG.coupleBurstR;
       const hit = G.npcs.filter(function (o) { return o.state === 'walk' && o.immune <= 0 && dist2(o.x, o.z, npc.x, npc.z) <= R2; });
       ev('burst', { x: npc.x, z: npc.z, n: hit.length, kind: npc.kind });
-      for (const o of hit) { if (G.phase !== 'play') break; if (o.state === 'walk') infect(o); }
+      for (const o of hit) { if (G.phase !== 'play') break; if (o.state === 'walk') infect(o, 'other', waveId); }
     }
     checkClear();
   }
@@ -468,19 +489,38 @@ function createGame(seed, opts) {
 
     // --- 感染判定 ---
     const fR = CFG.infectR * (G.fever > 0 ? CFG.feverRadiusMul : 1) * (G.drum > 0 ? st.drumMul : 1);
-    const sources = [{ x: P.x, z: P.z, r2: Math.pow(fR * (G.dance.fx.playerRMul || 1), 2) }];
-    for (const n of G.npcs) if (n.state === 'dancer') sources.push({ x: n.x, z: n.z, r2: Math.pow(fR * G.radiusOf(n), 2) });
-    for (const b of G.band) sources.push({ x: b.x, z: b.z, r2: st.bandInfectR * st.bandInfectR });
+    const dRate = G.wave ? CFG.waveDancerRate : 1;
+    const sources = [{ x: P.x, z: P.z, r2: Math.pow(fR * (G.dance.fx.playerRMul || 1), 2), rate: 1, cause: 'player' }];
+    for (const n of G.npcs) if (n.state === 'dancer') sources.push({ x: n.x, z: n.z, r2: Math.pow(fR * G.radiusOf(n), 2), rate: dRate, cause: 'dancer' });
+    for (const b of G.band) sources.push({ x: b.x, z: b.z, r2: st.bandInfectR * st.bandInfectR, rate: 1, cause: 'other' });
     for (const n of G.npcs) {
       if (n.state !== 'walk' || n.immune > 0) continue;
-      let near = false;
-      for (const s of sources) { if (dist2(n.x, n.z, s.x, s.z) <= s.r2) { near = true; break; } }
+      let rate = 0, cause = 'other';
+      for (const s of sources) { if (s.rate > rate && dist2(n.x, n.z, s.x, s.z) <= s.r2) { rate = s.rate; cause = s.cause; if (rate >= 1) break; } }
       const need = n.stubborn ? CFG.stubbornNeed : CFG.exposeNeed;
-      if (near) {
-        n.exposure += dt / need * (G.fever > 0 ? CFG.feverExposeMul : 1);
-        if (n.exposure >= 1) infect(n);
+      if (rate > 0) {
+        n.exposure += dt / need * rate * (G.fever > 0 ? CFG.feverExposeMul : 1);
+        if (n.exposure >= 1) infect(n, cause);
       } else if (n.exposure > 0) {
         n.exposure = Math.max(0, n.exposure - dt * CFG.exposeDecay / need);
+      }
+      if (G.phase !== 'play') return;
+    }
+    // 波モード: 予約されたパルスを発火。円の中の通行人を即座に踊らせ、その人がまたパルスを予約する
+    if (G.wave && G.pulses.length) {
+      const due = G.pulses.filter(function (q) { return q.at <= G.elapsed; });
+      if (due.length) G.pulses = G.pulses.filter(function (q) { return q.at > G.elapsed; });
+      for (const q of due) {
+        const src = G.npcs[q.id];
+        if (!src || src.state !== 'dancer') continue; // パルス前に説教で正気に戻された
+        const r = fR * G.radiusOf(src) * CFG.wavePulseMul, r2 = r * r;
+        ev('pulse', { x: src.x, z: src.z, r: r, waveId: q.waveId, size: G.waveSize[q.waveId] || 0 });
+        for (const o of G.npcs) {
+          if (o.state !== 'walk' || o.immune > 0 || dist2(o.x, o.z, src.x, src.z) > r2) continue;
+          if (o.stubborn) { o.exposure += CFG.waveStubbornHit; if (o.exposure >= 1) infect(o, 'pulse', q.waveId); }
+          else infect(o, 'pulse', q.waveId);
+          if (G.phase !== 'play') return;
+        }
       }
     }
     if (G.phase !== 'play') return; // 全員感染でクリアした場合

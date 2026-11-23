@@ -36,6 +36,30 @@ function unlockAudio() { // iOS Safari: ユーザー操作の中で生成・resu
 }
 function buzz(ms) { try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 function sInfect(chain) { beep(500 + Math.min(chain, 24) * 32, 0.12, 'sine', 0.16); }
+// 波モード: 連鎖が伸びるほどペンタトニック(ドレミソラ)で上がっていき、踊りの半拍に合わせて鳴る
+const PENTA = [0, 2, 4, 7, 9];
+const HALF_BEAT = Math.PI / 18; // 踊りの1拍は π/9 秒(p = t*9)。その半分
+let noteSlot = -1, noteSlotCount = 0;
+function sInfectMusic(chain) {
+  if (!soundOn) return;
+  const i = Math.min(chain - 1, 17);
+  const semi = Math.floor(i / 5) * 12 + PENTA[i % 5];
+  const f = 523.25 * Math.pow(2, semi / 12);
+  const tNow = performance.now() / 1000, slot = Math.ceil(tNow / HALF_BEAT);
+  if (slot === noteSlot) { if (++noteSlotCount > 2) return; } else { noteSlot = slot; noteSlotCount = 1; } // 同じ拍は和音2つまで
+  const delay = slot * HALF_BEAT - tNow;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime + Math.max(0, delay);
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = chain >= 18 ? 'square' : 'triangle';
+    o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(chain >= 18 ? 0.08 : 0.16, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.25);
+  } catch (e) {}
+}
+function sWave(n) { seq(n >= 30 ? [523, 659, 784, 1047, 1319, 1568] : [523, 659, 784, 1047], 60, 'square', 0.1, 0.18); }
 function sCure() { beep(320, 0.16, 'square', 0.07, 150); }
 function sCatch() { beep(150, 0.32, 'sawtooth', 0.18, 65); }
 function sClear() { const n = [523, 659, 784, 1047]; for (let i = 0; i < n.length; i++) (function (f, d) { setTimeout(function () { beep(f, 0.2, 'triangle', 0.15); }, d); })(n[i], i * 110); }
@@ -353,6 +377,20 @@ for (let i = 0; i < 20; i++) {
   m.rotation.x = -Math.PI / 2; m.position.y = 0.06; m.visible = false; scene.add(m);
   fxPool.push({ mesh: m, t: 1e9 });
 }
+// 波モードのパルス: 円の半径まで一気に広がる輪
+const pulsePool = [];
+for (let i = 0; i < 40; i++) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 40),
+    new THREE.MeshBasicMaterial({ color: 0xff5da2, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.07; m.visible = false; scene.add(m);
+  pulsePool.push({ mesh: m, t: 1e9, r: 1 });
+}
+function spawnPulse(x, z, r, big) {
+  for (const f of pulsePool) if (f.t > 0.35) {
+    f.t = 0; f.r = r; f.mesh.visible = true; f.mesh.position.x = x; f.mesh.position.z = z;
+    f.mesh.material.color.setHex(big ? 0xffcf3f : 0xff5da2); return;
+  }
+}
 const noteFxPool = [];
 for (let i = 0; i < 16; i++) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTex, transparent: true, opacity: 0, depthWrite: false }));
@@ -366,6 +404,13 @@ function spawnNoteFx(x, z) {
   for (const f of noteFxPool) if (f.t > 1) { f.t = 0; f.x = x; f.z = z; f.spr.visible = true; return; }
 }
 function updateFx(dt) {
+  for (const f of pulsePool) {
+    if (f.t > 0.35) { f.mesh.visible = false; continue; }
+    f.t += dt;
+    const k = Math.min(1, f.t / 0.22), s = f.r * (0.25 + 0.75 * (1 - Math.pow(1 - k, 3)));
+    f.mesh.scale.set(s, s, 1);
+    f.mesh.material.opacity = 0.9 * (1 - f.t / 0.35);
+  }
   for (const f of fxPool) {
     if (f.t > 0.6) { f.mesh.visible = false; continue; }
     f.t += dt;
@@ -457,7 +502,7 @@ function dancePose(P, t) {
   const cyc = (t * 9.0 / Math.PI) % 8;
   P.headG.rotation.y = 0;
   (GROOVES[danceStyle] || GROOVES.basic)(P, p, b, cyc);
-  if (cyc < 1) { // 決めポーズ: 両手を上げる(全員同時)
+  if (finale > 0 || cyc < 1) { // 決めポーズ: 両手を上げる(全員同時)
     P.armL.rotation.x = 2.9 + Math.sin(p * 3) * 0.12; P.armL.rotation.z = 0.22;
     P.armR.rotation.x = 2.9 - Math.sin(p * 3) * 0.12; P.armR.rotation.z = -0.22;
   } else if (cyc >= 7) { // 全員フリーズ(変なポーズで完全静止)
@@ -634,9 +679,17 @@ function showToast(msg) {
 }
 function showChain(n) {
   el.chain.textContent = n + '連鎖！';
+  if (G.wave) el.chain.className = n >= 30 ? 't3' : n >= 20 ? 't2' : n >= 10 ? 't1' : '';
   el.chain.classList.remove('show');
   void el.chain.offsetWidth;
   el.chain.classList.add('show');
+}
+const WAVE_MILESTONES = [[15, '🌊 大連鎖！'], [30, '🌊 伝説の波！'], [45, '🌊 踊りの大災害！']];
+function showWavePop(text) {
+  el.feverPop.textContent = text;
+  el.feverPop.classList.remove('show');
+  void el.feverPop.offsetWidth;
+  el.feverPop.classList.add('show');
 }
 function showFeverPop() {
   el.feverPop.textContent = '🔥 FEVER!! 🔥';
@@ -671,7 +724,23 @@ function onStageClick(e) {
 if ($('stageList')) $('stageList').addEventListener('click', onStageClick);
 let selDance = lsGet('dm_dance') || 'basic';
 if (bestScore < DM.danceById(selDance).unlock) selDance = 'basic';
-function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance }); }
+// 連鎖モード: 'normal'(いつもの) / 'wave'(波・試作)。URL に ?wave でも波モード
+let chainMode = lsGet('dm_wave') === '1' ? 'wave' : 'normal';
+try { if (typeof location !== 'undefined' && /[?&]wave\b/.test(location.search)) chainMode = 'wave'; } catch (e) {}
+function renderMode() {
+  const e = $('modeList'); if (!e) return;
+  e.innerHTML = '<button class="dBtn' + (chainMode === 'normal' ? ' on' : '') + '" data-mode="normal">いつもの</button>' +
+    '<button class="dBtn' + (chainMode === 'wave' ? ' on' : '') + '" data-mode="wave">🌊 波（試作）</button>';
+  $('modeDesc').textContent = chainMode === 'wave' ? '踊り出した人がパッと周りを巻き込み、ドミノのように広がる' : '踊っている人のそばに少しいると、うつる';
+}
+function onModeClick(e) {
+  const b = e.target && e.target.closest ? e.target.closest('[data-mode]') : null;
+  if (!b) return;
+  chainMode = b.getAttribute('data-mode'); lsSet('dm_wave', chainMode === 'wave' ? '1' : '0');
+  renderMode();
+}
+if ($('modeList')) $('modeList').addEventListener('click', onModeClick);
+function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance, wave: chainMode === 'wave' }); }
 function renderDances() {
   const html = DM.DANCES.map(function (d) {
     const locked = bestScore < d.unlock;
@@ -697,6 +766,7 @@ function onDanceClick(e) {
 ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
 renderDances();
 renderStages();
+renderMode();
 // 遊び方: 縦に余裕のある画面では最初から開く(小さいスマホではボタンを優先して畳む)
 if ($('howto') && window.innerHeight >= 760 && window.innerWidth >= 421) $('howto').open = true;
 let G = newGame();
@@ -709,6 +779,7 @@ let endTimer = -1;
 const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '太鼓に合わせて広げろ！', 'にわか雨は好機！', '動く歩道を使いこなせ！', '昼休みが終わる前に！', '楽団が呼ばれた。踊りは止まらない'];
 function stageToast() { showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― ' + STAGE_HINT[G.stageIdx]); }
 function setupStage() {
+  snapshotURL = null; finale = 0; slowMo = 0;
   buildWorld(G.stageIdx);
   for (let i = 0; i < npcPersons.length; i++) {
     const P = npcPersons[i], n = G.npcs[i];
@@ -738,11 +809,16 @@ function handleEvents(evs) {
   for (const ev of evs) {
     if (ev.type === 'infect') {
       spawnFx(ev.x, ev.z, 0xffcf3f); spawnNoteFx(ev.x, ev.z);
-      sInfect(ev.chain);
+      if (G.wave) {
+        sInfectMusic(ev.chain);
+        for (const m of WAVE_MILESTONES) if (ev.wave === m[0]) { showWavePop(m[1]); sWave(m[0]); slowMo = 0.55; buzz([30, 20, 30]); }
+      } else sInfect(ev.chain);
       if (ev.chain >= 3) showChain(ev.chain);
       updateHUD();
       if (ev.kind === 'dj' && !shownDJ) { shownDJ = true; showToast('🎧 DJが踊り出した！ 感染範囲が広い'); }
       else if (ev.kind === 'kid' && !shownKid) { shownKid = true; showToast('🧒 子どもが踊りながら走り回る！'); }
+    } else if (ev.type === 'pulse') {
+      spawnPulse(ev.x, ev.z, ev.r, ev.size >= 15);
     } else if (ev.type === 'train') {
       lastTrainAt = G.elapsed; sTrain(); spawnFx(ev.x, ev.z, 0x9fd4ff);
       showToast('🚃 電車が着いた！ 改札から' + ev.n + '人');
@@ -782,12 +858,12 @@ function handleEvents(evs) {
       showToast(ev.hearts > 0 ? '捕まった！ 残り❤×' + ev.hearts : '捕まった…');
       updateHUD();
     } else if (ev.type === 'clear') {
-      sClear(); snapshot();
-      endTimer = 0.9;
+      sClear(); if (G.wave) finale = 1.6; else snapshot();
+      endTimer = G.wave ? 1.7 : 0.9;
       pendingEnd = function () { showStagePanel(ev.bonus); };
     } else if (ev.type === 'goal') {
-      sClear(); snapshot();
-      endTimer = 0.9;
+      sClear(); if (G.wave) finale = 1.6; else snapshot();
+      endTimer = G.wave ? 1.7 : 0.9;
       pendingEnd = function () { showResult(true, ''); };
     } else if (ev.type === 'over') {
       sCatch(); snapshot();
@@ -797,6 +873,7 @@ function handleEvents(evs) {
   }
 }
 let pendingEnd = null;
+let slowMo = 0, finale = 0, animT = 0, waveCam = 0; // 波モードの演出: スロー残り秒 / クリア時の決めポーズ残り秒 / 踊りの時計 / カメラの引き
 let shownDJ = false, shownKid = false, shownDrum = false;
 function showStagePanel(bonus) {
   $('stageStats').innerHTML =
@@ -1059,6 +1136,9 @@ function animate() {
   const now = performance.now() / 1000;
   let dt = now - lastT; lastT = now;
   if (dt > 0.06) dt = 0.06;
+  const rdt = dt; // 実時間(演出タイマー用)
+  if (slowMo > 0) { slowMo -= rdt; dt *= 0.35; } // 大連鎖の瞬間だけスロー
+  if (!paused) animT += dt;
   if (started && G.phase === 'play' && !paused) {
     G.update(dt, readInput());
     handleEvents(G.drainEvents());
@@ -1066,21 +1146,30 @@ function animate() {
   } else {
     G.drainEvents();
   }
+  if (finale > 0) { finale -= rdt; if (finale <= 0.15 && !snapshotURL) snapshot(); }
   if (endTimer > 0) {
-    endTimer -= dt;
+    endTimer -= rdt;
     if (endTimer <= 0 && pendingEnd) { const f = pendingEnd; pendingEnd = null; f(); }
   }
   adaptQuality(dt);
-  syncPersons(now, dt);
+  syncPersons(animT, dt);
   updateTrain();
   updateWeather(dt);
   updateFx(dt);
   if (camShake > 0) camShake = Math.max(0, camShake - dt);
   const shX = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
   const shY = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
-  camPos.x += ((G.player.x) - camPos.x) * Math.min(1, dt * 3.2);
-  camPos.z += ((G.player.z + 25 * camDist) - camPos.z) * Math.min(1, dt * 3.2);
-  camera.position.set(camPos.x + shX, 33 * camDist + shY, camPos.z);
+  // 波モード: 大きな波が進んでいる間とクリアの決めポーズ中はカメラを少し引いて全体を見せる
+  let waveTarget = 0;
+  if (G.wave) {
+    if (finale > 0) waveTarget = 0.35;
+    else if (G.pulses && G.pulses.length) { let big = 0; for (const q of G.pulses) big = Math.max(big, G.waveSize[q.waveId] || 0); waveTarget = Math.min(0.3, big * 0.012); }
+  }
+  waveCam += (waveTarget - waveCam) * Math.min(1, rdt * (waveTarget > waveCam ? 2.5 : 0.8));
+  const cd = camDist * (1 + waveCam);
+  camPos.x += ((G.player.x) - camPos.x) * Math.min(1, rdt * 3.2);
+  camPos.z += ((G.player.z + 25 * cd) - camPos.z) * Math.min(1, rdt * 3.2);
+  camera.position.set(camPos.x + shX, 33 * cd + shY, camPos.z);
   camera.lookAt(G.player.x + shX, 0, G.player.z - 3);
   renderer.render(scene, camera);
 }
@@ -1097,5 +1186,5 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
+globalThis.__DM_UI__ = { setMode: function (m) { chainMode = m; }, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();

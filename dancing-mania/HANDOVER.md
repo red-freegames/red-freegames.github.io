@@ -17,12 +17,12 @@ Claude Code への引き継ぎ用。まずこのファイル全体を読んで�
 red-freegames.github.io リポジトリの dancing-mania-src ブランチにある dancing-mania/HANDOVER.md を読んで、『ダンシングマニア』の開発を引き継いでください。
 編集は部品ファイル（dance-core.js / dance-ui.js / shell-head.html）に対して行い、
 python3 build.py で index.html を再生成すること。three-block.js は改変禁止。
-変更後は tests/ のハーネス4本を node で実行し、全て PASS することを確認してください。
+変更後は tests/ のハーネス5本を node で実行し、全て PASS することを確認してください。
 公開するときは、生成した index.html（と og.png を変えたなら og.png）だけを main の dancing-mania/ に入れること。
 ```
 
 ### 公開の手順
-1. `dancing-mania-src` ブランチで部品を直し、`python3 build.py` → テスト4本を PASS。ソースの変更は `dancing-mania-src` にコミットする。
+1. `dancing-mania-src` ブランチで部品を直し、`python3 build.py` → テスト5本を PASS。ソースの変更は `dancing-mania-src` にコミットする。
 2. main から作業ブランチを切り、`dancing-mania/index.html`（必要なら `og.png`）だけをコピーしてコミット → PR → マージ。**部品・テスト・HANDOVER.md を main に入れない**。
 3. トップページの紹介文を変えるときは、main のルート `index.html` の `GAMES` 配列（先頭が新しい順）。
 
@@ -36,7 +36,7 @@ python3 build.py で index.html を再生成すること。three-block.js は改
 | `three-block.js` | Three.js **r128** minified（出禁ラーメン3Dのファイルから抽出）。**改変禁止** |
 | `dance-core.js` | ゲームロジック全部。THREE・DOM 非依存の純粋JS。Nodeで単体テスト可能 |
 | `dance-ui.js` | 描画（THREE）とUI。core の状態を読んで描くだけで、ゲームルールは持たない |
-| `tests/` | 検証ハーネス4本（後述） |
+| `tests/` | 検証ハーネス5本（後述） |
 
 組み立て順: `shell-head.html` + `<script>three-block.js</script>` + `<script>dance-core.js</script>` + `<script>dance-ui.js</script>` + `</body></html>`。
 
@@ -109,6 +109,14 @@ python3 build.py で index.html を再生成すること。three-block.js は改
 ### 称号（rankFor / RANKS）
 200000〜「ダンシングマニア」/ 140000〜「踊りの感染源」/ 80000〜「広場のスター」/ 30000〜「かけだしダンサー」/ それ未満「ただの通行人」。7ステージ化で引き上げた（ボットの最終スコア中央値 ~177,000）。踊りの解放ラインは称号のラインと同じ値を参照している。
 
+### 連鎖モード「波」（試作・A/B比較中）
+HOME の「連鎖モード」で切り替え（localStorage `dm_wave`、URL `?wave` でも可）。既定は「いつもの」。`createGame(seed, { wave: true })`。
+- **パルス**: 新しく踊り出した人は `waveDelay`(0.2秒) 後に1回だけパルスを出し、円の中の通行人を**即座に**踊らせる。その人がまたパルスを出すのでドミノのように波が広がる。説教でパルス前に戻された人は出さない。頑固な人はパルス1回で半分（`waveStubbornHit`、2回で踊る）。「近くにいる」感染はいつもどおり残る（`waveDancerRate` = 1）。
+- **波の記録**: 同じパルスからつながった人は同じ `waveId`。`G.waveSize`、`G.maxWave`、`G.stats`（player / pulse / dancer / other）で調整用に数えている。
+- **演出（UI、波モードのみ）**: パルスの輪（波が15人以上で金色）、感染音はペンタトニックで上がり踊りの半拍に合わせて鳴る（同じ拍は2音まで）、連鎖表示は10/20/30で段階的に派手に、波が15/30/45人で「大連鎖！」「伝説の波！」「踊りの大災害！」と0.55秒のスロー、大きな波の間はカメラを引く、クリア時は全員の決めポーズを1.6秒見せてから結果へ。踊りの時計は `animT`（スロー中は遅くなる）。
+- **基準値（harness-wave、ボット30回）**: いつもの → 全制覇19・最大連鎖中央値47・プレイヤーが直接踊らせた割合56%。波 → 全制覇15・最大連鎖48・波の最大人数中央値16・直接36%。クリア率の差は30回のばらつきの範囲とも言えるので、人の試遊で判断する。
+- **今後**: 連鎖が続きすぎないよう調整予定（作者）。調整の候補は `waveDelay`（波の速さ）、`wavePulseMul`（パルスの大きさ）、波ごとの上限など。次の段階は人数増（インスタンス描画化）と配置の調整。
+
 ### HOME
 - 起動時は HOME 画面（`#home`、旧タイトル画面）。右上に「🎮 他のゲームを見る」。
 - プレイ中は左下に「🏠 HOME」ボタン（右下の音ボタンと対）。クリア画面・結果画面にも HOME ボタン。
@@ -143,7 +151,8 @@ python3 build.py で index.html を再生成すること。three-block.js は改
 node tests/harness-logic.js     # ロジック単体テスト+ボット30シード試行 → ALL UNIT TESTS PASS
 node tests/harness-features.js  # 人だかり/フィーバー/連鎖タイマーのテスト → ALL NEW TESTS PASS
 node tests/harness-gimmicks.js  # 特別な通行人/ステージの仕掛け/踊りの効果 → ALL GIMMICK TESTS PASS
-node tests/smoke-ui.js          # 実Three.js+DOMスタブでUIを通しプレイ（全ステージ×全踊り）→ SMOKE TEST PASS
+node tests/harness-wave.js      # 波モード（パルス・頑固・説教）といつものモードの比較 → ALL WAVE TESTS PASS
+node tests/smoke-ui.js          # 実Three.js+DOMスタブでUIを通しプレイ（全ステージ×全踊り、HOME、波モード）→ SMOKE TEST PASS
 ```
 
 現在の基準値（壊れたら疑う目安）:
@@ -166,6 +175,7 @@ node tests/smoke-ui.js          # 実Three.js+DOMスタブでUIを通しプレ�
 9. 7ステージ化: 夏祭りの境内（やぐら・太鼓）、雨の商店街（にわか雨）、空港ロビー（動く歩道）、1518年 大聖堂前広場（楽団、最終ステージ）を追加し、オフィス街を6番目へ。警備員の描画プールを4体に。称号・解放ラインを引き上げ。通しプレイが長くなったのでステージ選択を追加。
 10. 公開: タイトル確定（「（仮）」を外す）、OGP・AdSense・他のゲームへのリンク・共有URLを追加し、トップページに掲載。開発用ファイルは `dancing-mania-src` ブランチへ分離。
 11. HOME: タイトル画面を HOME 画面にし、プレイ中の HOME ボタン（一時停止→続きから）、最初からの確認画面を追加。
+12. 連鎖モード「波」を試作（A/B切り替え）: パルスで波が広がる、音階の感染音、連鎖表示の段階、大連鎖のスロー、カメラの引き、クリア時の決めポーズ。
 
 ## 7. 注意・未決事項
 

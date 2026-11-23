@@ -56,6 +56,9 @@
 
   #chainPop { position:fixed; left:50%; top:26%; transform:translate(-50%,-50%) scale(.6); font-size:44px; font-weight:900; color:#ffcf3f; text-shadow:0 0 18px rgba(255,93,162,.9),0 3px 0 #c2185b; opacity:0; pointer-events:none; z-index:6; white-space:nowrap; }
   #chainPop.show { animation:chainAnim .8s ease-out; }
+  #chainPop.t1 { color:#ff9a3f; font-size:52px; }
+  #chainPop.t2 { color:#ff5da2; font-size:62px; text-shadow:0 0 22px rgba(255,207,63,.95),0 4px 0 #7a1050; }
+  #chainPop.t3 { font-size:72px; background:linear-gradient(90deg,#ffcf3f,#ff5da2,#7fd0ff,#39ff6a); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:none; filter:drop-shadow(0 3px 0 #3a1050) drop-shadow(0 0 14px rgba(255,255,255,.6)); }
   @keyframes chainAnim { 0%{opacity:0; transform:translate(-50%,-50%) scale(.5) rotate(-4deg);} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.15) rotate(2deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-60%) scale(1);} }
   #toast { position:fixed; left:50%; bottom:calc(12% + env(safe-area-inset-bottom)); transform:translateX(-50%); background:rgba(10,8,24,.8); border:1px solid rgba(255,255,255,.25); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none; z-index:6; white-space:normal; max-width:92vw; width:max-content; text-align:center; line-height:1.45; }
   #toast.show { opacity:1; }
@@ -196,6 +199,11 @@
       <div class="danceHead">踊りを選ぶ（スコアで解放）</div>
       <div class="danceList" id="danceList"></div>
       <div class="danceDesc" id="danceDesc"></div>
+    </div>
+    <div class="danceSel">
+      <div class="danceHead">連鎖モード</div>
+      <div class="danceList" id="modeList"></div>
+      <div class="danceDesc" id="modeDesc"></div>
     </div>
     <div class="danceSel" id="stageSel" style="display:none;">
       <div class="danceHead">スタート地点（到達したステージから選べる）</div>
