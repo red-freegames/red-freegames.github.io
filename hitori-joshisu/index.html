@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ひとり情シス防衛戦</title>
-<meta name="description" content="社員30人の会社で、IT担当はあなたひとり。攻撃の予報を読み、限られた予算で対策を積んで12か月を守り抜け。厳しくしすぎれば社員が不満を溜め、何も起きなければ社長が予算を削る。">
+<meta name="description" content="社員30人の会社で、IT担当はあなたひとり。社内ネットワークに対策を配置し、侵入してくる攻撃を隔離・調査・リセットで食い止めろ。予算は足りない、社員は面倒がる、社長は無茶を言う。12か月を守り抜け。">
 <meta property="og:title" content="ひとり情シス防衛戦">
-<meta property="og:description" content="攻撃は来るとわかっている。予算は足りない。社員は面倒がる。何も起きなければ、予算は削られる。12か月を守り抜け。">
+<meta property="og:description" content="社内ネットワークに対策を置き、迫る攻撃を手を打って食い止めろ。予算は足りない、社員は面倒がる、社長は無茶を言う。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://red-freegames.github.io/hitori-joshisu/">
 <meta property="og:site_name" content="RED FREE GAMES">
@@ -19,103 +19,132 @@
 <link rel="canonical" href="https://red-freegames.github.io/hitori-joshisu/">
 <style>
 /* 業務用コンソール風：淡いグレーの地に紺の文字、状態は信号色で示す */
-:root{color-scheme:light;--bg:#e9edf3;--panel:#fff;--ink:#14213d;--sub:#5b6680;--line:#d3d9e4;--accent:#0a64d8;--ok:#14935a;--okbg:#e2f6ec;--ng:#d7263d;--ngbg:#fde6e9;--warn:#c27c00;--warnbg:#fff3d6;--boss:#2b2f3a}
+:root{color-scheme:light;--bg:#e9edf3;--panel:#fff;--ink:#14213d;--sub:#5b6680;--line:#d3d9e4;--accent:#0a64d8;--acbg:#e3eefc;--ok:#14935a;--okbg:#e2f6ec;--ng:#d7263d;--ngbg:#fde6e9;--warn:#c27c00;--warnbg:#fff3d6;--boss:#2b2f3a}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.6;overflow-x:hidden}
-button{font-family:inherit;cursor:pointer;border:0;color:inherit}
+button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none}
 a{color:inherit}
-#wrap{max-width:560px;margin:0 auto;padding:10px 14px calc(160px + env(safe-area-inset-bottom,0px))}
+#wrap{max-width:560px;margin:0 auto;padding:10px 12px calc(170px + env(safe-area-inset-bottom,0px))}
 .topnav{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}
-.topnav button,.topnav a{background:transparent;color:var(--sub);border:1.5px solid currentColor;border-radius:99px;padding:3px 12px;text-decoration:none;font-size:12px;font-weight:800}
+.topnav button,.topnav a{color:var(--sub);border:1.5px solid currentColor;border-radius:99px;padding:3px 12px;text-decoration:none;font-size:12px;font-weight:800}
 
-#hud{position:sticky;top:0;z-index:20;background:rgba(233,237,243,.95);backdrop-filter:blur(6px);padding:6px 0 8px;display:none}
+#hud{position:sticky;top:0;z-index:30;background:rgba(233,237,243,.95);backdrop-filter:blur(6px);padding:6px 0 8px;display:none}
 #hud.on{display:block}
-.hgrid{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 12px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px}
+.hgrid{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px 12px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:7px 12px}
 .month{grid-row:span 2;text-align:center;padding-right:10px;border-right:1.5px solid var(--line)}
-.month b{display:block;font-size:24px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.month b{display:block;font-size:22px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
 .month small{font-size:10px;color:var(--sub);font-weight:800}
 .gauge{font-size:10.5px;font-weight:800;color:var(--sub)}
-.gauge .bar{height:8px;background:#e5e9f0;border-radius:6px;overflow:hidden;margin-top:2px}
+.gauge .bar{height:7px;background:#e5e9f0;border-radius:6px;overflow:hidden;margin-top:2px}
 .gauge .bar i{display:block;height:100%;transition:width .5s}
 .gauge span{float:right;color:var(--ink);font-variant-numeric:tabular-nums}
 .money{font-size:10.5px;font-weight:800;color:var(--sub)}
-.money b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.2}
+.money b{display:block;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.2}
 
-.card{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px}
+.card{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:10px}
 .card h2{font-size:14px;font-weight:900;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .card h2 small{font-size:11px;color:var(--sub);font-weight:700}
-.boss{display:flex;gap:10px;align-items:flex-start;margin-top:12px}
-.boss .av{flex:none;width:40px;height:40px;border-radius:50%;background:var(--boss);color:#fff;display:grid;place-items:center;font-size:20px}
-.boss .say{background:var(--panel);border:1.5px solid var(--line);border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:13.5px}
+.boss{display:flex;gap:10px;align-items:flex-start;margin-top:8px}
+.boss .av{flex:none;width:38px;height:38px;border-radius:50%;background:var(--boss);color:#fff;display:grid;place-items:center;font-size:19px}
+.boss .say{background:var(--panel);border:1.5px solid var(--line);border-radius:4px 14px 14px 14px;padding:7px 12px;font-size:13.5px}
 .boss .say b{display:block;font-size:10.5px;color:var(--sub)}
-.fc{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line);font-size:13.5px}
+.fc{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed var(--line);font-size:13px}
 .fc:first-of-type{border-top:0}
-.fc .ic{font-size:20px;flex:none}
 .fc .tx{flex:1;min-width:0}
-.fc .tx small{display:block;font-size:11.5px;color:var(--sub)}
+.fc .tx small{display:block;font-size:11px;color:var(--sub)}
 .conf{flex:none;font-size:10.5px;font-weight:900;border-radius:99px;padding:2px 8px;background:var(--warnbg);color:var(--warn)}
 .conf.hi{background:var(--ngbg);color:var(--ng)}
-.event{margin-top:8px;background:var(--ngbg);color:var(--ng);border-radius:10px;padding:8px 10px;font-size:12.5px;font-weight:800}
+.event{margin-top:6px;background:var(--ngbg);color:var(--ng);border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:800}
 
-/* 守備マップ */
-.map{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
-.map th{font-size:10.5px;color:var(--sub);font-weight:800;text-align:center;padding:2px}
-.map th:first-child{text-align:left}
-.map td{padding:5px 2px;border-top:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums}
-.map td:first-child{text-align:left;font-weight:800;font-size:12px;line-height:1.35}
-.map td:first-child small{display:block;font-size:10px;color:var(--sub);font-weight:700}
-.chip{display:inline-block;min-width:42px;border-radius:6px;padding:2px 4px;font-weight:900;font-size:11.5px}
-.c0{background:#eef0f4;color:#a0a8b8}
-.c1{background:var(--warnbg);color:var(--warn)}
-.c2{background:#d9ecff;color:var(--accent)}
-.c3{background:var(--okbg);color:var(--ok)}
-.risk{font-weight:900}
-.risk.hi{color:var(--ng)}.risk.mid{color:var(--warn)}.risk.lo{color:var(--ok)}
-.legend{font-size:10.5px;color:var(--sub);margin-top:6px;line-height:1.5}
+/* ネットワーク図 */
+.mapwrap{position:relative;height:420px;margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;overflow:hidden}
+.mapwrap svg{position:absolute;inset:0;width:100%;height:100%}
+.mapwrap svg line{stroke:#c7cfdc;stroke-width:.6;stroke-dasharray:1.4 1}
+.zone{position:absolute;left:6px;font-size:9.5px;font-weight:900;color:#a0a8b8;letter-spacing:.1em}
+.node{position:absolute;transform:translate(-50%,-50%);width:76px;min-height:66px;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 3px;text-align:center;transition:border-color .2s,background .2s}
+.node .ic{font-size:19px;line-height:1.15}
+.node .nm{font-size:10px;font-weight:900;line-height:1.2;white-space:nowrap}
+.node .tw{font-size:12px;line-height:1.3;min-height:15px;letter-spacing:-1px}
+.node .tk{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:2px}
+.node.entry{background:#f6f8fb}
+.node.goal{border-style:double;border-width:4px}
+.node.can{border-color:var(--accent);background:var(--acbg);animation:pulse .6s ease-in-out infinite alternate}
+.node.sel{border-color:var(--ink);box-shadow:0 0 0 3px rgba(20,33,61,.18)}
+.node.hot{border-color:var(--ng);background:#fff6f7}
+.node.iso{background:repeating-linear-gradient(45deg,#eef0f4 0 6px,#e2e6ec 6px 12px);opacity:.7}
+.node.weak{border-color:var(--warn)}
+@keyframes pulse{to{box-shadow:0 0 0 4px rgba(10,100,216,.2)}}
+.tok{font-size:10.5px;font-weight:900;border-radius:99px;padding:0 5px;background:var(--ng);color:#fff;line-height:1.55;white-space:nowrap}
+.tok.hint{background:var(--warn);animation:blink 1s steps(2) infinite}
+.tok.spawn{background:#a0a8b8}
+.tok i{font-style:normal;opacity:.8;font-weight:700}
+@keyframes blink{50%{opacity:.35}}
+.pop{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:12px;pointer-events:none;animation:up 1.1s ease-out forwards;white-space:nowrap;z-index:5;background:var(--panel);border-radius:6px;padding:0 4px}
+@keyframes up{to{transform:translate(-50%,-180%);opacity:0}}
 
-/* 対策 */
-.dlist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-.def{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:9px 10px}
+/* 操作パネル */
+.panel{margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;min-height:84px}
+.panel h3{font-size:13.5px;font-weight:900;display:flex;justify-content:space-between;gap:8px}
+.panel h3 small{font-size:11px;color:var(--sub);font-weight:700}
+.panel p{font-size:12.5px;color:var(--sub);margin-top:2px}
+.alist{margin-top:6px;display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+.alist div{display:flex;justify-content:space-between;gap:6px}
+.alist b{color:var(--ng)}
+.rm{border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:11px;font-weight:800;color:var(--sub)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.acts button{flex:1 1 46%;border-radius:10px;padding:7px 6px;font-weight:900;font-size:12.5px;background:var(--accent);color:#fff;line-height:1.3}
+.acts button small{display:block;font-size:10px;font-weight:700;opacity:.9}
+.acts button.sub{background:#eef0f4;color:var(--ink)}
+.acts button.red{background:var(--ng)}
+.acts button:disabled{opacity:.35;pointer-events:none}
+.turnbar{display:flex;gap:8px;align-items:center;margin-top:10px}
+.ap{display:flex;gap:4px;align-items:center;font-size:11px;font-weight:900;color:var(--sub)}
+.ap i{width:14px;height:14px;border-radius:50%;background:var(--accent)}
+.ap i.off{background:#d3d9e4}
+.turnbar .go{margin-top:0;flex:1}
+.log{margin-top:8px;font-size:11.5px;color:var(--sub);line-height:1.6;max-height:96px;overflow:hidden}
+.log div:first-child{color:var(--ink);font-weight:800}
+
+/* ショップ */
+.dlist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.def{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px}
 .def.on{border-color:var(--ok);background:#f6fcf9}
 .def.alert{border-color:var(--ng);background:#fff7f8}
-.def .ic{flex:none;font-size:22px;width:30px;text-align:center}
+.def .ic{flex:none;font-size:21px;width:28px;text-align:center}
 .def .tx{flex:1;min-width:0}
 .def .tx b{font-size:13.5px;display:block;line-height:1.35}
 .def .tx small{display:block;font-size:11px;color:var(--sub);line-height:1.45}
-.def .tx .tags{margin-top:3px;display:flex;flex-wrap:wrap;gap:4px}
-.def .tx .tags i{font-style:normal;font-size:10px;font-weight:800;border-radius:5px;padding:0 5px;background:#eef0f4;color:var(--sub)}
-.def .tx .tags i.f{background:var(--warnbg);color:var(--warn)}
-.def .tx .tags i.u{background:#e8eefc;color:var(--accent)}
-.def .act{flex:none;min-width:72px;border-radius:10px;padding:7px 8px;font-weight:900;font-size:12.5px;background:var(--accent);color:#fff;line-height:1.25}
+.tags{margin-top:3px;display:flex;flex-wrap:wrap;gap:4px}
+.tags i{font-style:normal;font-size:10px;font-weight:800;border-radius:5px;padding:0 5px;background:#eef0f4;color:var(--sub)}
+.tags i.f{background:var(--warnbg);color:var(--warn)}
+.tags i.u{background:var(--acbg);color:var(--accent)}
+.tags i.p{background:var(--okbg);color:var(--ok)}
+.def .act{flex:none;min-width:70px;border-radius:10px;padding:7px 8px;font-weight:900;font-size:12.5px;background:var(--accent);color:#fff;line-height:1.25}
 .def .act small{display:block;font-size:10px;font-weight:700;opacity:.9}
 .def .act.off{background:#eef0f4;color:var(--sub)}
 .def .act:disabled{opacity:.35;pointer-events:none}
-.go{display:block;width:100%;margin-top:16px;background:var(--ink);color:#fff;font-weight:900;font-size:17px;border-radius:14px;padding:14px;box-shadow:0 4px 0 #000}
+.go{display:block;width:100%;margin-top:14px;background:var(--ink);color:#fff;font-weight:900;font-size:16px;border-radius:14px;padding:13px;box-shadow:0 4px 0 #000}
 .go:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
 .go.blue{background:var(--accent);box-shadow:0 4px 0 #06408c}
-.go.ghost{background:transparent;color:var(--sub);border:2px solid var(--line);box-shadow:none;font-size:14px;padding:10px}
+.go:disabled{opacity:.4;pointer-events:none}
+.placing{position:sticky;bottom:10px;z-index:25;margin-top:10px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;display:flex;gap:8px;align-items:center}
+.placing span{flex:1}
+.placing button{background:#fff;color:var(--ink);border-radius:8px;padding:5px 10px;font-weight:900;font-size:12px}
 
-/* 迎撃 */
-.atk{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-top:12px}
-.atk .hd{display:flex;gap:8px;align-items:center;font-weight:900;font-size:14px}
-.atk .hd span{font-size:20px}
-.chain{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;position:relative}
-.node{border:2px solid var(--line);border-radius:10px;padding:7px 6px;text-align:center;font-size:11px;font-weight:800;color:#a0a8b8;min-height:68px;transition:all .25s}
-.node b{display:block;font-size:12px;margin-bottom:2px}
-.node.pass{border-color:var(--ng);background:var(--ngbg);color:var(--ng)}
-.node.block{border-color:var(--ok);background:var(--okbg);color:var(--ok)}
-.node.mit{border-color:var(--warn);background:var(--warnbg);color:var(--warn)}
-.node.skip{opacity:.35}
-.node.live{border-color:var(--accent);color:var(--accent);animation:pulse .5s ease-in-out infinite alternate}
-@keyframes pulse{to{box-shadow:0 0 0 4px rgba(10,100,216,.18)}}
-.verdict{margin-top:8px;font-size:13px;font-weight:900;text-align:center;min-height:1.6em}
-.verdict.ok{color:var(--ok)}.verdict.ng{color:var(--ng)}
-.sum{margin-top:12px}
+/* イベント・まとめ */
+.ev{margin-top:14px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:16px}
+.ev .kick{font-size:11px;font-weight:900;letter-spacing:.2em;color:var(--accent)}
+.ev h2{font-size:19px;font-weight:900;margin-top:2px}
+.ev .q{margin-top:10px;font-size:14.5px;line-height:1.85}
+.ev .opts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.ev .opts button{text-align:left;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:900;font-size:14px;background:var(--panel)}
+.ev .opts button:active{border-color:var(--accent)}
+.ev .res{margin-top:12px;background:#f4f6fa;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.8}
 .kv{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv b{font-variant-numeric:tabular-nums}
 
 /* タイトル・エンディング */
-.title{min-height:80vh;display:flex;flex-direction:column;justify-content:center}
+.title{min-height:78vh;display:flex;flex-direction:column;justify-content:center}
 .title .kick{font-size:11px;font-weight:900;letter-spacing:.25em;color:var(--accent)}
 .title h1{font-size:clamp(36px,11vw,52px);font-weight:900;line-height:1.15;margin-top:6px;text-wrap:balance}
 .title .lead{margin-top:14px;font-size:14.5px;font-weight:700;line-height:1.9}
@@ -165,110 +194,89 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const pct = p => Math.round(p * 100) + "%";
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-/* ============ 対策（金額は万円） ============
-   people: 社員が守ってこそ効く対策。不満が高いと効き目が落ちる */
-const DEF = {
-  mfa:   { ic: "📱", n: "二段階認証", d: "ログインにスマホでの確認を追加する", cost: 15, up: 2, fr: 3, people: true },
-  pm:    { ic: "🗝️", n: "パスワード管理アプリ", d: "全員のパスワードをサービスごとにバラバラにする", cost: 10, up: 3, fr: 2, people: true },
-  mail:  { ic: "📨", n: "迷惑メールフィルタ", d: "怪しいメールを受信箱に届く前に止める", cost: 12, up: 2, fr: 1 },
-  train: { ic: "🎓", n: "社員研修", d: "怪しい連絡を見抜く力をつける。効果は毎月薄れる", cost: 8, up: 0, fr: 4, people: true, once: true },
-  vpn:   { ic: "🚪", n: "VPN機器の更新", d: "社外から社内に入るための機器を最新の状態にする", cost: 20, up: 0, fr: 0, special: true },
-  rule:  { ic: "☎️", n: "送金の折り返しルール", d: "お金の依頼は、一度切って自分から折り返して確認", cost: 0, up: 0, fr: 3, people: true },
-  perm:  { ic: "🗂️", n: "権限の整理", d: "全員が全部のフォルダを見られる状態をやめる", cost: 10, up: 0, fr: 2 },
-  edr:   { ic: "🖥️", n: "監視ソフト", d: "PCの不審な動きを見つけて止める", cost: 25, up: 5, fr: 1 },
-  soc:   { ic: "🌙", n: "24時間監視サービス", d: "専門家が夜中も社内のネットワークを見張る", cost: 40, up: 10, fr: 0 },
-  bk:    { ic: "💾", n: "オフラインバックアップ", d: "ネットから切り離してデータを保管する", cost: 15, up: 2, fr: 0 },
-  ins:   { ic: "📄", n: "サイバー保険", d: "被害額の半分を補償。防ぐ力はない", cost: 0, up: 6, fr: 0 },
+/* ============ 社内ネットワーク ============
+   hard = 攻撃者がそこを攻略するのにかかるターン数 */
+const N = {
+  mail:   { ic: "📧", n: "メール",       x: 38, y: 12, entry: 1, hard: 1 },
+  login:  { ic: "🔐", n: "ログイン画面", x: 14, y: 12, entry: 1, hard: 1 },
+  vpn:    { ic: "🚪", n: "VPN",          x: 62, y: 12, entry: 1, hard: 1 },
+  phone:  { ic: "☎️", n: "電話",         x: 86, y: 12, entry: 1, hard: 1 },
+  sales:  { ic: "💻", n: "営業PC",       x: 38, y: 49, hard: 2 },
+  cloud:  { ic: "☁️", n: "クラウド",     x: 14, y: 49, hard: 1 },
+  admin:  { ic: "💻", n: "総務PC",       x: 62, y: 49, hard: 2 },
+  acct:   { ic: "💻", n: "経理PC",       x: 86, y: 49, hard: 1 },
+  share:  { ic: "🗂️", n: "共有フォルダ", x: 20, y: 86, hard: 2, goal: "leak",   dmg: 16, gn: "情報流出" },
+  server: { ic: "🖥️", n: "サーバー",     x: 58, y: 86, hard: 2, goal: "ransom", dmg: 40, gn: "ランサムウェア" },
+  bank:   { ic: "💴", n: "振込",         x: 86, y: 86, hard: 1, goal: "fraud",  dmg: 28, gn: "送金詐欺" },
 };
-const ORDER = ["mfa", "pm", "mail", "train", "vpn", "rule", "perm", "edr", "soc", "bk", "ins"];
+const EDGES = [["mail","sales"],["mail","admin"],["login","cloud"],["vpn","admin"],["phone","acct"],
+  ["sales","share"],["sales","server"],["cloud","share"],["admin","server"],["admin","share"],["acct","bank"]];
+const NB = {};
+EDGES.forEach(([a, b]) => { (NB[a] = NB[a] || []).push(b); (NB[b] = NB[b] || []).push(a); });
 
 /* ============ 攻撃 ============ */
-const ATK = {
-  sms:    { ic: "📦", n: "宅配SMS", to: "アカウント乗っ取り", from: 1, spread: false, dmg: 8,  type: "acct" },
-  reuse:  { ic: "🔑", n: "パスワード使い回し", to: "情報流出", from: 1, spread: true, dmg: 18, type: "leak" },
-  phish:  { ic: "📧", n: "フィッシングメール", to: "ランサムウェア", from: 3, spread: true, dmg: 40, type: "ransom" },
-  vpn:    { ic: "🚪", n: "古いVPN機器", to: "ランサムウェア", from: 3, spread: true, dmg: 45, type: "ransom" },
-  bec:    { ic: "🎙️", n: "社長なりすまし", to: "送金詐欺", from: 5, spread: false, dmg: 30, type: "fraud" },
+const AT = {
+  sms:   { ic: "📦", n: "宅配SMS",       str: 3, path: [["login"], ["cloud"], ["share"]], from: 1, lure: true },
+  reuse: { ic: "🔑", n: "使い回し",       str: 3, path: [["login"], ["cloud"], ["share"]], from: 1 },
+  phish: { ic: "📨", n: "フィッシング",   str: 5, path: [["mail"], ["sales", "admin"], ["server"]], from: 2, lure: true },
+  vpn:   { ic: "🚪", n: "VPN狙い",        str: 6, path: [["vpn"], ["admin"], ["server"]], from: 3 },
+  bec:   { ic: "🎙️", n: "社長なりすまし", str: 4, path: [["phone"], ["acct"], ["bank"]], from: 4, lure: true },
+  apt:   { ic: "👤", n: "潜伏型",         str: 5, path: [["mail"], ["sales", "admin"], ["share", "server"]], from: 6, stealth: true, lure: true },
 };
-const AKEYS = Object.keys(ATK);
+
+/* ============ 対策 ============
+   at: 置ける場所 / dmg: そこにいる攻撃者の強さを毎ターン削る量 / people: 社員の不満で効き目が落ちる */
+const DEF = {
+  filter: { ic: "📨", n: "迷惑メールフィルタ", d: "メールで来る攻撃を毎ターン2削る", cost: 12, up: 2, at: ["mail"], dmg: 2 },
+  mfa:    { ic: "📱", n: "二段階認証", d: "ログインで来る攻撃を毎ターン3削る", cost: 15, up: 2, fr: 2, at: ["login", "vpn"], dmg: 3, people: true },
+  pm:     { ic: "🗝️", n: "パスワード管理アプリ", d: "使い回し狙いを毎ターン3、ほかを1削る", cost: 10, up: 3, fr: 1, at: ["login"], dmg: 1, people: true },
+  edr:    { ic: "🛡️", n: "監視ソフト", d: "置いたPCの攻撃を毎ターン2削り、潜伏型も見つける", cost: 15, up: 3, at: ["sales", "admin", "acct", "server"], dmg: 2 },
+  rule:   { ic: "☎️", n: "送金の折り返しルール", d: "経理PCで、なりすましを毎ターン4削る", cost: 0, up: 0, fr: 3, at: ["acct"], dmg: 4, people: true },
+  perm:   { ic: "🗂️", n: "権限の整理", d: "共有フォルダを攻略するのに2ターン余計にかかる", cost: 10, up: 0, fr: 2, at: ["share"], dmg: 0 },
+  bk:     { ic: "💾", n: "オフラインバックアップ", d: "サーバーのランサムウェア被害を1/4に", cost: 15, up: 2, at: ["server"], dmg: 0 },
+};
+const GLOBAL = {
+  vpnup: { ic: "🔧", n: "VPN機器の更新", d: "最新ならVPN狙いの攻撃は入口で止まる" },
+  train: { ic: "🎓", n: "社員研修", d: "だまし系の攻撃を、入口とPCで毎ターン削る。効果は毎月薄れる", cost: 8, fr: 4 },
+  soc:   { ic: "🌙", n: "24時間監視サービス", d: "潜伏型を常に見つけ、毎ターンの行動が+1", cost: 40, up: 10 },
+  ins:   { ic: "📄", n: "サイバー保険", d: "被害額を半分に。防ぐ力はない", cost: 0, up: 6 },
+};
 
 let S;
 function fresh() {
-  S = { m: 1, hp: 100, budget: 50, left: 50, fr: 10, own: {}, T: 0, vpnOk: false, vpnOld: true,
-        blocked: 0, hits: 0, dmgTotal: 0, spentTotal: 0, plan: null, log: [], boss: "", fromIncident: false };
+  S = { m: 1, hp: 100, budget: 50, left: 50, fr: 10, T: 0, trained: false, vpnOk: false, vpnOld: true,
+        tw: [], soc: false, ins: false, snake: false, flags: {}, blocked: 0, hits: 0, spent: 0,
+        boss: "", bmod: 0, plan: null, W: null, place: null, sel: null, usedEv: {} };
 }
+const has = (k, node) => S.tw.some(t => t.k === k && (!node || t.node === node));
+const upkeep = () => S.tw.reduce((s, t) => s + DEF[t.k].up, 0) + (S.soc ? 10 : 0) + (S.ins ? 6 : 0) + (S.snake ? 15 : 0);
+const pe = () => 1 - S.fr / 160;
+const scale = () => 1 + (S.m - 1) * 0.07;
+const goalDmg = node => Math.round(N[node].dmg * scale());
+const isoCost = k => k === "server" ? 10 : k === "share" ? 6 : 4;
+const apMax = () => 2 + (S.soc ? 1 : 0);
 
-/* ---------- 効き目の計算 ---------- */
-function peopleEff() { return 1 - S.fr / 180; }
-function has(k) { return !!S.own[k]; }
-function trainP(a) {
-  let t = S.T;
-  if (a === "phish" && S.m >= 7) t *= 0.5;        // AIで文面が自然に
-  if (a === "sms" && S.m >= 7) t *= 0.6;
-  if (a === "bec") t *= S.m >= 8 ? 0.1 : 0.6;     // 声のディープフェイク
-  return t * peopleEff();
-}
-// 各段階で「止める」対策と確率の一覧
-function layers(a, stage) {
-  const pe = peopleEff(), L = [];
-  if (stage === 0) {
-    if (a === "sms")   { if (S.T) L.push(["train", trainP(a)]); if (has("mfa")) L.push(["mfa", .7 * pe]); }
-    if (a === "reuse") { if (has("pm")) L.push(["pm", .65 * pe]); if (has("mfa")) L.push(["mfa", .8 * pe]); }
-    if (a === "phish") { if (has("mail")) L.push(["mail", .5]); if (S.T) L.push(["train", trainP(a)]); if (has("mfa")) L.push(["mfa", .35 * pe]); }
-    if (a === "vpn")   { if (S.vpnOk) L.push(["vpn", .95]); if (has("mfa")) L.push(["mfa", .3 * pe]); }
-    if (a === "bec")   { if (S.T) L.push(["train", trainP(a)]); }
-  } else if (stage === 1) {
-    if (!ATK[a].spread) return L;
-    if (has("edr")) L.push(["edr", .5]); if (has("soc")) L.push(["soc", .6]); if (has("perm")) L.push(["perm", .3]);
-  } else {
-    if (a === "bec" && has("rule")) L.push(["rule", .85 * pe]);
-  }
-  return L;
-}
-const stopP = L => 1 - L.reduce((q, [, p]) => q * (1 - p), 1);
-// 被害の軽減（掛け算）
-function mitig(a) {
-  const t = ATK[a].type, M = [];
-  if (t === "ransom" && has("bk")) M.push(["bk", .25]);
-  if (t === "leak" && has("perm")) M.push(["perm", .6]);
-  if (has("ins") && t !== "acct") M.push(["ins", .5]);
-  return M;
-}
-function expect(a) {
-  const p0 = stopP(layers(a, 0)), p1 = stopP(layers(a, 1)), p2 = stopP(layers(a, 2));
-  const pass = (1 - p0) * (1 - p1) * (1 - p2);
-  const mul = mitig(a).reduce((x, [, m]) => x * m, 1);
-  const base = dmgOf(a);
-  return { p0, p1, p2, pass, dmg: base * mul, exp: pass * base * mul, spread: ATK[a].spread };
-}
-
-// 攻撃は月を追うごとに大がかりになる
-function dmgOf(a) { return Math.round(ATK[a].dmg * (1 + (S.m - 1) * 0.07)); }
-
-/* ---------- 月の計画（攻撃と予報） ---------- */
+/* ============ 月の計画 ============ */
 function planMonth() {
   const m = S.m;
-  const pool = AKEYS.filter(k => ATK[k].from <= m);
-  const n = m <= 2 ? 1 : m <= 5 ? 2 : m <= 8 ? 2 + (Math.random() < .5 ? 1 : 0) : 3;
+  const pool = Object.keys(AT).filter(k => AT[k].from <= m);
+  const n = m <= 2 ? 3 : m <= 5 ? 4 : m <= 8 ? 5 : 6;
   const real = [];
-  // VPNの弱点が公表された月は、VPNが狙われやすい
-  let event = null;
-  if ([3, 6, 9, 11].includes(m) && !S.vpnOld) { S.vpnOk = false; event = "⚠ 使っているVPN機器に新しい弱点が公表されました。更新を当てないと狙われます。"; }
-  if (m === 7) event = (event ? event + "\n" : "") + "⚠ AIで作られた自然な日本語の詐欺メールが急増。研修だけでは見抜きにくくなっています。";
-  if (m === 8) event = (event ? event + "\n" : "") + "⚠ 声をAIでまねる「なりすまし電話」が出回り始めました。声だけでは見分けられません。";
-  if (!S.vpnOk && m >= 3 && Math.random() < .7) real.push("vpn");
+  const events = [];
+  if (m === 7) events.push("AIで作られた自然な日本語の詐欺メールが急増。研修だけでは見抜きにくい（フィッシング・宅配SMSが強化）");
+  if (m === 8) events.push("声をAIでまねる「なりすまし電話」が出回り始めた（社長なりすましが強化、研修が効かない）");
+  if (!S.vpnOk && m >= 3) { real.push("vpn"); if (!S.vpnOld) events.push("VPN機器の弱点が公表されたまま。更新しないと狙われる"); }
   while (real.length < n) real.push(pick(pool));
-  // 予報：本物は高い確率で載る。ハズレ予報も混ざる
+  shuffle(real);
   const fc = [];
-  real.forEach(k => { if (Math.random() < .75) fc.push({ k, conf: Math.random() < .7 ? "hi" : "mid" }); });
-  if (Math.random() < .4) fc.push({ k: pick(pool), conf: "mid" });
-  const seen = new Set();
-  S.plan = { real, fc: fc.filter(f => !seen.has(f.k) && seen.add(f.k)), event };
+  real.forEach(k => { if (Math.random() < .7 && !fc.find(f => f.k === k)) fc.push({ k, conf: Math.random() < .7 ? "hi" : "mid" }); });
+  if (Math.random() < .35) { const k = pick(pool); if (!fc.find(f => f.k === k)) fc.push({ k, conf: "mid" }); }
+  S.plan = { real, fc, events };
 }
 
-/* ---------- 画面 ---------- */
+/* ============ 共通の描画 ============ */
 const G = {};
 function render(html) {
   const v = $("view");
@@ -287,20 +295,65 @@ function hud() {
   $("hBud").textContent = S.left + " / " + S.budget + "万円";
   $("hBlk").textContent = S.blocked + "件";
 }
+function mapHTML() {
+  const lines = EDGES.map(([a, b]) => `<line x1="${N[a].x}" y1="${N[a].y}" x2="${N[b].x}" y2="${N[b].y}"/>`).join("");
+  const nodes = Object.keys(N).map(k => `<button class="node ${N[k].entry ? "entry" : ""} ${N[k].goal ? "goal" : ""}" id="nd_${k}" style="left:${N[k].x}%;top:${N[k].y}%" onclick="G.tap('${k}')">
+      <div class="ic">${N[k].ic}</div><div class="nm">${N[k].n}</div><div class="tw" id="tw_${k}"></div><div class="tk" id="tk_${k}"></div></button>`).join("");
+  return `<div class="mapwrap" id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg>
+    <div class="zone" style="top:3px">入口</div><div class="zone" style="top:35%">社内</div><div class="zone" style="top:72%">守るもの</div>${nodes}</div>`;
+}
+function paintMap() {
+  const W = S.W;
+  for (const k in N) {
+    const el = $("nd_" + k);
+    if (!el) continue;
+    const tws = S.tw.filter(t => t.node === k).map(t => DEF[t.k].ic);
+    if (k === "vpn") tws.unshift(S.vpnOk ? "🔧" : "⚠️");
+    if (k === "mail" && S.snake) tws.push("📦");
+    $("tw_" + k).textContent = tws.join("");
+    let cls = "node" + (N[k].entry ? " entry" : "") + (N[k].goal ? " goal" : "");
+    if (k === "vpn" && !S.vpnOk) cls += " weak";
+    if (S.place && DEF[S.place].at.includes(k) && S.tw.filter(t => t.node === k).length < 3) cls += " can";
+    if (S.sel === k) cls += " sel";
+    let tk = "";
+    if (W) {
+      if (W.iso[k]) cls += " iso";
+      const here = W.atk.filter(a => a.on && a.path[a.i] === k);
+      if (here.some(a => !a.hidden)) cls += " hot";
+      tk = here.map(a => a.hidden ? (a.hint ? `<span class="tok hint">❓</span>` : "") : `<span class="tok">${AT[a.t].ic}${a.str}<i>${progTxt(a)}</i></span>`).join("");
+      const soon = W.atk.filter(a => !a.on && !a.done && a.path[0] === k && a.at === W.turn + 1);
+      tk += soon.map(a => `<span class="tok spawn">${AT[a.t].ic}次</span>`).join("");
+    }
+    el.className = cls;
+    $("tk_" + k).innerHTML = tk;
+  }
+}
+function progTxt(a) {
+  const need = hardOf(a.path[a.i]);
+  return need > 1 ? ` ${a.prog}/${need}` : "";
+}
+function hardOf(k) { return N[k].hard + (k === "share" && has("perm", "share") ? 2 : 0); }
+function popAt(k, text, color) {
+  const map = $("map"); if (!map) return;
+  const p = document.createElement("div");
+  p.className = "pop"; p.textContent = text; p.style.color = color || "var(--ng)";
+  p.style.left = N[k].x + "%"; p.style.top = (N[k].y - 8) + "%";
+  map.appendChild(p); setTimeout(() => p.remove(), 1100);
+}
 
+/* ============ タイトル ============ */
 G.title = () => {
   fresh();
   $("hud").classList.remove("on");
   render(`<div class="title">
     <div class="kick">CYBER DEFENSE SIMULATOR</div>
     <h1>ひとり情シス<br>防衛戦</h1>
-    <p class="lead">社員30人の会社で、IT担当はあなたひとり。<br>攻撃が来ることは、わかっている。<br>でも予算は足りないし、社員は面倒がる。</p>
+    <p class="lead">社員30人の会社で、IT担当はあなたひとり。<br>攻撃は、毎月やってくる。<br>予算は足りない。社員は面倒がる。社長は無茶を言う。</p>
     <div class="rules">
-      <b>毎月の流れ</b><br>
-      ① 攻撃の<b>予報</b>を読む（ハズレも、予報にない攻撃もある）<br>
-      ② 限られた<b>予算</b>で対策を買う（月額の維持費もかかる）<br>
-      ③ 攻撃は「<b>入口 → 社内に広がる → 被害</b>」と進む。どこか1か所で止めれば勝ち<br><br>
-      <b>気をつけること</b><br>
+      <b>① 準備</b>：攻撃の予報を読み、予算で対策を買って<b>社内ネットワークに配置</b>する<br>
+      <b>② 迎撃</b>：攻撃は入口から1マスずつ進んでくる。配置した対策が毎ターン攻撃の強さを削る。強さが0になれば阻止<br>
+      <b>③ 手を打つ</b>：毎ターン2回まで、場所をタップして<b>隔離・調査・リセット</b>などの対応ができる<br>
+      <b>④ 判断</b>：月末には社長や社員から、悩ましい相談が来る<br><br>
       ・対策を厳しくしすぎると<b>社員の不満</b>が溜まり、人が守る対策の効き目が落ちる<br>
       ・何も起きない月が続くと、社長は<b>予算を削る</b><br>
       ・<b>会社の体力</b>が0になったら倒産。12か月を守り抜け
@@ -309,222 +362,431 @@ G.title = () => {
     <p class="note">※このゲームはフィクションです。数値はゲーム用に単純化したもので、実際の製品やサービスの性能を示すものではありません。<br>実況・配信・動画投稿・収益化OK</p>
   </div>`);
 };
-
 G.start = () => {
   fresh();
   S.boss = "ITのことはよくわからんから、全部任せる。予算は月50万。大事に使ってくれよ。";
   planMonth();
-  G.month();
+  G.prep();
 };
 
-function costOf(k) {
-  if (k === "vpn") return S.vpnOld ? 20 : 3;
-  return DEF[k].cost;
-}
-G.month = () => {
+/* ============ 準備フェーズ ============ */
+G.prep = () => {
+  S.W = null; S.place = null; S.sel = null;
   hud();
   const P = S.plan;
-  const fcs = P.fc.length ? P.fc.map(f => `<div class="fc"><span class="ic">${ATK[f.k].ic}</span><div class="tx">${ATK[f.k].n}<small>→ 狙いは「${ATK[f.k].to}」</small></div><span class="conf ${f.conf}">確度 ${f.conf === "hi" ? "高" : "中"}</span></div>`).join("")
-    : `<div class="fc">今月は目立った予報なし。……本当に？</div>`;
+  const fcs = P.fc.length ? P.fc.map(f => `<div class="fc"><span>${AT[f.k].ic}</span><div class="tx">${AT[f.k].n}<small>${AT[f.k].path.map(o => o.map(x => N[x].n).join("か")).join(" → ")}</small></div><span class="conf ${f.conf}">確度 ${f.conf === "hi" ? "高" : "中"}</span></div>`).join("")
+    : `<div class="fc">目立った予報なし。……本当に？</div>`;
   render(`
     <div class="boss"><div class="av">👔</div><div class="say"><b>社長</b>${S.boss}</div></div>
-    <div class="card"><h2>📡 今月の攻撃予報<small>${S.m}月</small></h2>${fcs}
-      ${P.event ? P.event.split("\n").map(e => `<div class="event">${e}</div>`).join("") : ""}</div>
-    <div class="card"><h2>🗺 守備マップ<small>止める確率と、通ったときの被害</small></h2><div id="map"></div></div>
-    <div class="card"><h2>🛒 対策<small>残り ${S.left}万円</small></h2><div class="dlist" id="dlist"></div>
-      <div class="def" style="margin-top:8px"><div class="ic">🍱</div><div class="tx"><b>ランチ付き説明会</b><small>対策の理由をきちんと説明する。社員の不満 -15</small></div>
-        <button class="act" id="lunch" onclick="G.lunch()">5万円</button></div></div>
-    <button class="go" onclick="G.fight()">今月を迎え撃つ ▶</button>`);
-  drawMap(); drawDefs();
+    <div class="card"><h2>📡 ${S.m}月の攻撃予報<small>攻撃は全部で${P.real.length}件の見込み</small></h2>${fcs}
+      ${P.events.map(e => `<div class="event">⚠ ${e}</div>`).join("")}</div>
+    ${mapHTML()}
+    <div class="panel" id="pp"></div>
+    <div class="card"><h2>🛒 対策を買う<small id="shopLeft">残り ${S.left}万円</small></h2><div class="dlist" id="shop"></div></div>
+    <div id="placebar"></div>
+    <button class="go" onclick="G.battle()">準備完了。迎え撃つ ▶</button>`);
+  paintMap(); drawShop(); drawPrepPanel();
 };
-function chip(p, on) {
-  if (!on) return `<span class="chip c0">—</span>`;
-  const c = p >= .75 ? "c3" : p >= .45 ? "c2" : p > 0 ? "c1" : "c0";
-  return `<span class="chip ${c}">${p > 0 ? pct(p) : "0%"}</span>`;
+function drawPrepPanel() {
+  const k = S.sel, pp = $("pp");
+  if (!k) { pp.innerHTML = `<h3>📍 場所をタップすると、置いてある対策が見られます</h3><p>対策を買うと、置ける場所が青く光ります。予報の攻撃がどこを通るか見て配置しよう。</p>`; return; }
+  const list = S.tw.map((t, i) => ({ t, i })).filter(o => o.t.node === k);
+  const goal = N[k].goal ? `<p>ここまで攻撃が届くと「${N[k].gn}」。被害 ${goalDmg(k)}</p>` : "";
+  pp.innerHTML = `<h3>${N[k].ic} ${N[k].n}<small>攻略に${hardOf(k)}ターン</small></h3>${goal}
+    ${list.length ? `<div class="alist">${list.map(o => `<div><span>${DEF[o.t.k].ic} ${DEF[o.t.k].n}</span><button class="rm" onclick="G.remove(${o.i})">撤去</button></div>`).join("")}</div>` : `<p>対策は置かれていません</p>`}`;
 }
-function drawMap() {
-  const fcK = new Set(S.plan.fc.map(f => f.k));
-  const rows = AKEYS.map(k => {
-    const a = ATK[k], e = expect(k);
-    const locked = a.from > S.m;
-    const lv = e.exp >= 12 ? "hi" : e.exp >= 5 ? "mid" : "lo";
-    if (locked) return `<tr style="opacity:.35"><td>${a.ic} ${a.n}<small>${a.from}月ごろから出現</small></td><td colspan="4">—</td></tr>`;
-    return `<tr${fcK.has(k) ? ' style="background:#fff8e6"' : ""}><td>${a.ic} ${a.n}<small>→ ${a.to}（${dmgOf(k)}）</small></td>
-      <td>${chip(e.p0, true)}</td><td>${chip(e.p1, a.spread)}</td><td>${chip(e.p2, k === "bec")}</td>
-      <td><span class="risk ${lv}">${e.exp.toFixed(1)}</span></td></tr>`;
-  }).join("");
-  $("map").innerHTML = `<table class="map"><tr><th>攻撃</th><th>入口で</th><th>広がる前</th><th>最後の砦</th><th>予想被害</th></tr>${rows}</table>
-    <p class="legend">数字は止める確率。予想被害 = 通る確率 × 被害（バックアップや保険で軽減後）。黄色の行が今月の予報。<br>人が守る対策の効き目：<b>${pct(peopleEff())}</b>（社員の不満で下がる）</p>`;
-}
-function drawDefs() {
-  $("dlist").innerHTML = ORDER.map(k => {
-    const d = DEF[k];
-    let on = has(k), btn, cls = "";
-    let extra = "";
-    if (k === "train") {
-      on = S.T > 0.05;
-      extra = on ? `<i class="u">現在の効果 ${pct(S.T)}</i>` : "";
-      btn = `<button class="act" ${S.left < d.cost || S.trainedThis ? "disabled" : ""} onclick="G.buy('train')">${S.trainedThis ? "実施済み" : "実施<small>" + d.cost + "万円</small>"}</button>`;
-    } else if (k === "vpn") {
-      on = S.vpnOk;
-      if (!on) cls = "alert";
-      extra = S.vpnOld ? `<i class="f">古い機器のまま</i>` : on ? `<i class="u">最新</i>` : `<i class="f">更新が必要</i>`;
-      btn = on ? `<button class="act off" disabled>最新</button>` : `<button class="act" ${S.left < costOf(k) ? "disabled" : ""} onclick="G.buy('vpn')">${S.vpnOld ? "買い替え" : "更新"}<small>${costOf(k)}万円</small></button>`;
-    } else if (on) {
-      btn = `<button class="act off" onclick="G.cancel('${k}')">解約</button>`;
-    } else {
-      btn = `<button class="act" ${S.left < d.cost ? "disabled" : ""} onclick="G.buy('${k}')">導入<small>${d.cost ? d.cost + "万円" : "無料"}</small></button>`;
-    }
-    const tags = [];
+function drawShop() {
+  const rows = [];
+  for (const k in DEF) {
+    const d = DEF[k], n = S.tw.filter(t => t.k === k).length;
+    const tags = [`<i>置ける場所：${d.at.map(x => N[x].n).join("・")}</i>`];
     if (d.up) tags.push(`<i class="u">維持 ${d.up}万/月</i>`);
-    if (d.fr) tags.push(`<i class="f">不満 +${d.fr}${d.once ? "" : "/月"}</i>`);
-    if (d.people) tags.push(`<i>人が守る</i>`);
-    return `<div class="def ${on ? "on" : ""} ${cls}"><div class="ic">${d.ic}</div><div class="tx"><b>${d.n}</b><small>${d.d}</small><div class="tags">${extra}${tags.join("")}</div></div>${btn}</div>`;
-  }).join("");
-  $("lunch").disabled = S.left < 5 || S.lunched;
-  if (S.lunched) $("lunch").textContent = "実施済み";
-}
-G.buy = (k) => {
-  const c = costOf(k);
-  if (S.left < c) return;
-  S.left -= c; S.spentTotal += c;
-  if (k === "train") { S.T = Math.min(.6, S.T + .4); S.fr += DEF.train.fr; S.trainedThis = true; }
-  else if (k === "vpn") { S.vpnOk = true; S.vpnOld = false; }
-  else S.own[k] = true;   // 維持費は翌月から
-  hud(); drawMap(); drawDefs(); refreshShopHead();
-};
-G.cancel = (k) => { delete S.own[k]; hud(); drawMap(); drawDefs(); };
-G.lunch = () => {
-  if (S.left < 5 || S.lunched) return;
-  S.left -= 5; S.spentTotal += 5; S.fr = Math.max(0, S.fr - 15); S.lunched = true;
-  hud(); drawMap(); drawDefs(); refreshShopHead();
-};
-function refreshShopHead() {
-  document.querySelectorAll(".card h2 small").forEach(e => { if (e.textContent.startsWith("残り")) e.textContent = `残り ${S.left}万円`; });
-}
-
-/* ---------- 迎撃 ---------- */
-const STAGE = ["入口", "社内に広がる", "被害"];
-G.fight = async () => {
-  const real = S.plan.real;
-  render(`<div class="card"><h2>🚨 ${S.m}月の攻撃<small>${real.length}件</small></h2><p style="font-size:12.5px;color:var(--sub)">どこか1か所で止めれば防げる。</p></div><div id="atks"></div><div id="after"></div>`);
-  window.scrollTo(0, 0);
-  let monthDmg = 0, monthBlk = 0;
-  const lines = [];
-  for (const a of real) {
-    const A = ATK[a];
-    const box = document.createElement("div");
-    box.className = "atk";
-    box.innerHTML = `<div class="hd"><span>${A.ic}</span>${A.n} → ${A.to}</div>
-      <div class="chain">${STAGE.map((s, i) => `<div class="node"><b>${s}</b><span>…</span></div>`).join("")}</div>
-      <div class="verdict">　</div>`;
-    $("atks").appendChild(box);
-    box.scrollIntoView({ behavior: "smooth", block: "center" });
-    const node = i => box.querySelectorAll(".node")[i];
-    let stopped = false;
-    for (let i = 0; i < 3 && !stopped; i++) {
-      const nd = node(i);
-      nd.classList.add("live");
-      await sleep(650);
-      nd.classList.remove("live");
-      const L = layers(a, i);
-      if (i === 1 && !A.spread) { nd.classList.add("skip"); nd.querySelector("span").textContent = "（この攻撃にはない）"; continue; }
-      if (i < 2 || a === "bec") {
-        // 1つずつ判定して、止めた対策を表示
-        let who = null;
-        for (const [k, p] of L) if (Math.random() < p) { who = k; break; }
-        if (who) { stopped = true; nd.classList.add("block"); nd.querySelector("span").textContent = "🛡 " + DEF[who].n + "で阻止"; }
-        else { nd.classList.add("pass"); nd.querySelector("span").textContent = L.length ? "すり抜けた" : "守りなし"; }
-        if (stopped || i < 2) continue;
-      }
-      // 被害
-      if (!stopped) {
-        const M = mitig(a);
-        const dmg = Math.round(dmgOf(a) * M.reduce((x, [, m]) => x * m, 1));
-        monthDmg += dmg;
-        nd.classList.add(M.length ? "mit" : "pass");
-        nd.querySelector("span").innerHTML = (M.length ? M.map(([k]) => DEF[k].n).join("・") + "で軽減<br>" : "") + "体力 -" + dmg;
-      }
-    }
-    const v = box.querySelector(".verdict");
-    if (stopped) { monthBlk++; v.className = "verdict ok"; v.textContent = "防いだ"; lines.push(`${A.ic} ${A.n}：防いだ`); }
-    else { v.className = "verdict ng"; v.textContent = "被害が出た"; lines.push(`${A.ic} ${A.n}：被害`); }
-    await sleep(500);
+    if (d.fr) tags.push(`<i class="f">不満 +${d.fr}/月</i>`);
+    if (d.people) tags.push(`<i class="p">人が守る</i>`);
+    if (n) tags.unshift(`<i class="p">配置中 ${n}</i>`);
+    const once = (k === "rule" || k === "perm") && n >= 1;
+    rows.push(`<div class="def ${n ? "on" : ""}"><div class="ic">${d.ic}</div><div class="tx"><b>${d.n}</b><small>${d.d}</small><div class="tags">${tags.join("")}</div></div>
+      <button class="act" ${S.left < d.cost || once ? "disabled" : ""} onclick="G.buy('${k}')">${once ? "導入済" : "買って置く"}<small>${d.cost ? d.cost + "万円" : "無料"}</small></button></div>`);
   }
-  // 月末処理
-  S.hp -= monthDmg; S.dmgTotal += monthDmg; S.blocked += monthBlk; S.hits += real.length - monthBlk;
-  const prevBudget = S.budget;
+  // 全体にかかる対策
+  const g = GLOBAL;
+  const vc = S.vpnOld ? 20 : 3;
+  rows.push(`<div class="def ${S.vpnOk ? "on" : "alert"}"><div class="ic">${g.vpnup.ic}</div><div class="tx"><b>${g.vpnup.n}</b><small>${g.vpnup.d}</small><div class="tags">${S.vpnOld ? '<i class="f">古い機器のまま</i>' : S.vpnOk ? '<i class="p">最新</i>' : '<i class="f">更新が必要</i>'}</div></div>
+    ${S.vpnOk ? `<button class="act off" disabled>最新</button>` : `<button class="act" ${S.left < vc ? "disabled" : ""} onclick="G.vpnup()">${S.vpnOld ? "買い替え" : "更新"}<small>${vc}万円</small></button>`}</div>`);
+  rows.push(`<div class="def ${S.T ? "on" : ""}"><div class="ic">${g.train.ic}</div><div class="tx"><b>${g.train.n}</b><small>${g.train.d}</small><div class="tags">${S.T ? `<i class="p">効果 ${S.T}</i>` : ""}<i class="f">不満 +4</i><i class="p">人が守る</i></div></div>
+    <button class="act" ${S.left < 8 || S.trained ? "disabled" : ""} onclick="G.train()">${S.trained ? "実施済" : "実施"}<small>8万円</small></button></div>`);
+  rows.push(`<div class="def ${S.soc ? "on" : ""}"><div class="ic">${g.soc.ic}</div><div class="tx"><b>${g.soc.n}</b><small>${g.soc.d}</small><div class="tags"><i class="u">維持 10万/月</i></div></div>
+    ${S.soc ? `<button class="act off" onclick="G.toggle('soc')">解約</button>` : `<button class="act" ${S.left < 40 ? "disabled" : ""} onclick="G.toggle('soc')">導入<small>40万円</small></button>`}</div>`);
+  rows.push(`<div class="def ${S.ins ? "on" : ""}"><div class="ic">${g.ins.ic}</div><div class="tx"><b>${g.ins.n}</b><small>${g.ins.d}</small><div class="tags"><i class="u">維持 6万/月</i></div></div>
+    <button class="act ${S.ins ? "off" : ""}" onclick="G.toggle('ins')">${S.ins ? "解約" : "加入<small>来月から6万/月</small>"}</button></div>`);
+  if (S.snake) rows.push(`<div class="def alert"><div class="ic">📦</div><div class="tx"><b>完全防御ボックス</b><small>営業マンに勧められた「AIが100%防ぐ」製品。中身はただの迷惑メールフィルタだった</small><div class="tags"><i class="u">維持 15万/月</i></div></div>
+    <button class="act off" onclick="G.toggle('snake')">解約</button></div>`);
+  rows.push(`<div class="def"><div class="ic">🍱</div><div class="tx"><b>ランチ付き説明会</b><small>対策の理由をきちんと説明する。社員の不満 -15</small></div>
+    <button class="act" ${S.left < 5 || S.lunched ? "disabled" : ""} onclick="G.lunch()">${S.lunched ? "実施済" : "開く"}<small>5万円</small></button></div>`);
+  $("shop").innerHTML = rows.join("");
+  $("shopLeft").textContent = `残り ${S.left}万円 ・ 来月の維持費 ${upkeep()}万円`;
+}
+function spend(c) { S.left -= c; S.spent += c; hud(); }
+G.buy = (k) => {
+  if (S.left < DEF[k].cost) return;
+  S.place = k;
+  $("placebar").innerHTML = `<div class="placing"><span>${DEF[k].ic} ${DEF[k].n}を置く場所をタップ</span><button onclick="G.cancelPlace()">やめる</button></div>`;
+  paintMap();
+  $("map").scrollIntoView({ behavior: "smooth", block: "center" });
+};
+G.cancelPlace = () => { S.place = null; $("placebar").innerHTML = ""; paintMap(); };
+G.remove = (i) => { S.tw.splice(i, 1); paintMap(); drawShop(); drawPrepPanel(); };
+G.vpnup = () => { const c = S.vpnOld ? 20 : 3; if (S.left < c) return; spend(c); S.vpnOk = true; S.vpnOld = false; paintMap(); drawShop(); };
+G.train = () => { if (S.left < 8 || S.trained) return; spend(8); S.T = Math.min(3, S.T + 2); S.fr += 4; S.trained = true; hud(); drawShop(); };
+G.lunch = () => { if (S.left < 5 || S.lunched) return; spend(5); S.fr = Math.max(0, S.fr - 15); S.lunched = true; hud(); drawShop(); };
+G.toggle = (k) => {
+  if (k === "soc" && !S.soc) { if (S.left < 40) return; spend(40); }
+  S[k] = !S[k]; drawShop(); paintMap();
+};
+G.tap = (k) => {
+  if (S.W) return battleTap(k);
+  if (S.place) {
+    const d = DEF[S.place];
+    if (!d.at.includes(k) || S.tw.filter(t => t.node === k).length >= 3) return;
+    spend(d.cost);
+    S.tw.push({ k: S.place, node: k });
+    popAt(k, "配置 " + d.ic, "var(--accent)");
+    S.place = null; $("placebar").innerHTML = "";
+    S.sel = k;
+    paintMap(); drawShop(); drawPrepPanel();
+    return;
+  }
+  S.sel = S.sel === k ? null : k;
+  paintMap(); drawPrepPanel();
+};
+
+/* ============ 迎撃フェーズ ============ */
+G.battle = () => {
+  S.place = null;
+  const atk = S.plan.real.map((t, i) => {
+    const path = AT[t].path.map(o => pick(o));
+    let str = Math.round(AT[t].str * (1 + (S.m - 1) * 0.06));
+    if (S.m >= 7 && (t === "phish" || t === "sms")) str += 1;
+    if (S.m >= 8 && t === "bec") str += 2;
+    if (t === "vpn" && S.flags.byod) str += 2;
+    return { id: i, t, path, i: 0, prog: 0, str, at: 1 + Math.floor(i * 0.9 + rnd(0, 1.2)), on: false, done: false, hidden: !!AT[t].stealth, hint: false };
+  });
+  (S.extra || []).forEach(x => atk.push({ id: atk.length, t: x.t, path: x.path, i: 0, prog: 0, str: 5, at: 1, on: false, done: false, hidden: true, hint: false }));
+  S.extra = [];
+  S.W = { turn: 0, atk, ap: apMax(), iso: {}, log: [], dmg: 0, blk: 0, hit: 0, busy: false };
+  S.sel = null;
+  render(`${mapHTML()}
+    <div class="turnbar"><div class="ap" id="ap"></div><button class="go blue" id="nextT" onclick="G.turn()">次のターン ▶</button></div>
+    <div class="panel" id="bp"></div>
+    <div class="log" id="log"></div>`);
+  window.scrollTo(0, 0);
+  G.turn();
+};
+function log(t) { S.W.log.unshift(t); $("log").innerHTML = S.W.log.slice(0, 6).map(x => `<div>${x}</div>`).join(""); }
+function drawAP() {
+  const W = S.W;
+  $("ap").innerHTML = "行動" + Array.from({ length: apMax() }, (_, i) => `<i class="${i < W.ap ? "" : "off"}"></i>`).join("");
+}
+function towerDmg(a, k) {
+  // その場所で、その攻撃者が毎ターン受けるダメージ
+  let d = 0;
+  const p = pe();
+  for (const t of S.tw.filter(t => t.node === k)) {
+    const D = DEF[t.k];
+    let v = D.dmg;
+    if (t.k === "pm" && a.t === "reuse") v = 3;
+    if (t.k === "rule" && a.t !== "bec") v = 0;
+    if (t.k === "filter" && k !== "mail") v = 0;
+    if (t.k === "mfa" && S.flags.no2fa) v -= 1;
+    if (D.people) v *= p;
+    d += v;
+  }
+  if (k === "mail" && S.snake) d += 1;
+  if (S.T && AT[a.t].lure && (N[k].entry || ["sales", "admin", "acct"].includes(k))) {
+    let tv = S.T;
+    if (S.m >= 7 && (a.t === "phish" || a.t === "sms")) tv *= .5;
+    if (a.t === "bec" && S.m >= 8) tv = 0;
+    d += tv * p;
+  }
+  return Math.floor(d + Math.random() * 0.999);   // 端数は確率で切り上げ
+}
+G.turn = async () => {
+  const W = S.W;
+  if (W.busy) return;
+  W.busy = true;
+  $("nextT").disabled = true;
+  W.turn++;
+  // 出現
+  for (const a of W.atk) if (!a.on && !a.done && a.at === W.turn) {
+    a.on = true;
+    if (a.t === "vpn" && S.vpnOk) { a.on = false; a.done = true; W.blk++; S.blocked++; log(`🔧 VPN狙いの攻撃：機器が最新なので入り口がなかった`); popAt("vpn", "阻止", "var(--ok)"); continue; }
+    if (!a.hidden) log(`${AT[a.t].ic} ${AT[a.t].n}が「${N[a.path[0]].n}」に来た（強さ${a.str}）`);
+    if (a.hidden && (S.soc || has("edr", a.path[0]))) a.hidden = false;
+  }
+  paintMap();
+  await sleep(350);
+  // 対策が削る → 進む
+  for (const a of W.atk.filter(a => a.on)) {
+    const k = a.path[a.i];
+    const d = towerDmg(a, k);
+    if (d > 0) {
+      a.str -= d;
+      if (!a.hidden) popAt(k, "-" + d, "var(--ok)");
+    }
+    if (a.str <= 0) { a.on = false; a.done = true; W.blk++; S.blocked++; log(`🛡 ${a.hidden ? "何かが" : AT[a.t].n + "を"}「${N[k].n}」で止めた`); popAt(k, "阻止！", "var(--ok)"); continue; }
+    a.prog++;
+    if (a.prog >= hardOf(k)) {
+      if (a.i === a.path.length - 1) {
+        // 目的達成
+        let dmg = goalDmg(k);
+        const why = [];
+        if (k === "server" && has("bk", "server")) { dmg = Math.round(dmg / 4); why.push("バックアップ"); }
+        if (S.ins) { dmg = Math.round(dmg / 2); why.push("保険"); }
+        a.on = false; a.done = true; W.hit++; S.hits++; W.dmg += dmg; S.hp -= dmg;
+        log(`💥 ${AT[a.t].n}が「${N[k].n}」に到達。${N[k].gn}で体力 -${dmg}${why.length ? "（" + why.join("・") + "で軽減）" : ""}`);
+        popAt(k, "被害 -" + dmg);
+        continue;
+      }
+      const nx = a.path[a.i + 1];
+      if (W.iso[nx]) { a.on = false; a.done = true; W.blk++; S.blocked++; log(`🔌 ${a.hidden ? "何か" : AT[a.t].n}が隔離された「${N[nx].n}」に進めず消えた`); continue; }
+      a.i++; a.prog = 0;
+      if (a.hidden && (S.soc || has("edr", nx))) { a.hidden = false; log(`🛡 監視が潜伏型を見つけた：「${N[nx].n}」`); }
+    }
+  }
+  // 潜伏型のかすかな兆候
+  W.atk.forEach(a => { if (a.on && a.hidden) a.hint = Math.random() < .45; });
+  hud();
+  W.ap = apMax();
+  W.busy = false;
+  const left = W.atk.some(a => !a.done);
+  paintMap(); drawAP(); drawBattlePanel();
+  if (!left || S.hp <= 0) { await sleep(700); return monthEnd(); }
+  $("nextT").disabled = false;
+};
+
+function drawBattlePanel() {
+  const W = S.W, k = S.sel, bp = $("bp");
+  if (!bp) return;
+  if (!k) {
+    const coming = W.atk.filter(a => !a.on && !a.done).length;
+    const visible = W.atk.filter(a => a.on && !a.hidden).length;
+    bp.innerHTML = `<h3>ターン ${W.turn}<small>侵入中 ${visible}件・これから ${coming}件</small></h3>
+      <p>赤い場所をタップして手を打とう。対策は毎ターン自動で攻撃を削る。数字は攻撃の強さ、「1/2」は攻略の進み具合。<br>黄色い❓は「何かいるかもしれない」兆候。</p>`;
+    return;
+  }
+  const here = W.atk.filter(a => a.on && a.path[a.i] === k);
+  const vis = here.filter(a => !a.hidden);
+  const acts = [];
+  const ap = W.ap;
+  if (!N[k].entry && !W.iso[k]) {
+    const cost = isoCost(k);
+    acts.push(`<button class="red" ${ap < 1 ? "disabled" : ""} onclick="G.act('iso','${k}')">🔌 隔離する<small>中の攻撃を全部止める。業務停止で体力-${cost}・不満+3。今月はここを使えない</small></button>`);
+  }
+  acts.push(`<button ${ap < 1 ? "disabled" : ""} onclick="G.act('scan','${k}')">🔍 調査する<small>ここと隣の潜伏型を見つける</small></button>`);
+  if (k === "cloud" || k === "login") acts.push(`<button ${ap < 1 ? "disabled" : ""} onclick="G.act('reset','${k}')">🔑 パスワードを強制リセット<small>ここの攻撃を-3。不満+2</small></button>`);
+  if (k === "acct" || k === "phone") acts.push(`<button ${ap < 1 ? "disabled" : ""} onclick="G.act('call','${k}')">📞 社長に直接確認<small>なりすましを-4</small></button>`);
+  if (["sales", "admin", "acct"].includes(k)) acts.push(`<button ${ap < 1 ? "disabled" : ""} onclick="G.act('warn','${k}')">📢 「そのメール開かないで」<small>ここのだまし系の攻撃を-2。不満+1</small></button>`);
+  bp.innerHTML = `<h3>${N[k].ic} ${N[k].n}<small>${W.iso[k] ? "隔離中" : "攻略に" + hardOf(k) + "ターン"}</small></h3>
+    ${N[k].goal ? `<p>到達されると「${N[k].gn}」：被害 ${goalDmg(k)}</p>` : ""}
+    <div class="alist">${vis.length ? vis.map(a => `<div><span>${AT[a.t].ic} ${AT[a.t].n} ・ 次は ${a.i < a.path.length - 1 ? N[a.path[a.i + 1]].n : "被害"}</span><b>強さ ${a.str}（毎ターン -${estDmg(a, k)}前後）</b></div>`).join("") : `<div><span>${here.some(a => a.hint) ? "⚠ 何かいる気配がある" : "見える攻撃はない"}</span></div>`}</div>
+    <div class="acts">${acts.join("")}<button class="sub" onclick="G.tap('${k}')">閉じる</button></div>`;
+}
+function estDmg(a, k) {
+  let d = 0;
+  for (let i = 0; i < 40; i++) d += towerDmg(a, k);
+  return Math.round(d / 40);
+}
+function battleTap(k) {
+  if (S.W.ended) return;
+  S.sel = S.sel === k ? null : k;
+  paintMap(); drawBattlePanel();
+}
+G.act = (type, k) => {
+  const W = S.W;
+  if (W.ap < 1 || W.busy) return;
+  W.ap--;
+  const here = W.atk.filter(a => a.on && a.path[a.i] === k);
+  const kill = (a, why) => { a.on = false; a.done = true; W.blk++; S.blocked++; log(why); };
+  if (type === "iso") {
+    W.iso[k] = true;
+    const cost = isoCost(k);
+    S.hp -= cost; W.dmg += cost; S.fr = clamp(S.fr + 3, 0, 100);
+    here.forEach(a => kill(a, `🔌 「${N[k].n}」を隔離して${a.hidden ? "潜んでいた何か" : AT[a.t].n}を止めた`));
+    log(`🔌 「${N[k].n}」を隔離（業務停止で体力 -${cost}）`);
+    popAt(k, "隔離", "var(--ink)");
+  } else if (type === "scan") {
+    const area = [k, ...(NB[k] || [])];
+    let found = 0;
+    W.atk.forEach(a => { if (a.on && a.hidden && area.includes(a.path[a.i])) { a.hidden = false; found++; } });
+    log(found ? `🔍 調査で潜伏型を${found}件見つけた！` : `🔍 「${N[k].n}」の周辺を調べたが、何も見つからなかった`);
+    popAt(k, found ? "発見！" : "異常なし", found ? "var(--ng)" : "var(--sub)");
+  } else {
+    const amt = type === "reset" ? 3 : type === "call" ? 4 : 2;
+    const ok = a => type === "reset" || (type === "call" && a.t === "bec") || (type === "warn" && AT[a.t].lure);
+    if (type === "reset") S.fr = clamp(S.fr + 2, 0, 100);
+    if (type === "warn") S.fr = clamp(S.fr + 1, 0, 100);
+    let hit = 0;
+    here.filter(a => !a.hidden && ok(a)).forEach(a => {
+      a.str -= amt; hit++;
+      if (a.str <= 0) kill(a, `✅ ${AT[a.t].n}を「${N[k].n}」で止めた`);
+    });
+    const label = { reset: "強制リセット", call: "社長に確認", warn: "注意喚起" }[type];
+    log(hit ? `${label}：-${amt}` : `${label}：効く相手がいなかった`);
+    popAt(k, hit ? "-" + amt : "空振り", hit ? "var(--ok)" : "var(--sub)");
+  }
+  hud(); paintMap(); drawAP(); drawBattlePanel();
+  if (!W.atk.some(a => !a.done)) setTimeout(monthEnd, 600);
+};
+
+/* ============ 月末 ============ */
+function monthEnd() {
+  const W = S.W;
+  if (W.ended) return;
+  W.ended = true;
+  $("nextT") && ($("nextT").disabled = true);
+  // 不満の増減・研修の減衰
   let fr = S.fr;
-  ORDER.forEach(k => { if (has(k) && !DEF[k].once) fr += DEF[k].fr; });
-  fr -= 7; S.fr = clamp(fr, 0, 100);
-  S.T *= .75; if (S.T < .05) S.T = 0;
-  let bossLine;
-  if (monthDmg > 0) {
+  S.tw.forEach(t => fr += DEF[t.k].fr || 0);
+  fr -= 8; S.fr = clamp(fr, 0, 100);
+  S.T = Math.max(0, S.T - 1);
+  const prev = S.budget;
+  let line;
+  if (W.hit > 0) {
     S.budget = Math.min(100, Math.round(S.budget * 1.2));
-    bossLine = pick(["なんで防げなかったんだ！……わかった、予算は増やす。", "取引先に謝りに行ってきた。予算は出すから、なんとかしてくれ。", "ニュースで見てた話が、うちで起きるとはな……。予算を増やそう。"]);
+    line = pick(["なんで防げなかったんだ！……わかった、予算は増やす。", "取引先に謝りに行ってきた。予算は出すから、なんとかしてくれ。", "ニュースで見てた話が、うちで起きるとはな……。予算を増やそう。"]);
   } else {
     S.budget = Math.max(25, Math.round(S.budget * .85));
-    bossLine = pick(["最近なにも起きてないじゃないか。セキュリティにお金かけすぎじゃないか？予算は少し減らすぞ。", "平和だな。ということは、もう対策は足りてるってことだろ？", "何も起きないなら、その予算は営業に回したいんだがね。"]);
+    line = pick(["最近なにも起きてないじゃないか。セキュリティにお金かけすぎじゃないか？予算は少し減らすぞ。", "平和だな。ということは、もう対策は足りてるってことだろ？", "何も起きないなら、その予算は営業に回したいんだがね。"]);
   }
-  if (S.fr >= 70) bossLine += "　……あと、社員から「IT担当のルールが面倒すぎる」って苦情が来てるぞ。";
-  const upkeep = ORDER.reduce((s, k) => s + (has(k) ? DEF[k].up : 0), 0);
-  S.boss = bossLine;
-  const over = S.hp <= 0, clear = S.m >= 12;
+  if (S.fr >= 70) line += "　……あと、社員から「IT担当のルールが面倒すぎる」って苦情が来てるぞ。";
+  S.boss = line;
   hud();
-  $("after").innerHTML = `<div class="card sum"><h2>📋 ${S.m}月のまとめ</h2>
-    <div class="kv"><span>攻撃</span><b>${real.length}件（防いだ ${monthBlk}件）</b></div>
-    <div class="kv"><span>会社の体力</span><b>-${monthDmg}（残り ${Math.max(0, Math.round(S.hp))}）</b></div>
+  const over = S.hp <= 0, clear = S.m >= 12;
+  const bp = $("bp");
+  bp.innerHTML = `<h3>📋 ${S.m}月のまとめ</h3>
+    <div class="kv"><span>攻撃</span><b>${W.atk.length}件（止めた ${W.blk}件）</b></div>
+    <div class="kv"><span>会社の体力</span><b>-${W.dmg}（残り ${Math.max(0, Math.round(S.hp))}）</b></div>
     <div class="kv"><span>社員の不満</span><b>${Math.round(S.fr)}</b></div>
-    ${!over && !clear ? `<div class="kv"><span>来月の予算</span><b>${prevBudget} → ${S.budget}万円</b></div>
-    <div class="kv"><span>うち維持費</span><b>-${upkeep}万円</b></div>` : ""}
-    </div>
-    <button class="go" onclick="G.next()">${over ? "……" : clear ? "1年を終える" : "翌月へ ▶"}</button>`;
-  $("after").scrollIntoView({ behavior: "smooth", block: "end" });
-};
-G.next = () => {
+    ${!over && !clear ? `<div class="kv"><span>来月の予算</span><b>${prev} → ${S.budget}万円（維持費 -${upkeep()}）</b></div>` : ""}
+    <button class="go" onclick="G.after()">${over ? "……" : clear ? "1年を終える" : "次へ ▶"}</button>`;
+  S.sel = null; paintMap();
+  bp.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+G.after = () => {
   if (S.hp <= 0) return G.end(false);
   if (S.m >= 12) return G.end(true);
-  S.m++;
-  const upkeep = ORDER.reduce((s, k) => s + (has(k) ? DEF[k].up : 0), 0);
-  S.left = S.budget - upkeep;
-  S.trainedThis = false; S.lunched = false;
-  if (S.left < 0) {
-    // 維持費が払えない：高いものから自動解約
-    const owned = ORDER.filter(k => has(k) && DEF[k].up).sort((a, b) => DEF[b].up - DEF[a].up);
-    const dropped = [];
-    while (S.left < 0 && owned.length) { const k = owned.shift(); delete S.own[k]; S.left += DEF[k].up; dropped.push(DEF[k].n); }
-    S.boss += `　維持費が予算を超えたので、${dropped.join("・")}は解約しておいたぞ。`;
-  }
-  S.spentTotal += upkeep;
-  planMonth();
-  G.month();
-  window.scrollTo(0, 0);
+  // 翌月の弱点公表
+  if ([2, 5, 8, 10].includes(S.m) && !S.vpnOld) S.vpnOk = false;
+  showEvent();
 };
 
-/* ---------- エンディング ---------- */
+/* ============ イベント ============ */
+const EV = [
+  { id: "patch", prio: true, cond: () => !S.vpnOk && !S.vpnOld, kick: "緊急", title: "VPN機器に弱点が見つかった",
+    q: "使っているVPN機器の弱点がニュースになった。今夜、全員の作業を止めれば無料で更新できる。",
+    o: [["今夜、全員止めて更新する", () => { S.vpnOk = true; S.fr += 6; return "社員からは文句が出たが、入り口はふさがった。（不満 +6）"; }],
+        ["来月、予算を使って昼間にやる", () => "更新には3万円かかる。それまでVPNは狙われ放題だ。"]] },
+  { id: "boss2fa", cond: () => has("mfa") && !S.flags.no2fa, kick: "社長", title: "社長からの頼み",
+    q: "「二段階認証、毎回スマホを出すのが面倒なんだ。俺のアカウントだけ外してくれないか？」",
+    o: [["外してあげる", () => { S.flags.no2fa = true; S.bmod += 8; return "社長は上機嫌だ。来月の予算が少し増えた。……ただし、一番狙われるアカウントの守りに穴が空いた。（二段階認証の効果 -1）"; }],
+        ["丁寧に断る", () => { S.bmod -= 5; return "「融通がきかないな」社長はむっとした。（来月の予算 -5万）"; }]] },
+  { id: "usb", kick: "社員", title: "拾ったUSBメモリ",
+    q: "「駐車場でUSBメモリを拾いました。誰のか、中身を見て確かめてもいいですか？」",
+    o: [["見ていいよ", () => { S.extra = (S.extra || []).concat([{ t: "apt", path: ["sales", "server"] }]); return "中には「給与一覧.xlsx」というファイルがあった。開いた瞬間、何かが動いた気がする……。"; }],
+        ["触らず捨てさせる", () => { S.fr += 3; return "「なんでですか、もったいない」少し不満そうだ。（不満 +3）"; }],
+        ["研修のネタにする（3万円）", () => { S.bmod -= 3; S.T = Math.min(3, S.T + 1); return "拾ったUSBは挿さない。社員の意識が少し上がった。（研修効果 +1、来月の予算 -3万）"; }]] },
+  { id: "snake", cond: () => !S.snake, kick: "営業電話", title: "「100%防ぐ」製品",
+    q: "「AIがあらゆる攻撃を100%防ぐ『完全防御ボックス』！月額たったの15万円です。社長さんにもご案内済みです」",
+    o: [["導入する", () => { S.snake = true; return "……届いた箱の中身は、ただの迷惑メールフィルタだった。毎月15万円の維持費がかかる。（対策の画面から解約できる）"; }],
+        ["断る", () => "「100%防ぐ」製品は存在しない。正しい判断だ。"]] },
+  { id: "invoice", kick: "経理", title: "振込先の変更",
+    q: "経理「取引先から『振込先の口座が変わりました』とメールが来ました。来週の支払いから変えておきますね」",
+    o: [["そのまま任せる", () => { const d = Math.round(14 * scale()); S.hp -= d; return `……取引先になりすました詐欺メールだった。支払いは戻ってこない。（体力 -${d}）`; }],
+        ["取引先に電話で確認させる", () => { S.fr += 1; return "取引先は口座を変えていなかった。詐欺メールだった。危なかった。"; }]] },
+  { id: "byod", cond: () => !S.flags.byod, kick: "社員", title: "在宅勤務の相談",
+    q: "「家の私物パソコンでも仕事できるようにしてほしいです。みんなそう言ってます」",
+    o: [["許可する", () => { S.flags.byod = true; S.fr -= 12; return "社員は大喜びだ。ただ、守れていないPCが社内につながるようになった。（不満 -12、VPN狙いの攻撃が強くなる）"; }],
+        ["会社のPCを貸し出す（10万円）", () => { S.bmod -= 10; S.fr -= 6; return "少しお金はかかったが、安全に在宅できるようになった。（不満 -6、来月の予算 -10万）"; }],
+        ["却下する", () => { S.fr += 8; return "「時代遅れですよ」……空気が悪くなった。（不満 +8）"; }]] },
+  { id: "cutsoc", cond: () => S.soc, kick: "社長", title: "監視サービスは必要か",
+    q: "「何も起きてないし、24時間監視は解約してもいいんじゃないか？月10万だぞ」",
+    o: [["解約する", () => { S.soc = false; return "監視サービスを解約した。夜中に何かあっても、もう誰も気づかない。"; }],
+        ["止めた攻撃の記録を見せて説得する", () => { S.bmod -= 3; return "「……そんなに来てたのか」社長はしぶしぶ納得した。ただ機嫌は悪い。（来月の予算 -3万）"; }]] },
+  { id: "drill", kick: "提案", title: "訓練メール",
+    q: "偽の詐欺メールを社員に送って、引っかかるか試す訓練ができる。費用は3万円。",
+    o: [["実施する", () => { S.bmod -= 3; S.T = Math.min(3, S.T + 1); S.fr += 4; return "30人中7人がリンクを踏んだ。社員は少しムッとしたが、次は気をつけるはずだ。（研修効果 +1、不満 +4）"; }],
+        ["やめておく", () => "今月は見送った。"]] },
+  { id: "oldpc", kick: "社員", title: "古いパソコン",
+    q: "「総務のパソコン、もうサポートが切れたWindowsらしいです。でも動くしいいですよね？」",
+    o: [["買い替える（8万円）", () => { S.bmod -= 8; return "新しいPCに入れ替えた。（来月の予算 -8万）"; }],
+        ["動くならそのままで", () => { S.extra = (S.extra || []).concat([{ t: "apt", path: ["admin", "share"] }]); return "更新されないPCは、攻撃者にとって鍵の開いたドアだ。……誰かがもう気づいたかもしれない。"; }]] },
+];
+function showEvent() {
+  const elig = EV.filter(e => (!e.cond || e.cond()) && !S.usedEv[e.id]);
+  const e = elig.find(x => x.prio) || pick(elig.filter(x => !x.prio).length ? elig.filter(x => !x.prio) : elig);
+  if (!e) return nextMonth();
+  if (!e.prio) S.usedEv[e.id] = true;
+  S.curEv = e;
+  hud();
+  render(`<div class="ev"><div class="kick">${e.kick}からの相談</div><h2>${e.title}</h2><p class="q">${e.q}</p>
+    <div class="opts" id="evo">${e.o.map((o, i) => `<button onclick="G.ev(${i})">${o[0]}</button>`).join("")}</div><div id="evr"></div></div>`);
+  window.scrollTo(0, 0);
+}
+G.ev = (i) => {
+  const r = S.curEv.o[i][1]();
+  S.fr = clamp(S.fr, 0, 100);
+  hud();
+  $("evo").innerHTML = `<button disabled style="border-color:var(--accent)">${S.curEv.o[i][0]}</button>`;
+  $("evr").innerHTML = `<div class="res">${r}</div><button class="go" onclick="G.next()">${S.hp <= 0 ? "……" : S.m + 1 + "月の準備へ ▶"}</button>`;
+};
+G.next = () => { if (S.hp <= 0) return G.end(false); nextMonth(); };
+function nextMonth() {
+  S.m++;
+  S.budget = clamp(S.budget + S.bmod, 20, 100); S.bmod = 0;
+  const up = upkeep();
+  S.left = S.budget - up; S.spent += up;
+  S.trained = false; S.lunched = false;
+  if (S.left < 0) {
+    const dropped = [];
+    while (S.left < 0) {
+      if (S.snake) { S.snake = false; S.left += 15; dropped.push("完全防御ボックス"); continue; }
+      if (S.soc) { S.soc = false; S.left += 10; dropped.push("24時間監視"); continue; }
+      if (S.ins) { S.ins = false; S.left += 6; dropped.push("保険"); continue; }
+      const i = S.tw.findIndex(t => DEF[t.k].up);
+      if (i < 0) { S.left = 0; break; }
+      S.left += DEF[S.tw[i].k].up; dropped.push(DEF[S.tw[i].k].n); S.tw.splice(i, 1);
+    }
+    S.boss += `　維持費が予算を超えたので、${dropped.join("・")}は解約しておいたぞ。`;
+  }
+  planMonth();
+  G.prep();
+  window.scrollTo(0, 0);
+}
+
+/* ============ エンディング ============ */
 G.end = (ok) => {
   $("hud").classList.remove("on");
   const hp = Math.max(0, Math.round(S.hp));
   let rank, lead;
   if (!ok) { rank = "倒産"; lead = `${S.m}月、会社の体力が尽きた。<br>攻撃者たちは、もう次の会社を探している。`; }
-  else if (hp >= 90) { rank = "鉄壁のひとり情シス"; lead = "1年間、ほとんど何も起きなかった。<br>だから誰にも褒められなかった。<br>それが、守る側の仕事の正体だ。"; }
-  else if (hp >= 60) { rank = "現場の守護神"; lead = "いくつか被害は出た。それでも会社は回り続けた。<br>完璧な守りは存在しない。止められる場所を、少しでも増やすことだ。"; }
-  else if (hp >= 30) { rank = "満身創痍の情シス"; lead = "会社は生き残った。ぎりぎりで。<br>来年の予算会議では、たぶん今年の被害の話から始まる。"; }
+  else if (hp >= 80) { rank = "鉄壁のひとり情シス"; lead = "1年間、ほとんど何も起きなかった。<br>だから誰にも褒められなかった。<br>それが、守る側の仕事の正体だ。"; }
+  else if (hp >= 55) { rank = "現場の守護神"; lead = "いくつか被害は出た。それでも会社は回り続けた。<br>完璧な守りは存在しない。止められる場所を、ひとつでも増やすことだ。"; }
+  else if (hp >= 25) { rank = "満身創痍の情シス"; lead = "会社は生き残った。ぎりぎりで。<br>来年の予算会議は、たぶん今年の被害の話から始まる。"; }
   else { rank = "首の皮一枚"; lead = "倒産だけは免れた。<br>あなたの机には、取引先へのお詫び状の束が残っている。"; }
-  const text = `「ひとり情シス防衛戦」${ok ? "12か月を守り抜いた" : S.m + "月に倒産した"}。\n称号【${rank}】 体力${hp} / 防いだ攻撃${S.blocked}件\n#ひとり情シス防衛戦`;
+  const text = `「ひとり情シス防衛戦」${ok ? "12か月を守り抜いた" : S.m + "月に倒産した"}。\n称号【${rank}】 体力${hp} / 止めた攻撃${S.blocked}件\n#ひとり情シス防衛戦`;
   render(`<div class="end">
     <div class="rank ${ok ? "" : "bad"}">${rank}</div>
     <h1>${ok ? "12か月、守り抜いた。" : "会社は倒産した。"}</h1>
     <p class="lead">${lead}</p>
     <div class="trio">
       <div><b>${hp}</b><small>残った体力</small></div>
-      <div><b>${S.blocked}/${S.blocked + S.hits}</b><small>防いだ攻撃</small></div>
-      <div><b>${S.spentTotal}万</b><small>使った予算</small></div>
+      <div><b>${S.blocked}/${S.blocked + S.hits}</b><small>止めた攻撃</small></div>
+      <div><b>${S.spent}万</b><small>使った予算</small></div>
     </div>
     <div class="card"><h2>🛡 現実でも、まずはこの5つ</h2>
       <div class="tip">📱 <b>二段階認証・パスキー</b>を設定する。パスワードが漏れても入られにくい</div>
       <div class="tip">🗝️ <b>パスワードを使い回さない</b>。管理アプリを使えば覚えなくていい</div>
-      <div class="tip">🚪 <b>更新はすぐ当てる</b>。スマホもPCも、ルーターも</div>
+      <div class="tip">🔧 <b>更新はすぐ当てる</b>。スマホもPCも、ルーターも</div>
       <div class="tip">☎️ お金の依頼は<b>一度切って折り返す</b>。家族で合言葉を決める</div>
       <div class="tip">💾 大事なデータは<b>ネットから切り離してバックアップ</b></div>
     </div>
