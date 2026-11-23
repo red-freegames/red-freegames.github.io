@@ -521,7 +521,8 @@ if (S.profit >= GOAL_PROFIT &&!S.goalDone){ S.goalDone = true; S.goalWeek = S.we
 function pickWave(){
 const pool = ITEMS.slice();
 const picks = [];
-const nPick = Math.random() < 0.3 ? 1 : 2;
+const roll = Math.random();
+const nPick = roll < 0.2 ? 1 : roll < 0.85 ? 2 : 3;
 for (let i = 0; i < nPick && pool.length; i++){
 picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
 }
@@ -556,6 +557,13 @@ runEvent();
 /* ニュースで動いた分も「今週の相場の動き」に含める（フィーバー表示・売れ行き判定と一致させる） */
 ITEMS.forEach(it => { const s = S.items[it.id]; if (s.prevMult > 0) s.weekChange = (s.mult - s.prevMult) / s.prevMult; });
 }
+/* フィーバー中（相場が+25%以上跳ねた）の商品は、入荷予定になくても必ず入荷させる */
+ITEMS.forEach(it => {
+const s = S.items[it.id];
+if (s.weekChange < 0.25 || s.stock > 0) return;
+s.stock = Math.max(2, Math.round(it.stock * (S.tactics.group ? 1.3 : 1) / 2));
+pushLog("🔥 フィーバー中の「" + nm(it) + "」が緊急入荷（" + s.stock + "個）", "good");
+});
 /* 来週の噂 */
 S.rumor = makeRumor(picks);
 /* Botは週の初めに自動で買い占める */
@@ -988,7 +996,7 @@ function render(){
   ITEMS.forEach(it => { const s = S.items[it.id]; if (!hottest || s.weekChange > hottest.weekChange) hottest = { it, weekChange: s.weekChange }; });
   const fever = !!hottest && hottest.weekChange >= 0.25 && !S.over;
   document.body.classList.toggle("fever", fever);
-  if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + nm(hottest.it) + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！";
+  if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + nm(hottest.it) + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！" + (S.items[hottest.it.id].stock > 0 ? "　仕入れ欄に入荷中 🛒" : "");
   /* 噂 */
   const rb = $("rumorBar"); rb.innerHTML = "";
   if (S.rumorResult && !S.over){
