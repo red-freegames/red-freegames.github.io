@@ -7,9 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>ダンシングマニア ｜ 変な踊りは、感染する。</title>
-<meta name="description" content="変な踊りが人から人へ感染していく3Dブラウザゲーム。あなたは最初に踊り出した「患者ゼロ」。警備員から逃げながら、広場の全員を踊らせろ。全7ステージ、スマホでそのまま遊べる。">
+<meta name="description" content="変な踊りが人から人へ感染していく3Dブラウザゲーム。あなたは最初に踊り出した「患者ゼロ」。警備員から逃げながら、広場の全員を踊らせろ。全7ステージ＋エンドレス、スマホでそのまま遊べる。">
 <meta property="og:title" content="ダンシングマニア">
-<meta property="og:description" content="変な踊りが人から人へ感染していく3Dブラウザゲーム。あなたは最初に踊り出した「患者ゼロ」。警備員から逃げながら、広場の全員を踊らせろ。全7ステージ、スマホでそのまま遊べる。">
+<meta property="og:description" content="変な踊りが人から人へ感染していく3Dブラウザゲーム。あなたは最初に踊り出した「患者ゼロ」。警備員から逃げながら、広場の全員を踊らせろ。全7ステージ＋エンドレス、スマホでそのまま遊べる。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://red-freegames.github.io/dancing-mania/">
 <meta property="og:site_name" content="RED FREE GAMES">
@@ -42,6 +42,7 @@
   #hudScore small { display:block; font-size:10px; font-weight:400; opacity:.75; }
   #infectWrap { margin:8px auto 0; max-width:520px; background:rgba(10,8,24,.62); border:1px solid rgba(255,255,255,.18); border-radius:999px; height:22px; position:relative; overflow:hidden; }
   #infectFill { height:100%; width:0%; background:linear-gradient(90deg,#ffcf3f,#ff5da2); transition:width .25s; }
+  #infectFill.danger { background:linear-gradient(90deg,#53c2c2,#ff3b3b); } /* エンドレス: 正気の人ゲージ */
   #infectText { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.7); }
   #chainWrap { margin:6px auto 0; max-width:420px; background:rgba(10,8,24,.62); border:1px solid rgba(255,207,63,.5); border-radius:999px; height:17px; position:relative; overflow:hidden; display:none; }
   #chainFill { height:100%; width:100%; background:linear-gradient(90deg,#53c2c2,#ffcf3f); }
@@ -200,11 +201,6 @@
       <div class="danceList" id="danceList"></div>
       <div class="danceDesc" id="danceDesc"></div>
     </div>
-    <div class="danceSel">
-      <div class="danceHead">連鎖モード</div>
-      <div class="danceList" id="modeList"></div>
-      <div class="danceDesc" id="modeDesc"></div>
-    </div>
     <div class="danceSel" id="stageSel" style="display:none;">
       <div class="danceHead">どこから始める？（一度たどり着いたステージから選べる）</div>
       <div class="danceList" id="stageList"></div>
@@ -222,7 +218,8 @@
       👥 屋台の周りの「人だかり」に火をつけると一気に広がる<br>
       🔗 連鎖は2.5秒以内に次を感染させると継続（ゲージ表示あり）<br>
       🔥 12連鎖でフィーバー：感染範囲が広がり、警備員も踊り出す<br>
-      🎧 DJ（緑の服）は感染範囲が広い／🧒 子どもは走り回って遠くまで広げる
+      🎧 DJ（緑の服）は感染範囲が広い／🧒 子どもは走り回って遠くまで広げる<br>
+      ∞ 7ステージ制覇でエンドレス解放：人が途切れず来る。正気の人が60人になるか、3回捕まったら終わり
     </div>
     </details>
     <div class="history">1518年、ストラスブール。1人の女性が踊り始め、1ヶ月で400人が踊り続けた――実在の事件「ダンシングマニア」がモチーフです。</div>
@@ -260,6 +257,7 @@
     </div>
     <div class="rowBtns">
       <button class="btn" id="btnRetry">もう一度踊る</button>
+      <button class="btn" id="btnEndless" style="display:none;">∞ エンドレスに挑戦</button>
     </div>
     <div class="rowBtns"><button class="btn sub" id="btnHomeResult">🏠 HOME</button></div>
     <div class="credit"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></div>

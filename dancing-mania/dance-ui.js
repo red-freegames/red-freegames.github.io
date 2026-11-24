@@ -96,6 +96,7 @@ const THEMES = [
   { sky: 0xd6ecff, ground: 0xb7c2cf, arena: 0xeef1f5, accent: 0x3f7fe0, prop: 'airport' },   // 空港ロビー
   { sky: 0xa9c3e6, ground: 0x4d5c6e, arena: 0x71808f, accent: 0xffcf3f, prop: 'office' },    // オフィス街
   { sky: 0xf2b27c, ground: 0x6e5a48, arena: 0xb09c7e, accent: 0x8b2b2b, prop: 'oldtown' },   // 1518年 大聖堂前
+  { sky: 0x2a1f4a, ground: 0x3a3352, arena: 0x8f86a8, accent: 0x39ff6a, prop: 'office' },    // エンドレス(夜の街)
 ];
 let curTheme = THEMES[0];
 const worldG = new THREE.Group();
@@ -173,7 +174,7 @@ function buildWorld(idx) {
     }
   }
   // ステージの仕掛けの舞台装置
-  const gm = G && STAGES[idx].gimmick;
+  const gm = G && DM.stageDef(idx).gimmick;
   if (gm === 'train') { // 駅舎・改札・線路
     box(20, 7, 5, build, 0, 3.5, -37.5);
     box(20.6, 0.5, 5.6, accMat, 0, 7.2, -37.5);
@@ -204,7 +205,7 @@ function buildWorld(idx) {
       const f = k / 6; box(0.55, 0.7, 0.55, lanternM, c[0] * f, 5.2 - Math.sin(f * Math.PI) * 1.2, c[1] * f);
     }
   } else if (gm === 'rain') { // アーケード(雨宿りの屋根)
-    const st = STAGES[idx];
+    const st = DM.stageDef(idx);
     const stripe = [accMat, tableM];
     for (const sh of st.shelters) {
       const out = sh[0] > 0 ? 1 : -1;
@@ -213,7 +214,7 @@ function buildWorld(idx) {
     }
   } else if (gm === 'walkway') { // 動く歩道(矢印が流れる)
     const beltM = new THREE.MeshLambertMaterial({ color: 0x39414d }), arrowM = new THREE.MeshBasicMaterial({ color: 0x7fd0ff });
-    for (const w of STAGES[idx].walkways) {
+    for (const w of DM.stageDef(idx).walkways) {
       box(w.x1 - w.x0, 0.12, w.w, beltM, (w.x0 + w.x1) / 2, 0.06, w.z);
       box(w.x1 - w.x0, 0.6, 0.18, accMat, (w.x0 + w.x1) / 2, 0.3, w.z - w.w / 2 - 0.1);
       box(w.x1 - w.x0, 0.6, 0.18, accMat, (w.x0 + w.x1) / 2, 0.3, w.z + w.w / 2 + 0.1);
@@ -234,6 +235,13 @@ function buildWorld(idx) {
     const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.8, 18), stone2); basin.position.set(0, 0.4, 0); worldG.add(basin);
     const water = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.1, 18), new THREE.MeshBasicMaterial({ color: 0x6fb6d9 })); water.position.set(0, 0.82, 0); worldG.add(water);
     box(0.5, 2.2, 0.5, stone, 0, 1.1, 0);
+  }
+  if (gm === 'endless') { // 四方の入口(ここから人が入ってくる)
+    const neon = new THREE.MeshBasicMaterial({ color: 0x39ff6a });
+    for (const a of [[0, -28.4, 0], [0, 28.4, 0], [-28.4, 0, 1], [28.4, 0, 1]]) {
+      for (const o of [-4, 4]) box(0.4, 3, 0.4, neon, a[0] + (a[2] ? 0 : o), 1.5, a[1] + (a[2] ? o : 0));
+      box(a[2] ? 0.4 : 8.4, 0.4, a[2] ? 8.4 : 0.4, neon, a[0], 3.1, a[1]);
+    }
   }
   // 電車(駅のみ。位置は毎フレーム updateTrain で動かす)
   trainG = null;
@@ -397,6 +405,15 @@ function crowdGround(mesh, idx, x, y, z, sc) { // 地面に寝かせた円・影
 const crowdNotes = [], crowdAnger = [];
 for (let i = 0; i < 40; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTex, transparent: true, depthWrite: false })); sp.visible = false; scene.add(sp); crowdNotes.push(sp); }
 for (let i = 0; i < 16; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: angerTex, transparent: true, depthWrite: false })); sp.visible = false; sp.scale.set(0.8, 0.8, 1); scene.add(sp); crowdAnger.push(sp); }
+function setCrowdColor(i) {
+  if (i >= NPC_MAX) return;
+  const n = G.npcs[i], c = new THREE.Color();
+  const shirt = n.kind === 'dj' ? MAT.djShirt : n.kind === 'bride' ? MAT.bride : n.kind === 'groom' ? MAT.groom : n.stubborn ? MAT.stubborn : MAT.shirt[n.colorIdx];
+  c.copy(shirt.color); CROWD.torso.setColorAt(i, c); CROWD.armL.setColorAt(i, c); CROWD.armR.setColorAt(i, c);
+  c.copy(MAT.pants[i % 4].color); CROWD.legL.setColorAt(i, c); CROWD.legR.setColorAt(i, c);
+  c.copy(MAT.skin[i % 3].color); CROWD.head.setColorAt(i, c);
+  for (const k of COLOR_PARTS) CROWD[k].instanceColor.needsUpdate = true;
+}
 function setupCrowdColors() {
   const c = new THREE.Color();
   for (let i = 0; i < G.npcs.length && i < NPC_MAX; i++) {
@@ -708,18 +725,27 @@ const el = {
 let hudCache = {};
 function setText(key, node, val) { if (hudCache[key] !== val) { hudCache[key] = val; node.textContent = val; } }
 function updateHUD() {
-  const st = STAGES[G.stageIdx];
+  const st = DM.stageDef(G.stageIdx);
   setText('stage', el.stage, '');
-  el.stage.innerHTML = 'STAGE ' + (G.stageIdx + 1) + '　' + st.name + '<small>' + st.sub + '</small>';
-  const t = Math.ceil(G.timeLeft);
+  el.stage.innerHTML = stageLabel(G.stageIdx) + '　' + st.name + '<small>' + st.sub + '</small>';
+  const endless = G.isEndless();
+  const t = endless ? Math.floor(G.elapsed) : Math.ceil(G.timeLeft); // エンドレスは生き残った秒数を数え上げる
   setText('time', el.time, '' + t);
-  el.time.className = t <= 10 && G.phase === 'play' ? 'warn' : '';
+  el.time.className = !endless && t <= 10 && G.phase === 'play' ? 'warn' : '';
   el.time.id = 'hudTime';
   setText('hearts', el.hearts, '❤'.repeat(Math.max(0, G.hearts)) + '🖤'.repeat(Math.max(0, 3 - G.hearts)));
   setText('score', el.score, '' + G.score);
-  const inf = G.infectedCount();
-  el.fill.style.width = (G.totalNpc ? (inf / G.totalNpc) * 100 : 0) + '%';
-  setText('inf', el.infText, '感染 ' + inf + ' / ' + G.totalNpc);
+  if (endless) { // エンドレス: 正気の人が上限に近づくほどゲージが伸びる(危険)
+    const sane = G.saneCount();
+    el.fill.style.width = Math.min(100, sane / CFG.endlessLimit * 100) + '%';
+    el.fill.className = 'danger';
+    setText('inf', el.infText, '正気の人 ' + sane + ' / ' + CFG.endlessLimit + '（' + CFG.endlessLimit + '人で終わり）');
+  } else {
+    const inf = G.infectedCount();
+    el.fill.className = '';
+    el.fill.style.width = (G.totalNpc ? (inf / G.totalNpc) * 100 : 0) + '%';
+    setText('inf', el.infText, '感染 ' + inf + ' / ' + G.totalNpc);
+  }
   const cl = G.chainTimeLeft();
   if (G.chain >= 2 && cl > 0 && G.phase === 'play') {
     el.chainWrap.style.display = 'block';
@@ -735,7 +761,7 @@ function updateHUD() {
 }
 function gimmickText() {
   if (G.phase !== 'play') return '';
-  const gm = STAGES[G.stageIdx].gimmick;
+  const gm = DM.stageDef(G.stageIdx).gimmick;
   if (gm === 'train') {
     const t = G.nextTrainIn();
     return t >= 0 ? '🚃 次の電車まで ' + Math.ceil(t) + '秒（あと' + G.arrivals.length + '本）　改札から人が増える' : '';
@@ -754,6 +780,7 @@ function gimmickText() {
   }
   if (gm === 'walkway') return '🛬 動く歩道に乗ると流される（警備員も）';
   if (gm === 'band') return '🎺 楽団のそばの人は勝手に踊り出す';
+  if (gm === 'endless') return '🌀 四方から人が来る。踊った人は' + CFG.endlessTire + '秒で踊り疲れて帰る　警備員 ' + G.guards.length + '人';
   if (gm === 'bell') {
     const b = G.bellIn();
     if (b >= 0) return '🔔 昼休み終了まで ' + Math.ceil(b) + '秒';
@@ -770,12 +797,12 @@ function showToast(msg) {
 }
 function showChain(n) {
   el.chain.textContent = n + '連鎖！';
-  if (G.wave) el.chain.className = n >= 30 ? 't3' : n >= 20 ? 't2' : n >= 10 ? 't1' : '';
+  el.chain.className = n >= 60 ? 't3' : n >= 30 ? 't2' : n >= 10 ? 't1' : '';
   el.chain.classList.remove('show');
   void el.chain.offsetWidth;
   el.chain.classList.add('show');
 }
-const WAVE_MILESTONES = [[15, '🌊 大連鎖！'], [30, '🌊 伝説の波！'], [45, '🌊 踊りの大災害！']];
+const CHAIN_MILESTONES = [[30, '🔥 大連鎖！'], [60, '🌊 伝説の連鎖！'], [100, '💃 踊りの大災害！']]; // 連鎖数の節目でスロー
 function showWavePop(text) {
   el.feverPop.textContent = text;
   el.feverPop.classList.remove('show');
@@ -793,7 +820,8 @@ function showFeverPop() {
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 let bestScore = parseInt(lsGet('dm_best') || '0', 10) || 0;
-let reach = Math.min(STAGES.length - 1, parseInt(lsGet('dm_reach') || '0', 10) || 0); // 到達した最大ステージ(0始まり)
+let reach = Math.min(STAGES.length, parseInt(lsGet('dm_reach') || '0', 10) || 0); // 到達した最大ステージ(0始まり)。STAGES.length はエンドレス解放済み
+let endlessBest = parseInt(lsGet('dm_endless_best') || '0', 10) || 0; // エンドレスの最長生存秒数
 let startIdx = 0;
 function noteReach(idx) { if (idx > reach) { reach = idx; lsSet('dm_reach', '' + reach); renderStages(); } }
 function renderStages() {
@@ -802,8 +830,10 @@ function renderStages() {
   if (startIdx > reach) startIdx = 0;
   $('stageList').innerHTML = STAGES.map(function (st, i) {
     return '<button class="dBtn sBtn' + (i === startIdx ? ' on' : '') + (i > reach ? ' lock' : '') + '" data-stage="' + i + '" title="' + st.name + '">' + (i + 1) + '</button>';
-  }).join('');
-  $('stageName').textContent = 'STAGE ' + (startIdx + 1) + '　' + STAGES[startIdx].name + (startIdx > 0 ? ' から始める（スコアは0から数え直し）' : ' から始める');
+  }).join('') + (reach >= STAGES.length ? '<button class="dBtn sBtn' + (startIdx === STAGES.length ? ' on' : '') + '" data-stage="' + STAGES.length + '" title="エンドレス">∞</button>' : '');
+  $('stageName').textContent = startIdx >= STAGES.length
+    ? '∞ エンドレスに挑戦' + (endlessBest ? '（最長 ' + endlessBest + '秒）' : '')
+    : 'STAGE ' + (startIdx + 1) + '　' + STAGES[startIdx].name + (startIdx > 0 ? ' から始める（スコアは0から数え直し）' : ' から始める');
 }
 function onStageClick(e) {
   const b = e.target && e.target.closest ? e.target.closest('[data-stage]') : null;
@@ -815,23 +845,7 @@ function onStageClick(e) {
 if ($('stageList')) $('stageList').addEventListener('click', onStageClick);
 let selDance = lsGet('dm_dance') || 'basic';
 if (bestScore < DM.danceById(selDance).unlock) selDance = 'basic';
-// 連鎖モード: 'normal'(いつもの) / 'wave'(波・試作)。URL に ?wave でも波モード
-let chainMode = lsGet('dm_wave') === '1' ? 'wave' : 'normal';
-try { if (typeof location !== 'undefined' && /[?&]wave\b/.test(location.search)) chainMode = 'wave'; } catch (e) {}
-function renderMode() {
-  const e = $('modeList'); if (!e) return;
-  e.innerHTML = '<button class="dBtn' + (chainMode === 'normal' ? ' on' : '') + '" data-mode="normal">いつもの</button>' +
-    '<button class="dBtn' + (chainMode === 'wave' ? ' on' : '') + '" data-mode="wave">🌊 波（試作）</button>';
-  $('modeDesc').textContent = chainMode === 'wave' ? '踊り出した人がパッと周りを巻き込み、ドミノのように広がる' : '踊っている人のそばに少しいると、うつる';
-}
-function onModeClick(e) {
-  const b = e.target && e.target.closest ? e.target.closest('[data-mode]') : null;
-  if (!b) return;
-  chainMode = b.getAttribute('data-mode'); lsSet('dm_wave', chainMode === 'wave' ? '1' : '0');
-  renderMode();
-}
-if ($('modeList')) $('modeList').addEventListener('click', onModeClick);
-function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance, wave: chainMode === 'wave' }); }
+function newGame() { return DM.createGame((Math.random() * 1e9) | 0, { dance: selDance }); } // 連鎖はいつものモードだけ(波モードは core に残るが使わない)
 function renderDances() {
   const html = DM.DANCES.map(function (d) {
     const locked = bestScore < d.unlock;
@@ -857,7 +871,6 @@ function onDanceClick(e) {
 ['danceList', 'danceList2'].forEach(function (id) { const e = $(id); if (e) e.addEventListener('click', onDanceClick); });
 renderDances();
 renderStages();
-renderMode();
 // 遊び方: 縦に余裕のある画面では最初から開く(小さいスマホではボタンを優先して畳む)
 if ($('howto') && window.innerHeight >= 760 && window.innerWidth >= 421) $('howto').open = true;
 let G = newGame();
@@ -867,8 +880,9 @@ let snapshotURL = null;
 let endTimer = -1;
 
 // STAGES と同じ順
-const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '太鼓に合わせて広げろ！', 'にわか雨は好機！', '動く歩道を使いこなせ！', '昼休みが終わる前に！', '楽団が呼ばれた。踊りは止まらない'];
-function stageToast() { showToast('STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + ' ― ' + STAGE_HINT[G.stageIdx]); }
+const STAGE_HINT = ['電車が着くたびに人が増える！', '新郎新婦を踊らせろ！', '太鼓に合わせて広げろ！', 'にわか雨は好機！', '動く歩道を使いこなせ！', '昼休みが終わる前に！', '楽団が呼ばれた。踊りは止まらない', '人が途切れない。どこまで踊らせ続けられる？'];
+function stageLabel(i) { return i >= STAGES.length ? '∞' : 'STAGE ' + (i + 1); }
+function stageToast() { showToast(stageLabel(G.stageIdx) + '　' + DM.stageDef(G.stageIdx).name + ' ― ' + STAGE_HINT[G.stageIdx]); }
 function setupStage() {
   snapshotURL = null; finale = 0; slowMo = 0;
   buildWorld(G.stageIdx);
@@ -887,14 +901,19 @@ function handleEvents(evs) {
   for (const ev of evs) {
     if (ev.type === 'infect') {
       spawnFx(ev.x, ev.z, 0xffcf3f); spawnNoteFx(ev.x, ev.z);
-      if (G.wave) {
-        sInfectMusic(ev.chain);
-        for (const m of WAVE_MILESTONES) if (ev.wave === m[0]) { showWavePop(m[1]); sWave(m[0]); slowMo = 0.55; buzz([30, 20, 30]); }
-      } else sInfect(ev.chain);
+      sInfectMusic(ev.chain);
+      for (const m of CHAIN_MILESTONES) if (ev.chain === m[0]) { showWavePop(m[1]); sWave(m[0] >= 60 ? 30 : 15); slowMo = 0.55; buzz([30, 20, 30]); }
       if (ev.chain >= 3) showChain(ev.chain);
       updateHUD();
       if (ev.kind === 'dj' && !shownDJ) { shownDJ = true; showToast('🎧 DJが踊り出した！ 感染範囲が広い'); }
       else if (ev.kind === 'kid' && !shownKid) { shownKid = true; showToast('🧒 子どもが踊りながら走り回る！'); }
+    } else if (ev.type === 'spawn') {
+      setCrowdColor(ev.id); updateHUD();
+    } else if (ev.type === 'tired') {
+      spawnFx(ev.x, ev.z, 0x9fb6cc);
+    } else if (ev.type === 'guardAdd') {
+      const gp = guardPersons[ev.n - 1]; if (gp) { gp.root.visible = true; gp.groundG.visible = true; }
+      sCatch(); showToast('🚨 警備員が増えた！（' + ev.n + '人）'); updateHUD();
     } else if (ev.type === 'pulse') {
       spawnPulse(ev.x, ev.z, ev.r, ev.size >= 15);
     } else if (ev.type === 'train') {
@@ -936,12 +955,13 @@ function handleEvents(evs) {
       showToast(ev.hearts > 0 ? '捕まった！ 残り❤×' + ev.hearts : '捕まった…');
       updateHUD();
     } else if (ev.type === 'clear') {
-      sClear(); if (G.wave) finale = 1.6; else snapshot();
-      endTimer = G.wave ? 1.7 : 0.9;
+      sClear(); finale = 1.6;
+      endTimer = 1.7;
       pendingEnd = function () { showStagePanel(ev.bonus); };
     } else if (ev.type === 'goal') {
-      sClear(); if (G.wave) finale = 1.6; else snapshot();
-      endTimer = G.wave ? 1.7 : 0.9;
+      sClear(); finale = 1.6;
+      endTimer = 1.7;
+      noteReach(STAGES.length); // エンドレスを解放
       pendingEnd = function () { showResult(true, ''); };
     } else if (ev.type === 'over') {
       sCatch(); snapshot();
@@ -951,7 +971,7 @@ function handleEvents(evs) {
   }
 }
 let pendingEnd = null;
-let slowMo = 0, finale = 0, animT = 0, waveCam = 0; // 波モードの演出: スロー残り秒 / クリア時の決めポーズ残り秒 / 踊りの時計 / カメラの引き
+let slowMo = 0, finale = 0, animT = 0, waveCam = 0; // 演出: スロー残り秒 / クリア時の決めポーズ残り秒 / 踊りの時計 / カメラの引き
 let shownDJ = false, shownKid = false, shownDrum = false;
 function showStagePanel(bonus) {
   $('stageStats').innerHTML =
@@ -985,11 +1005,18 @@ function buildResultImage(done) {
 }
 const GAME_URL = 'https://red-freegames.github.io/dancing-mania/';
 function showResult(goal, reason) {
-  $('resultTitle').textContent = goal ? '🎉 全ステージ制覇！' : (reason === 'caught' ? '警備員に捕まった…' : '時間切れ…');
+  const endless = G.isEndless(), secs = Math.floor(G.elapsed);
+  let endlessNew = false;
+  if (endless && secs > endlessBest) { endlessBest = secs; lsSet('dm_endless_best', '' + endlessBest); endlessNew = true; }
+  $('resultTitle').textContent = goal ? '🎉 全ステージ制覇！'
+    : endless ? (reason === 'caught' ? '∞ 警備員に捕まった…' : '∞ 正気の人が多すぎた…')
+    : (reason === 'caught' ? '警備員に捕まった…' : '時間切れ…');
   $('resultStats').innerHTML =
-    '到達： STAGE ' + (G.stageIdx + 1) + ' / ' + STAGES.length + (G.startIdx ? '（STAGE ' + (G.startIdx + 1) + ' から挑戦）' : '') + '<br>' +
+    (endless ? '∞ エンドレス　生き残り <span class="big">' + secs + '秒</span>' + (endlessNew ? '（最長記録！）' : '（最長 ' + endlessBest + '秒）')
+      : '到達： STAGE ' + (G.stageIdx + 1) + ' / ' + STAGES.length + (G.startIdx ? '（STAGE ' + (G.startIdx + 1) + ' から挑戦）' : '')) + '<br>' +
     'スコア <span class="big">' + G.score + '</span><br>' +
     '最大 ' + G.maxChain + ' 連鎖　感染させた人数 のべ ' + G.totalInfectedEver + ' 人';
+  $('btnEndless').style.display = goal ? 'inline-block' : 'none';
   $('resultRank').textContent = '「' + DM.rankFor(G.score) + '」';
   const prevBest = bestScore;
   if (G.score > bestScore) { bestScore = G.score; lsSet('dm_best', '' + bestScore); }
@@ -1003,7 +1030,9 @@ function showResult(goal, reason) {
     if (url) { im.src = url; im.style.display = 'block'; $('btnSaveImg').href = url; }
     else im.style.display = 'none';
   });
-  const txt = goal
+  const txt = endless
+    ? '『ダンシングマニア』エンドレスで' + secs + '秒生き残った💃 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」 #ダンシングマニア #ブラウザゲーム'
+    : goal
     ? '『ダンシングマニア』全' + STAGES.length + 'ステージ制覇！全員踊らせた💃 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」 #ダンシングマニア #ブラウザゲーム'
     : '『ダンシングマニア』STAGE' + (G.stageIdx + 1) + 'まで到達 スコア' + G.score + ' 最大' + G.maxChain + '連鎖 称号「' + DM.rankFor(G.score) + '」だった。変な踊りは感染する💃 #ダンシングマニア #ブラウザゲーム';
   $('btnShareX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt) + '&url=' + encodeURIComponent(GAME_URL);
@@ -1018,7 +1047,7 @@ function showHome() {
   paused = true; releaseAll();
   const has = inProgress(), c = $('homeCont'), n = $('btnStart');
   c.style.display = has ? 'inline-block' : 'none';
-  if (has) c.innerHTML = '▶ 続きから<small>STAGE ' + (G.stageIdx + 1) + '　' + STAGES[G.stageIdx].name + '・スコア ' + G.score + '</small>';
+  if (has) c.innerHTML = '▶ 続きから<small>' + stageLabel(G.stageIdx) + '　' + DM.stageDef(G.stageIdx).name + '・スコア ' + G.score + '</small>';
   n.textContent = has ? '最初からはじめる' : '▶ はじめる';
   n.className = has ? 'btn sub' : 'btn';
   renderDances(); renderStages();
@@ -1043,7 +1072,7 @@ function startNew() {
 }
 $('btnStart').addEventListener('click', function () {
   if (!inProgress()) { startNew(); return; }
-  $('confirmText').textContent = 'STAGE ' + (G.stageIdx + 1) + '・スコア ' + G.score + ' のプレイは終わりになります。';
+  $('confirmText').textContent = stageLabel(G.stageIdx) + '・スコア ' + G.score + ' のプレイは終わりになります。';
   $('confirmPanel').style.display = 'flex';
 });
 $('confirmNo').addEventListener('click', function () { $('confirmPanel').style.display = 'none'; });
@@ -1060,6 +1089,7 @@ $('btnNext').addEventListener('click', function () {
   setupStage();
   stageToast();
 });
+$('btnEndless').addEventListener('click', function () { startIdx = STAGES.length; startNew(); });
 $('btnRetry').addEventListener('click', function () {
   unlockAudio();
   $('resultPanel').style.display = 'none';
@@ -1077,7 +1107,7 @@ el.btnSound.textContent = soundOn ? '🔊 音ON' : '🔇 音OFF';
 // ================= メインループ =================
 function syncPersons(t, dt) {
   const P = G.player, PP = playerPerson;
-  const rs = (G.fever > 0 ? CFG.feverRadiusMul : 1) * (G.drum > 0 ? STAGES[G.stageIdx].drumMul : 1);
+  const rs = (G.fever > 0 ? CFG.feverRadiusMul : 1) * (G.drum > 0 ? DM.stageDef(G.stageIdx).drumMul : 1);
   PP.root.position.x = P.x; PP.root.position.z = P.z;
   PP.groundG.position.x = P.x; PP.groundG.position.z = P.z;
   PP.root.rotation.y = P.face + danceSpinOffset(t);
@@ -1211,12 +1241,8 @@ function animate() {
   if (camShake > 0) camShake = Math.max(0, camShake - dt);
   const shX = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
   const shY = camShake > 0 ? (Math.random() - 0.5) * camShake * 1.6 : 0;
-  // 波モード: 大きな波が進んでいる間とクリアの決めポーズ中はカメラを少し引いて全体を見せる
-  let waveTarget = 0;
-  if (G.wave) {
-    if (finale > 0) waveTarget = 0.35;
-    else if (G.pulses && G.pulses.length) { let big = 0; for (const q of G.pulses) big = Math.max(big, G.waveSize[q.waveId] || 0); waveTarget = Math.min(0.3, big * 0.012); }
-  }
+  // クリアの決めポーズ中はカメラを少し引いて全体を見せる
+  let waveTarget = finale > 0 ? 0.35 : 0;
   waveCam += (waveTarget - waveCam) * Math.min(1, rdt * (waveTarget > waveCam ? 2.5 : 0.8));
   const cd = camDist * (1 + waveCam);
   camPos.x += ((G.player.x) - camPos.x) * Math.min(1, rdt * 3.2);
@@ -1238,5 +1264,5 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { CROWD: CROWD, setMode: function (m) { chainMode = m; }, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
+globalThis.__DM_UI__ = { CROWD: CROWD, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();

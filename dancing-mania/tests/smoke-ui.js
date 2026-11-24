@@ -166,6 +166,21 @@ let sawInfect = false, frames = 0;
     ok(g.maxWave >= 5, 'a wave formed in UI: ' + g.maxWave);
     for (let i = 0; i < 90; i++) frame();
   }
+  // エンドレス: 人が入ってきて、警備員が増え、正気の人が上限で終わり、結果画面に進む
+  {
+    const g = DM.createGame(11); g.startStage(DM.STAGES.length);
+    UI.setGame(g); UI.setupStage();
+    let spawns = 0, adds = 0, frames3 = 0;
+    g.elapsed = DM.CFG.endlessGuardEvery - 1;
+    while (g.phase === 'play' && frames3 < 30 * 240) { frame(); frames3++; for (const n of g.npcs) if (n.state === 'walk' && n.x > 0 && frames3 < 60) n.immune = 0; }
+    ok(g.npcs.length > 40, 'endless spawned people in UI: ' + g.npcs.length);
+    ok(g.guards.length >= 2, 'endless added a guard in UI: ' + g.guards.length);
+    ok(g.phase === 'over', 'endless ended in UI: ' + g.phase + '/' + g.overReason);
+    for (let i = 0; i < 90; i++) frame();
+    await new Promise(r => setTimeout(r, 10));
+    ok(elCache['resultPanel'].style.display === 'flex', 'endless result shown');
+    ok(/生き残り/.test(elCache['resultStats'].innerHTML), 'endless result shows survival time');
+  }
   ok(Object.keys(seen).length === DM.STAGES.length, 'all gimmicks exercised: ' + Object.keys(seen).join(','));
   for (let i = 0; i < 30; i++) frame();
   console.log(fails === 0 ? 'SMOKE TEST PASS' : fails + ' FAILURES');

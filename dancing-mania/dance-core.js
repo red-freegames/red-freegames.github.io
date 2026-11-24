@@ -41,6 +41,13 @@ const STAGES = [
     gimmick: 'band', obstacles: [[0, 0, 2.2]], bandR: 15, bandSpeed: 2.4, bandInfectR: 4 },
 ];
 
+// エンドレス(7ステージ制覇後に挑戦できる)。番号は STAGES.length(=7)。stageDef(i) で STAGES と同じように引ける。
+// 四方から正気の人が途切れずに入ってくる。踊り出した人は endlessTire 秒で「踊り疲れて」帰る。
+// 正気の人が endlessLimit 人に達するか、3回捕まったら終わり。生き残った秒数とスコアを競う。
+const ENDLESS = { name: 'エンドレス 踊りの止まない街', sub: '人が途切れない', npc: 40, stubborn: 6, guards: 1, time: 0, clusters: 3, dj: 1, kids: 2,
+  gimmick: 'endless', endless: true };
+function stageDef(i) { return i >= STAGES.length ? ENDLESS : STAGES[i]; }
+
 // 称号(高い順)。人数増(60〜130人)後、7ステージ通しのボットの中央値が約100万点・最大約118万点。
 const RANKS = [
   { min: 1100000, name: 'ダンシングマニア' },
@@ -100,6 +107,14 @@ const CFG = {
   waveDelay: 0.2,        // 踊り出してからパルスまでの秒数(波の進む速さ)
   wavePulseMul: 1.0,     // パルスの半径(感染範囲に対する倍率)
   waveStubbornHit: 0.5,  // 頑固な人はパルス1回でこれだけ溜まる(2回で踊る)
+  // エンドレス
+  npcMax: 140,            // 同時にいられる通行人の上限(描画プール NPC_MAX と同じ)
+  endlessLimit: 60,       // 正気の人がこの人数に達したら終わり
+  endlessTire: 15,        // 踊り出してからこの秒数で踊り疲れて帰る
+  endlessSpawnStart: 1.6, // 入ってくる間隔(秒)の初め。時間とともに短くなる
+  endlessSpawnMin: 0.45,  // 入ってくる間隔の最短
+  endlessSpawnRamp: 0.008, // 1秒ごとに間隔がこれだけ縮む
+  endlessGuardEvery: 40,  // 警備員が1人増える間隔(秒)。最大6人
   waveDancerRate: 0.3,   // 波モードでの、踊っている通行人の「近くにいる」感染の速さ。低いほど連鎖の火種はプレイヤー頼みになる(0だとボットはほぼクリア不能)
 };
 
@@ -169,21 +184,24 @@ function createGame(seed, opts) {
   };
 
   G.nextTrainIn = function () { return G.arrivals.length ? Math.max(0, G.arrivals[0].at - G.elapsed) : -1; };
-  G.bellIn = function () { const st = STAGES[G.stageIdx]; return st.gimmick === 'bell' && !G.bellRung ? Math.max(0, st.bellAt - G.elapsed) : -1; };
+  G.bellIn = function () { const st = stageDef(G.stageIdx); return st.gimmick === 'bell' && !G.bellRung ? Math.max(0, st.bellAt - G.elapsed) : -1; };
   G.radiusOf = function (n) { return n.kind === 'dj' ? CFG.djRMul : 1; };
-  G.stage = function () { return STAGES[G.stageIdx]; };
+  G.stage = function () { return stageDef(G.stageIdx); };
+  G.isEndless = function () { return !!stageDef(G.stageIdx).endless; };
+  G.saneCount = function () { let n = 0; for (const p of G.npcs) if (p.state === 'walk') n++; return n; };
   G.nextDrumIn = function () { return G.stage().gimmick === 'yagura' ? Math.max(0, G.nextDrumAt - G.elapsed) : -1; };
   G.nextRainIn = function () { return G.stage().gimmick === 'rain' ? Math.max(0, G.nextRainAt - G.elapsed) : -1; };
 
   function blocked(x, z, pad) { // 障害物・動く歩道の上か
-    const st = STAGES[G.stageIdx];
+    const st = stageDef(G.stageIdx);
     for (const b of (st.obstacles || [])) if (dist2(x, z, b[0], b[1]) < Math.pow(b[2] + pad, 2)) return true;
     for (const w of (st.walkways || [])) if (Math.abs(z - w.z) < w.w / 2 + pad && x > w.x0 - pad && x < w.x1 + pad) return true;
     return false;
   }
 
   G.startStage = function (idx) {
-    const st = STAGES[idx];
+    const st = stageDef(idx);
+    G.endlessT = { nextSpawn: 1.5, nextGuard: CFG.endlessGuardEvery, tired: 0 };
     G.arrivals = []; G.bellRung = false; G.escaped = 0;
     G.pulses = []; G.waveSize = {}; G.waveOrigin = {};
     G.drum = 0; G.nextDrumAt = st.drumFirst || 0;
@@ -194,7 +212,7 @@ function createGame(seed, opts) {
     G.stageIdx = idx;
     G.phase = 'play';
     G.hearts = CFG.hearts;
-    G.timeLeft = st.time;
+    G.timeLeft = st.endless ? Infinity : st.time; // エンドレスに時間切れはない
     G.elapsed = 0;
     G.chain = 0;
     G.lastInfectAt = -99;
@@ -298,7 +316,7 @@ function createGame(seed, opts) {
   // cause: 'player' | 'dancer' | 'pulse' | 'other'。waveId は同じ波の仲間(省略で新しい波)
   function infect(npc, cause, waveId) {
     npc.state = 'dancer';
-    npc.exposure = 0; npc.cureProg = 0;
+    npc.exposure = 0; npc.cureProg = 0; npc.danceT = 0;
     G.totalInfectedEver++;
     G.stats[cause || 'other']++;
     if (waveId === undefined) { waveId = ++waveSeq; G.waveOrigin[waveId] = cause === 'player' ? 'player' : cause === 'dancer' ? 'dancer' : 'other'; }
@@ -330,13 +348,66 @@ function createGame(seed, opts) {
   }
 
   function checkClear() {
-    if (G.phase !== 'play' || G.arrivals.length) return;
+    if (G.phase !== 'play' || G.arrivals.length || G.isEndless()) return;
     if (G.infectedCount() >= G.totalNpc) {
       const bonus = Math.ceil(G.timeLeft) * 10 + G.hearts * 200;
       G.score += bonus;
       G.lastClearBonus = bonus;
       G.phase = (G.stageIdx >= STAGES.length - 1) ? 'goal' : 'clear';
       ev(G.phase === 'goal' ? 'goal' : 'clear', { bonus: bonus });
+    }
+  }
+
+  // --- エンドレス ---
+  const homesE = [[-22, -22], [22, -22], [0, -24], [-22, 22], [24, 2], [-24, 2]];
+  function spawnWalker() {
+    let n = null;
+    for (const o of G.npcs) if (o.state === 'gone') { n = o; break; } // 帰った人の枠を使い回す
+    if (!n) {
+      if (G.npcs.length >= CFG.npcMax) return false;
+      n = { id: G.npcs.length }; G.npcs.push(n);
+    }
+    const side = (rng() * 4) | 0, t = (rng() * 2 - 1) * (ARENA - 3);
+    const x = side === 0 ? t : side === 1 ? t : side === 2 ? -(ARENA - 1) : ARENA - 1;
+    const z = side === 0 ? -(ARENA - 1) : side === 1 ? ARENA - 1 : t;
+    const r = rng();
+    Object.assign(n, {
+      x: x, z: z, dir: Math.atan2(-x, -z) + (rng() - 0.5) * 0.9, dirT: 2 + rng() * 2,
+      state: 'walk', exposure: 0, stubborn: r < 0.15, stand: false, immune: 0, cureProg: 0,
+      walkPhase: rng() * Math.PI * 2, colorIdx: (rng() * 8) | 0,
+      kind: r > 0.95 ? 'dj' : r > 0.85 ? 'kid' : 'normal', leaving: false, burstUsed: false,
+      orbit: 0, shelter: null, danceT: 0, waveId: undefined,
+    });
+    G.totalNpc++;
+    ev('spawn', { id: n.id });
+    return true;
+  }
+  function endlessTick(dt) {
+    const E = G.endlessT;
+    // 踊り疲れて帰る
+    for (const n of G.npcs) {
+      if (n.state !== 'dancer') continue;
+      n.danceT = (n.danceT || 0) + dt;
+      if (n.danceT >= CFG.endlessTire) { n.state = 'gone'; G.totalNpc--; E.tired++; ev('tired', { id: n.id, x: n.x, z: n.z }); }
+    }
+    // 四方から人が入ってくる(だんだん速く)
+    if (G.elapsed >= E.nextSpawn) {
+      const every = Math.max(CFG.endlessSpawnMin, CFG.endlessSpawnStart - G.elapsed * CFG.endlessSpawnRamp);
+      E.nextSpawn = G.elapsed + every;
+      let b = 1 + (rng() < 0.4 ? 1 : 0) + (G.elapsed > 60 && rng() < 0.4 ? 1 : 0);
+      while (b-- > 0) spawnWalker();
+    }
+    // 警備員が増える
+    if (G.elapsed >= E.nextGuard && G.guards.length < homesE.length) {
+      E.nextGuard += CFG.endlessGuardEvery;
+      const h = homesE[G.guards.length];
+      G.guards.push({ id: G.guards.length, x: h[0], z: h[1], hx: h[0], hz: h[1], mode: 'patrol', tx: h[0], tz: h[1], waitT: 0, targetId: -1, cureT: 0, face: 0 });
+      ev('guardAdd', { n: G.guards.length });
+    }
+    // 正気の人が多すぎたら終わり
+    if (G.saneCount() >= CFG.endlessLimit) {
+      G.phase = 'over'; G.overReason = 'sane';
+      ev('over', { reason: 'sane' });
     }
   }
 
@@ -380,7 +451,11 @@ function createGame(seed, opts) {
       });
       ev('train', { n: a.ids.length, x: CFG.gate[0], z: CFG.gate[1], left: G.arrivals.length });
     }
-    const st = STAGES[G.stageIdx];
+    const st = stageDef(G.stageIdx);
+    if (st.endless) {
+      endlessTick(dt);
+      if (G.phase !== 'play') return;
+    }
     if (st.gimmick === 'yagura') {
       if (G.drum > 0) G.drum -= dt;
       if (G.elapsed >= G.nextDrumAt) { G.drum = st.drumDur; G.nextDrumAt += st.drumEvery; ev('drum', {}); }
@@ -632,5 +707,5 @@ function rankFor(score) {
   return RANKS[RANKS.length - 1].name;
 }
 
-globalThis.__DM__ = { STAGES: STAGES, CFG: CFG, ARENA: ARENA, RANKS: RANKS, DANCES: DANCES, danceById: danceById, unlockedDances: unlockedDances, createGame: createGame, rankFor: rankFor, mulberry32: mulberry32 };
+globalThis.__DM__ = { STAGES: STAGES, ENDLESS: ENDLESS, stageDef: stageDef, CFG: CFG, ARENA: ARENA, RANKS: RANKS, DANCES: DANCES, danceById: danceById, unlockedDances: unlockedDances, createGame: createGame, rankFor: rankFor, mulberry32: mulberry32 };
 })();
