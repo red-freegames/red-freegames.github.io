@@ -473,7 +473,7 @@ G.morning = () => {
     if (L.leak.length && L.dmg >= 20) { angry = true; boss = pick(["昨日のアレはなんだ！取引先から電話が鳴りっぱなしだぞ！……予算は出す。二度と起こすな。", "朝から警察と保険会社の対応だよ。……わかった、予算は増やそう。"]); }
     else if (L.leak.length) { angry = true; boss = pick(["昨日、少しやられたそうじゃないか。……まあいい、予算は少し増やす。", "「ちょっとした被害」で済んでよかったな、とは言わんぞ。予算は増やしておく。"]); }
     else boss = pick(["昨日も何も起きなかったな。本当に攻撃なんて来てるのか？予算は減らすぞ。", "平和だな。もう対策は足りてるんだろう？予算は減らす。", "何も起きないなら、その予算は営業に回したいんだがね。"]);
-    const lines = L.leak.filter(x => x.from !== "call").map(x => `<button class="rline" onclick="G.infoAtk('${x.from}')"><span>${EN[x.from].ic}→${EN[x.as].ic}</span><span class="g">${EN[x.as].goal}${x.mit ? "（💾軽減）" : ""}</span><b>-${x.dmg}</b><span class="fix">${stoppers(x.from).concat(stoppers(x.as)).map(s => s.slice(0, 2)).filter((v, i, a) => a.indexOf(v) === i).join("")}</span></button>`).join("");
+    const lines = L.leak.filter(x => x.from !== "call").map(x => `<button class="rline" onclick="G.infoAtk('${x.from}')"><span>${EN[x.from].ic}→${EN[x.as].ic}</span><span class="g">${x.call ? "📞" : ""}${EN[x.as].goal}${x.mit ? "（💾軽減）" : ""}</span><b>-${x.dmg}</b><span class="fix">${stoppers(x.from).concat(stoppers(x.as)).map(s => s.slice(0, 2)).filter((v, i, a) => a.indexOf(v) === i).join("")}</span></button>`).join("");
     const bad = (L.calls || []).filter(x => !x.ok);
     if (bad.length) { angry = true; boss += pick(["　それと、社員の問い合わせにまずい返事をしたそうだな。", "　あと、社員から『情シスに聞いたらいいって言われた』と聞いたぞ。"]); }
     const clines = bad.map(x => { const c = CALLS.find(y => y.id === x.id); return `<button class="rline" onclick="G.infoCall('${c.id}')"><span>📞</span><span class="g">${c.who}「${c.bad}」${x.auto ? "（自己判断）" : ""}</span><span class="fix">ⓘ</span></button>`; }).join("");
@@ -494,80 +494,80 @@ G.afterBoss = () => { const e = pickEvent(); if (e) return showEvent(e); G.prep(
 /* ============ 社員からの問い合わせ（業務時間中に届く） ============
    good: 正しい対応 / bad: まずい対応。hit: まずいときに起きること
    spawn: 社内に敵が湧く（社内の対策で止められる） / hp: 直接の被害 / off: その対策がその日止まる */
-const CALL_T = 10;
+const CALL_T = 10, HOLE_T = 7;
 const CALLS = [
   /* ---- パスワード・アカウント ---- */
   { id: "pwchat", who: "営業", q: "パスワードを忘れました！チャットで新しいのを送ってください。急ぎです！",
-    good: "本人確認してリセット", bad: "チャットで送る", hit: { spawn: "acct" },
+    good: "本人確認してリセット", bad: "チャットで送る", hit: { hole: 1 },
     ok: "電話で本人と確かめてからリセットした。", ng: "チャットの相手は、乗っ取られた同僚のアカウントだった。",
     long: "「急ぎで」「パスワードを教えて」は、なりすましの定番です。チャットやメールのアカウント自体が乗っ取られていることもあります。パスワードの再発行は、別の手段（電話や対面など）で本人だと確かめてから行うのが基本です。" },
   { id: "sms", who: "総務", q: "宅配の不在通知SMSのリンクを開いて、会社のIDとパスワードを入れちゃいました……",
-    good: "すぐパスワードを変えさせる", bad: "様子を見る", hit: { spawn: "acct" },
+    good: "すぐパスワードを変えさせる", bad: "様子を見る", hit: { hole: 1 },
     ok: "すぐに変えたので、盗まれたパスワードは使えなくなった。", ng: "数時間後、そのIDで社内にログインされた。",
     long: "入力してしまったら、とにかく早くパスワードを変えるのが一番の対策です。攻撃者は盗んだ情報をすぐに試します。正直に報告してくれた社員を責めないことも大切です。責めると、次から隠されてしまいます。" },
   { id: "mfaspam", who: "営業", q: "身に覚えのない「ログインを承認しますか？」がスマホに何度も来ます。押せば止まりますか？",
-    good: "押さずにパスワード変更", bad: "押して止める", hit: { spawn: "acct" },
+    good: "押さずにパスワード変更", bad: "押して止める", hit: { hole: 1 },
     ok: "パスワードが漏れていた。変えたので、もう入れない。", ng: "押した瞬間、攻撃者のログインが通った。",
     long: "パスワードを盗んだ攻撃者が、承認の通知を何十回も送りつけて、根負けして押させる手口です（MFA疲労攻撃）。身に覚えのない承認は絶対に押さず、パスワードが漏れていると考えてすぐ変えます。数字を入力させる方式や、パスキーなら防ぎやすくなります。" },
   { id: "quit", who: "人事", q: "先月辞めた人のアカウント、まだ残ってます。消したほうがいいですか？",
-    good: "今日中に消す", bad: "そのうちで", hit: { spawn: "acct" },
+    good: "今日中に消す", bad: "そのうちで", hit: { hole: 1 },
     ok: "使われていないアカウントを消した。", ng: "誰も見ていないアカウントは、攻撃者の格好の隠れ家だった。",
     long: "退職者や使われていないアカウントは、パスワードを変える人も、不審なログインに気づく人もいないため、乗っ取りに使われやすい入口です。辞めた日に止めるのが基本です。" },
   { id: "reuse", who: "営業", q: "パスワード、全部のサービスで同じにしてもいいですか？覚えられなくて……",
-    good: "管理アプリを使ってもらう", bad: "同じでいい", hit: { spawn: "acct" },
+    good: "管理アプリを使ってもらう", bad: "同じでいい", hit: { hole: 1 },
     ok: "パスワード管理アプリで、サービスごとに別のものにした。", ng: "趣味の通販サイトから漏れたパスワードで、会社のアカウントに入られた。",
     long: "どこか1つのサービスから漏れたIDとパスワードを、ほかのサービスで片っ端から試す攻撃（リスト型攻撃）がよくあります。使い回していると、1か所の流出で全部が開いてしまいます。覚えられないなら、パスワード管理アプリに任せるのが現実的です。" },
   { id: "postit", who: "総務", q: "パスワードを付箋に書いて、モニターに貼っておいてもいいですか？",
-    good: "管理アプリに保存してもらう", bad: "貼っていい", hit: { spawn: "acct" },
+    good: "管理アプリに保存してもらう", bad: "貼っていい", hit: { hole: 1 },
     ok: "管理アプリに入れて、付箋は捨ててもらった。", ng: "来客が撮った写真の背景に、付箋がはっきり写っていた。",
     long: "モニターの付箋は、来客、清掃業者、ビデオ会議の背景、SNSに載せたオフィス写真などから簡単に見られます。実際にテレビ取材の映像にパスワードが映り込んだ例もあります。" },
   { id: "helpdesk", who: "総務", q: "情シスを名乗る人から電話で「パスワードを確認させて」と言われました。あなたですか？",
-    good: "私は聞かない、と伝える", bad: "教えていいよ", hit: { spawn: "acct" },
+    good: "私は聞かない、と伝える", bad: "教えていいよ", hit: { hole: 1 },
     ok: "「情シスはパスワードを聞かない」と全員に周知した。", ng: "電話の相手は、情シスを名乗る攻撃者だった。",
     long: "IT担当やサポートを名乗って電話でパスワードを聞き出す手口は昔からあります（ソーシャルエンジニアリング）。「情シスがパスワードを聞くことは絶対にない」とあらかじめ決めて、全員に伝えておくのが一番効きます。" },
   { id: "newhire", who: "人事", q: "明日入社の人に、アカウントとパスワードをメールで送っておきますね。",
-    good: "別の経路で渡し、初回に変えさせる", bad: "メールで送る", hit: { spawn: "acct" },
+    good: "別の経路で渡し、初回に変えさせる", bad: "メールで送る", hit: { hole: 1 },
     ok: "初日に手渡しし、その場で本人に変えてもらった。", ng: "その人の個人メールは、すでに乗っ取られていた。",
     long: "パスワードをメールに書いて送ると、途中の経路や受け手のメールボックスから漏れるおそれがあります。初期パスワードは別の経路で渡し、最初のログインで必ず変えてもらうのが基本です。" },
   { id: "shareid", who: "営業", q: "派遣さんに、私のIDとパスワードを貸して作業してもらってもいいですか？",
-    good: "その人用のアカウントを作る", bad: "貸していい", hit: { spawn: "acct" },
+    good: "その人用のアカウントを作る", bad: "貸していい", hit: { hole: 1 },
     ok: "必要な範囲だけ見られる、専用のアカウントを作った。", ng: "誰が何をしたか分からないアカウントが、いつの間にか外から使われていた。",
     long: "アカウントの貸し借りをすると、誰が何をしたのか記録から分からなくなり、パスワードを知る人も増えます。作業する人ごとにアカウントを作り、見られる範囲を絞るのが基本です。" },
   { id: "qr", who: "総務", q: "駐車場の精算機に貼ってあったQRコードを読んだら、会社のアカウントでログインしてと出ました。",
-    good: "入力しない", bad: "入力する", hit: { spawn: "acct" },
+    good: "入力しない", bad: "入力する", hit: { hole: 1 },
     ok: "精算機のQRコードは、上から貼られた偽物だった。", ng: "上から貼られた偽物のQRコードだった。IDとパスワードが盗まれた。",
     long: "本物の掲示物の上に偽のQRコードを貼り、偽のログイン画面に誘う手口があります（クイッシング）。QRコードは見た目でリンク先が分からないので、ログインを求められたら疑ってかかるのが安全です。" },
   { id: "survey", who: "総務", q: "「アンケートに答えると商品券がもらえる」メール、会社のアカウントでログインして答えていいですか？",
-    good: "答えない", bad: "答える", hit: { spawn: "acct" },
+    good: "答えない", bad: "答える", hit: { hole: 1 },
     ok: "差出人を調べると、実在しない会社だった。", ng: "アンケートの入口は、偽のログイン画面だった。",
     long: "プレゼントや当選をエサに、会社のIDでログインさせる手口は定番です。「得をする話」と「ログインさせる」がセットになっていたら、まず疑います。" },
   { id: "deepfake", who: "人事", q: "オンライン面接の相手、映像と声が少しずれてる気がします。でも優秀なので採用したいです。",
-    good: "身元をしっかり確かめる", bad: "採用してアカウントを渡す", hit: { spawn: "acct" },
+    good: "身元をしっかり確かめる", bad: "採用してアカウントを渡す", hit: { hole: 1 },
     ok: "身分証の確認をお願いしたら、連絡が途絶えた。", ng: "AIで顔を差し替えた偽の応募者だった。社内のアカウントが渡ってしまった。",
     long: "AIで顔や声を差し替えた偽の応募者が、採用されて社内のアカウントを手に入れる例が海外で報告されています。リモート採用では、身分証の確認や、入社後しばらくは権限を絞るといった備えが必要です。" },
   { id: "passkey", who: "社員", q: "ログイン画面で「パスキーを設定しませんか？」と出ました。よく分からないので、やめておいていいですか？",
-    good: "ぜひ設定して", bad: "やめておいていい", hit: { spawn: "acct" },
+    good: "ぜひ設定して", bad: "やめておいていい", hit: { hole: 1 },
     ok: "指紋でログインできるようになり、本人もラクになった。", ng: "その後、偽サイトにパスワードを入れてしまった。",
     long: "パスキーは、スマホやPCの指紋・顔認証でログインする仕組みです。偽サイトでは使えないので、パスワードを盗まれる心配がほぼなくなります。面倒が減って安全も上がる、数少ない対策です。" },
   { id: "lostphone", who: "営業", q: "会社のスマホを電車に忘れました……。明日、駅に聞けば大丈夫ですよね？",
-    good: "すぐ遠隔でロック", bad: "明日でいい", hit: { spawn: "acct" },
+    good: "すぐ遠隔でロック", bad: "明日でいい", hit: { hole: 1 },
     ok: "遠隔でロックし、ログイン中のアカウントも切った。", ng: "拾った誰かが、ログインしたままのメールを開いていた。",
     long: "なくしたスマホやPCには、ログインしたままのメールやチャットが残っています。気づいた時点ですぐ報告し、遠隔ロックやログインの強制解除をするのが大切です。報告が早いほど被害は小さく済みます。" },
   { id: "ext", who: "企画", q: "仕事が速くなるブラウザの拡張機能を見つけました。入れていいですか？",
-    good: "会社が認めたものだけにする", bad: "入れていい", hit: { spawn: "acct" },
+    good: "会社が認めたものだけにする", bad: "入れていい", hit: { hole: 1 },
     ok: "調べると、閲覧情報を外に送る拡張機能だった。", ng: "拡張機能が、ログイン情報を外に送っていた。",
     long: "ブラウザの拡張機能は、見ているページの中身を読めるものが多く、悪意のあるものはログイン情報を盗みます。最初は普通でも、あとから買収されて悪意のある更新が配られる例もあります。" },
   { id: "cloudpw", who: "設計", q: "クラウドのファイル置き場、最初に決めたパスワードのまま使ってます。変えなきゃだめですか？",
-    good: "変えて二段階認証も付ける", bad: "そのままでいい", hit: { spawn: "acct" },
+    good: "変えて二段階認証も付ける", bad: "そのままでいい", hit: { hole: 1 },
     ok: "強いパスワードと二段階認証にした。", ng: "簡単なパスワードが、総当たりで破られた。",
     long: "最初に決めた簡単なパスワードや、機器やサービスの初期パスワードのままだと、総当たりや既知のパスワードの一覧で簡単に破られます。大事なデータを置く場所ほど、二段階認証を付けておきます。" },
   { id: "sns", who: "広報", q: "新しいオフィスの写真をSNSに載せたいです。後ろにホワイトボードも写ってますが。",
-    good: "写り込みを確認してから", bad: "そのまま載せる", hit: { spawn: "acct" },
+    good: "写り込みを確認してから", bad: "そのまま載せる", hit: { hole: 1 },
     ok: "ホワイトボードにWi-Fiのパスワードが書いてあった。消してから載せた。", ng: "ホワイトボードに書いたパスワードが、ばっちり写っていた。",
     long: "社内の写真には、ホワイトボード、付箋、画面、社員証など、思わぬ情報が写り込みます。載せる前に拡大して確かめる習慣をつけましょう。" },
   /* ---- マルウェア ---- */
   { id: "zip", who: "経理", q: "取引先から「請求書.zip」が届きました。開いていいですか？",
-    good: "開かずに電話で確認", bad: "開いていい", hit: { spawn: "mal" },
+    good: "開かずに電話で確認", bad: "開いていい", hit: { hole: 0 },
     ok: "取引先は送っていなかった。なりすましメールだった。", ng: "開いた瞬間、PCがマルウェアに感染した。",
     long: "請求書・見積書・配送伝票を装った添付ファイルは、マルウェア感染の入口の定番です。圧縮ファイルやパスワード付きの添付は、メールのチェックをすり抜けやすい形でもあります。心当たりがなければ、メールに書かれていない連絡先で送り主に確かめます。" },
   { id: "usb", who: "社員", q: "駐車場でUSBメモリを拾いました。誰のか、中身を見て確かめてもいいですか？",
@@ -583,7 +583,7 @@ const CALLS = [
     ok: "ただの偽の警告画面だった。閉じれば終わり。", ng: "電話の先で言われるまま、遠隔操作ソフトを入れてしまった。",
     long: "ウェブ広告などから偽の警告画面を出し、大きな音で焦らせて電話をかけさせる手口です（サポート詐欺）。本物のウイルス対策ソフトが、電話番号を出してかけさせることはありません。閉じられないときは、ブラウザを強制終了するか再起動します。" },
   { id: "macro", who: "経理", q: "メールのExcelを開いたら「コンテンツの有効化」を押してと出ます。押していいですか？",
-    good: "押さない", bad: "押していい", hit: { spawn: "mal" },
+    good: "押さない", bad: "押していい", hit: { hole: 0 },
     ok: "送り主に確かめたら、送っていないと言われた。", ng: "押した瞬間、裏でマルウェアがダウンロードされた。",
     long: "Officeファイルに仕込んだプログラム（マクロ）を動かすため、「有効化」を押させる手口です。中身を見るだけなら有効化は不要です。押すよう促す文面があったら、それ自体が怪しいサインです。" },
   { id: "freesoft", who: "設計", q: "無料のPDF変換ソフトをネットで見つけました。入れていいですか？",
@@ -599,19 +599,19 @@ const CALLS = [
     ok: "必要なときだけ一時的に付ける運用にした。", ng: "うっかり開いたマルウェアが、管理者権限でPC全体を乗っ取った。",
     long: "管理者権限があると、マルウェアもその権限で動けてしまい、PCの守りを止めたり、深く居座ったりできます。普段は一般ユーザーで使い、必要なときだけ権限を付けるのが基本です（最小権限）。" },
   { id: "osupdate", who: "総務", q: "パソコンに「更新があります」と出ました。なんだか怖いので、入れなくていいですか？",
-    good: "すぐ入れて", bad: "入れなくていい", hit: { spawn: "mal" },
+    good: "すぐ入れて", bad: "入れなくていい", hit: { hole: 2 },
     ok: "更新を入れた。これで既知の弱点はふさがった。", ng: "その更新でふさがるはずだった弱点を突かれた。",
     long: "OSやソフトの正規の更新は、見つかった弱点をふさぐものです。怖がって入れないほうが危険です。ただし、ウェブページの中に出る「更新してください」は偽物のことがあるので、OSの設定画面から入れるのが確実です。" },
   { id: "camera", who: "総務", q: "防犯カメラを外から見られるようにしたいです。設定は買ったままでいいですよね？",
-    good: "初期パスワードを変えて更新も", bad: "買ったままで", hit: { spawn: "mal" },
+    good: "初期パスワードを変えて更新も", bad: "買ったままで", hit: { hole: 2 },
     ok: "初期パスワードを変え、更新も当てた。", ng: "初期パスワードのまま。数時間で外から乗っ取られた。",
     long: "カメラやルーターなどネットにつながる機器は、初期パスワードのまま公開すると、自動で探して回る攻撃にすぐ見つかります。乗っ取られた機器は、社内への足がかりや、別の攻撃の踏み台に使われます。" },
   { id: "vendor", who: "総務", q: "複合機の業者さんが、遠隔保守のために社内につながる機器を置きたいそうです。",
-    good: "契約と設定を確認してから", bad: "そのまま置かせる", hit: { spawn: "mal" },
+    good: "契約と設定を確認してから", bad: "そのまま置かせる", hit: { hole: 2 },
     ok: "接続の範囲と管理方法を決めてから置いてもらった。", ng: "保守用の機器の弱点から、社内に入られた。",
     long: "保守業者のための遠隔接続の機器が、管理されないまま弱点を抱え、侵入口になる例があります。病院のランサムウェア被害でも原因のひとつになりました。誰が、どこまで、どう管理するかを決めておく必要があります。" },
   { id: "resume", who: "人事", q: "求人に応募してきた人から「履歴書.exe」が届きました。開いていいですか？",
-    good: "開かない", bad: "開く", hit: { spawn: "mal" },
+    good: "開かない", bad: "開く", hit: { hole: 0 },
     ok: "履歴書が「.exe」（プログラム）のはずがない。", ng: "履歴書ではなく、マルウェアだった。",
     long: "「.exe」はプログラムを動かすファイルで、書類であるはずがありません。採用窓口は知らない人からのファイルを開くのが仕事なので、狙われやすい部署です。拡張子を表示する設定にしておくと気づきやすくなります。" },
   { id: "slow", who: "設計", q: "PCが急に重くて、マウスが勝手に動いた気がします。気のせいですかね？",
@@ -701,7 +701,7 @@ const CALLS = [
     ok: "入力と承認を別の人が行う仕組みにした。", ng: "数年にわたって、少しずつお金が抜かれていた。",
     long: "お金の流れを一人だけが握っていると、不正も間違いも誰にも気づかれません。入力する人と承認する人を分ける（職務の分離）のが基本です。疑うためではなく、本人を守るための仕組みでもあります。" },
   { id: "adminpw", who: "総務", min: 3, q: "サーバーの管理者パスワード、全員が知ってます。辞めた人も知ってますけど、変えなくていいですか？",
-    good: "変えて、人ごとのIDに", bad: "そのままでいい", hit: { spawn: "acct" },
+    good: "変えて、人ごとのIDに", bad: "そのままでいい", hit: { hole: 1 },
     ok: "パスワードを変え、管理者は人ごとのIDにした。", ng: "辞めた人のところから、パスワードが漏れていた。",
     long: "みんなで共有するパスワードは、誰が使ったか分からず、辞めた人も使えたままになります。管理者の作業は人ごとのIDで行い、共有のパスワードは人が抜けるたびに変えます。" },
   /* ---- 対策を止めてしまう ---- */
@@ -740,9 +740,10 @@ function callsFor(day) {
 G.infoCall = (id) => {
   const c = CALLS.find(x => x.id === id);
   const h = c.hit;
-  const what = h.spawn ? `社内に${EN[h.spawn].ic}${EN[h.spawn].n}が現れる` : h.hp ? `${h.n}（体力 -${h.hp}）` : `${h.off === "backup" ? "💾バックアップ" : TW[h.off].ic + TW[h.off].n}がその日使えない（入れていなければ社内に敵が現れる）`;
+  const what = h.hole !== undefined ? `${LANES[h.hole].ic}${LANES[h.hole].n}の入口に穴が開き、そこを突いて攻撃が入ってくる` : h.spawn ? `社内に${EN[h.spawn].ic}${EN[h.spawn].n}が現れる` : h.hp ? `${h.n}（体力 -${h.hp}）` : `${h.off === "backup" ? "💾バックアップ" : TW[h.off].ic + TW[h.off].n}がその日使えない（入れていなければ社内に敵が現れる）`;
   sheet(`<div class="shk">問い合わせ ・ ${c.who}</div><h2>📞 ${c.q}</h2><p class="long">${c.long}</p>
     <div class="flow"><div><span>正しい対応</span><i>${c.good}</i></div><div><span>まずい対応</span><i class="ng">${c.bad}</i></div><div><span>まずいと</span><b>${what}</b></div>
+    ${h.hole !== undefined ? `<div><span>社内で止める</span>${chipsOf(stoppers(EN[["phish", "pw", "vpn"][h.hole]].to), "in")}</div>` : ""}
     ${h.spawn ? `<div><span>社内で止める</span>${chipsOf(stoppers(h.spawn), "in")}</div>` : ""}</div>`);
 };
 
@@ -882,6 +883,10 @@ function gate(ctx, k, lane, y, col, N) {
   ctx.globalAlpha = 1;
   if (!on) { ctx.fillStyle = col.txt; ctx.font = `800 ${Math.round(w * .024)}px sans-serif`; ctx.fillText("未導入", x, y * h + gh * .62); }
   if (on && !act) { ctx.fillStyle = "#d7263d"; ctx.font = `900 ${Math.round(w * .024)}px sans-serif`; ctx.fillText("要更新", x, y * h + gh * .62); }
+  if (N && N.hole && TW[k].layer === "entry" && N.hole[lane] > 0) {
+    rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10); ctx.fillStyle = "rgba(215,38,61,.82)"; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * .032)}px sans-serif`; ctx.fillText(`穴 ${Math.ceil(N.hole[lane])}`, x, y * h + 1);
+  }
   if (N && N.flash[k + lane] > 0) { ctx.globalAlpha = N.flash[k + lane] / .4; rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10); ctx.fillStyle = "rgba(47,227,165,.55)"; ctx.fill(); ctx.globalAlpha = 1; }
 }
 function drawBoard(N) {
@@ -943,7 +948,7 @@ function buildNight() {
   spawns.sort((a, b) => a.at - b.at);
   const cl = callsFor(S.day);
   const calls = cl.map((c, i) => ({ c, at: 3 + (i + rnd(.1, .6)) * (span + 4) / cl.length }));
-  return { t: 0, spawns, en: [], pops: [], speed: 1, ko: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {}, calls, cur: null, callLog: [] };
+  return { t: 0, spawns, en: [], pops: [], speed: 1, ko: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {}, calls, cur: null, callLog: [], hole: [0, 0, 0] };
 }
 function pop(N, x, y, t, kind) {
   const C = { ok: ["#14935a", "#fff"], ng: ["#d7263d", "#fff"], warn: ["#c27c00", "#fff"] }[kind];
@@ -983,7 +988,13 @@ function answerCall(N, good) {
   S.calls++; if (good) S.callsOk++;
   N.callLog.push({ id: c.id, ok: good, auto });
   if (!good) {
-    if (h.spawn) { spawnInside(N, h.spawn, "call"); pop(N, LANES[h.spawn === "acct" ? 1 : 0].x, BOUND + .06, "📞ミス", "warn"); }
+    if (h.hole !== undefined) {
+      const l = h.hole, base = ["phish", "pw", "vpn"][l];
+      N.hole[l] = HOLE_T;
+      N.en.push({ t: base, from: base, lane: l, x: LANES[l].x - .08, y: TOP, inside: false, call: true });   // 攻撃者がすかさず穴を突く
+      pop(N, LANES[l].x, ENTRY_Y + .07, "📞ミスで穴が開いた", "ng");
+    }
+    if (h.spawn) { spawnInside(N, h.spawn, "call"); pop(N, .5, BOUND + .06, "📞ミス：社内に直接", "warn"); }
     if (h.hp) { const d = Math.round(h.hp * (1 + (S.day - 1) * .05)); S.hp -= d; N.dmg += d; N.leak.push({ from: "call", as: c.id, dmg: d, mit: false }); pop(N, .5, GOAL - .02, `${h.n} -${d}`, "ng"); }
     if (h.off) {
       const has = h.off === "backup" ? S.backup : S.own[h.off];
@@ -1025,11 +1036,13 @@ function nightStep(N, dt) {
     N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: !!s.inside, boss: s.k === "pw" && Math.random() < .3 });
   }
   for (const k in N.flash) N.flash[k] -= dt;
+  N.hole = N.hole.map(v => Math.max(0, v - dt));
   for (const e of N.en) {
     e.y += EN[e.t].spd * dt;
     if (!e.inside && !e.passE && e.y >= ENTRY_Y) {
       e.passE = true;
-      const b = blocker(e, "entry");
+      const b = N.hole[e.lane] > 0 ? null : blocker(e, "entry");
+      if (!b && N.hole[e.lane] > 0 && S.own[TKEYS.find(k => TW[k].layer === "entry" && lanesOf(k).includes(e.lane))]) pop(N, e.x, ENTRY_Y - .05, "穴から侵入！", "ng");
       if (b) { e.gone = true; N.ko++; S.ko++; N.flash[b + e.lane] = .4; pop(N, e.x, ENTRY_Y - .05, "ブロック", "ok"); continue; }
       if (EN[e.t].bypass && S.own[TKEYS.find(k => TW[k].hits.includes(EN[e.t].base))]) pop(N, e.x, ENTRY_Y - .05, "すり抜け！", "warn");
       else if (e.boss && S.own.mfa && S.flags.no2fa) pop(N, e.x, ENTRY_Y - .05, "社長の穴！", "warn");
@@ -1049,7 +1062,7 @@ function nightStep(N, dt) {
       let mit = false;
       if (e.t === "mal" && S.backup && !S.off.backup) { dmg = Math.round(dmg / 4); mit = true; }
       N.dmg += dmg; S.hp -= dmg;
-      N.leak.push({ from: e.from === "call" ? e.t : e.from, as: e.t, dmg, mit, call: e.from === "call" });
+      N.leak.push({ from: e.from === "call" ? e.t : e.from, as: e.t, dmg, mit, call: e.from === "call" || !!e.call });
       pop(N, e.x, GOAL - .02, `-${dmg}`, "ng");
       e.gone = true;
     }
