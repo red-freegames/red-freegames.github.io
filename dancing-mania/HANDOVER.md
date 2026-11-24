@@ -17,7 +17,7 @@ Claude Code への引き継ぎ用。まずこのファイル全体を読んで�
 red-freegames.github.io リポジトリの dancing-mania-src ブランチにある dancing-mania/HANDOVER.md を読んで、『ダンシングマニア』の開発を引き継いでください。
 編集は部品ファイル（dance-core.js / dance-ui.js / shell-head.html）に対して行い、
 python3 build.py で index.html を再生成すること。three-block.js は改変禁止。
-変更後は tests/ のハーネス5本を node で実行し、全て PASS することを確認してください。
+変更後は tests/ のハーネス5本と check-build.js を node で実行し、全て PASS することを確認してください。
 公開するときは、生成した index.html（と og.png を変えたなら og.png）だけを main の dancing-mania/ に入れること。
 ```
 
@@ -162,6 +162,7 @@ HOME の「連鎖モード」で切り替え（localStorage `dm_wave`、URL `?wa
 node tests/harness-logic.js     # ロジック単体テスト+ボット30シード試行 → ALL UNIT TESTS PASS
 node tests/harness-features.js  # 人だかり/フィーバー/連鎖タイマーのテスト → ALL NEW TESTS PASS
 node tests/harness-gimmicks.js  # 特別な通行人/ステージの仕掛け/踊りの効果 → ALL GIMMICK TESTS PASS
+node tests/check-build.js       # index.html が部品から組み立て直されているか → BUILD UP TO DATE（公開・試遊ページ更新の前に必ず）
 node tests/harness-wave.js      # 波モード（パルス・頑固・説教）といつものモードの比較 → ALL WAVE TESTS PASS
 node tests/smoke-ui.js          # 実Three.js+DOMスタブでUIを通しプレイ（全ステージ×全踊り、HOME、波モード）→ SMOKE TEST PASS
 ```
@@ -189,6 +190,7 @@ node tests/smoke-ui.js          # 実Three.js+DOMスタブでUIを通しプレ�
 12. 連鎖モード「波」を試作（A/B切り替え）: パルスで波が広がる、音階の感染音、連鎖表示の段階、大連鎖のスロー、カメラの引き、クリア時の決めポーズ。
 13. 人数増（作者の判断）: 感染半径4.3→3.0、人数60〜130人。通行人をインスタンス描画に作り替え。警備員の圧・制限時間・称号ラインを再調整。HOME のステージ選択の表記を「どこから始める？」「〜から始める（スコアは0から数え直し）」に変更。
 14. 難化: 警備員を遅く・多く、感染0.9秒、波モードの通行人どうしの感染を0.3倍、説教後の免疫2.5秒、制限時間延長。連鎖の起点を記録（`G.origin`）。
+15. 組み立て忘れの防止: 14の調整後に build.py を忘れて、古い index.html を試遊ページに出してしまった。`tests/check-build.js` を追加。
 
 ## 7. 注意・未決事項
 
