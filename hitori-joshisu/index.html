@@ -251,7 +251,7 @@ const LANES = [
   { x: .5,    ic: "🔐", n: "ログイン" },
   { x: 5 / 6, ic: "🚪", n: "VPN" },
 ];
-const TOP = .1, ENTRY_Y = .3, BOUND = .5, INSIDE_Y = .74, GOAL = .95;
+const TOP = .08, ENTRY_Y = .3, BOUND = .5, INSIDE_Y = .74, GOAL = .95;
 
 /* ============ 攻撃 ============
    n: 画面に出す短い名前 / long: タップで読む説明
@@ -322,33 +322,7 @@ const WAVES = {
   10: { pw: 6, pw2: 4, phish: 6, phish2: 4, vpn: 4, vpn2: 3, supply: 6 },
 };
 const VULN_DAYS = [7, 9];
-const SPEED = .85;   // 夜の流れる速さ（判断の時間を残す）
-
-/* ============ 怪しいサイン ============
-   攻撃にはサインが多く、本物の通信には少ない。ただし本物にも付くことがある */
-const SIGNS = {
-  late:   { ic: "🌙", n: "深夜", long: "誰も働いていない時間のログインやアクセス。攻撃者は、気づかれにくい夜中や休日を好みます。ただし、残業や時差のある出張先からの本物のアクセスもあります。" },
-  abroad: { ic: "🌏", n: "海外から", long: "普段は国内からしか使わないのに、海外からのアクセス。乗っ取りの典型的なサインです。ただし、出張中の社員かもしれません。" },
-  newp:   { ic: "🆕", n: "初めて", long: "初めてやりとりする相手や、初めて見る端末からのアクセス。なりすましや乗っ取りでよく見られます。新しい取引先や新しいPCの可能性もあります。" },
-  zip:    { ic: "📦", n: "圧縮ファイル", long: "パスワード付きの圧縮ファイルや、見慣れない形式の添付。中身を検査されにくいので、ウイルスを送る手口によく使われます。" },
-  urgent: { ic: "⏰", n: "至急", long: "「至急」「本日中に」と急がせる文面。考える時間を奪うのは、詐欺の基本的な手口です。もちろん、本当に急ぎの連絡もあります。" },
-  fail:   { ic: "🔁", n: "何度も失敗", long: "パスワードを何度も間違えたあとのログイン成功。漏れたパスワードを片っ端から試す攻撃のサインです。本人がうろ覚えなだけのこともあります。" },
-  bulk:   { ic: "📂", n: "大量の持ち出し", long: "短い時間に大量のファイルを開いたり、ダウンロードしたりする動き。情報を盗み出す、またはランサムウェアが暗号化する前ぶれのことがあります。" },
-  odd:    { ic: "🔀", n: "いつもと違う場所", long: "その人が普段は触らないフォルダやサーバーへのアクセス。乗っ取られたアカウントが社内を見て回るときのサインです。" },
-};
-const SIGN_POOL = [["zip", "urgent", "newp", "late"], ["late", "abroad", "fail", "newp"], ["late", "abroad", "newp"]];
-const INSIDE_POOL = ["bulk", "odd", "late"];
-const LEGIT = [
-  ["取引先からの請求書", "社員のログイン", "在宅勤務の接続"],
-  "社員の普段の作業",
-];
-function rollSigns(pool, n) { return shuffle(pool.slice()).slice(0, n); }
-function signCount(kind) {
-  const r = Math.random();
-  if (kind === "legit") return r < .65 ? 0 : r < .97 ? 1 : 2;
-  if (kind === "subtle") return (Math.random() < .55 ? 1 : 0) + (Math.random() < .2 ? 1 : 0);
-  return 1 + (Math.random() < .7 ? 1 : 0) + (Math.random() < .3 ? 1 : 0);
-}
+const EMERG = 3;
 
 let S;
 function fresh() {
@@ -411,11 +385,6 @@ G.infoAtk = (k) => {
   }
   sheet(`<div class="shk">攻撃</div><h2>${e.ic} ${e.n}</h2><p class="long">${e.long}</p>${flow}`);
 };
-G.infoSign = (k) => {
-  const g = SIGNS[k];
-  sheet(`<div class="shk">怪しいサイン</div><h2>${g.ic} ${g.n}</h2><p class="long">${g.long}</p>
-    <p class="long" style="color:var(--sub)">夜の盤面では、流れてくる❓の上にサインが表示されます。サインが多いほど怪しい。でも、本物の通信にもサインが付くことがあるので、決めつけは禁物です。買った対策は、見分けのつく攻撃を関門で自動的に止めてくれるので、判断しなければならない❓が減ります。</p>`);
-};
 G.infoDef = (k) => {
   if (k === "backup") {
     sheet(`<div class="shk">対策 ・ 最後の砦</div><h2>${BACKUP.ic} ${BACKUP.n}</h2><p class="long">${BACKUP.long}</p>
@@ -447,7 +416,7 @@ G.title = () => {
       ☀️ 朝、予算で<b>対策を買う</b>（1回買えば、決まった攻撃をすべて止める）<br>
       🌙 夜、寝ている間に<b>攻撃が来る</b><br>
       🚪 <b>入口で止める</b>、🧱 <b>社内で広げない</b><br>
-      ❓ 夜は攻撃と<b>本物の通信</b>が混ざって流れてくる。<b>怪しいサイン</b>の多いものを<b>タップで止める</b>。本物を止めると仕事が止まり、予算が減る<br>
+      📞 抜けてきた攻撃は、<b>タップで止める</b>（1晩${EMERG}回）<br>
       <span style="color:var(--sub)">攻撃や対策をタップすると、くわしい説明が読めます</span>
     </div>
     <button class="go blue" onclick="G.start()">▶ 着任する</button>
@@ -473,13 +442,12 @@ G.morning = () => {
     report = `<div class="card"><h2>📋 昨夜の報告<small>止めた ${L.ko} ・ 被害 ${L.leak.length}</small></h2>
       ${lines || `<p class="calm">すべて止めた。……誰も褒めてくれない。</p>`}
       ${L.breach ? `<p class="calm">侵入されたぶんの対応 -${L.breach}</p>` : ""}
-      ${L.ff ? `<p class="calm" style="color:var(--warn);font-weight:800">🙅 本物の通信を${L.ff}件止めた → 仕事が止まり、予算 -${3 * L.ff}万</p>` : ""}
       ${lines ? `<p class="hint">右のアイコンは、止められた対策。タップで説明</p>` : ""}</div>`;
   }
   render(`<div class="scene">☀️ DAY ${S.day} ・ 朝 ・ 社長室</div>
     <div class="boss ${angry ? "angry" : ""}"><div class="av">👔</div><div class="say"><b>社長</b>${boss}</div></div>
     ${report}
-    <div class="card"><div class="kv"><span>今日の予算</span><b>+${Math.max(0, S.budget - 3 * (L ? L.ff || 0 : 0))}万円</b></div><div class="kv"><span>使えるお金</span><b>${S.money}万円</b></div></div>
+    <div class="card"><div class="kv"><span>今日の予算</span><b>+${S.budget}万円</b></div><div class="kv"><span>使えるお金</span><b>${S.money}万円</b></div></div>
     <button class="go" onclick="G.afterBoss()">自分の席に戻る ▶</button>`);
   window.scrollTo(0, 0);
 };
@@ -556,7 +524,6 @@ G.prep = () => {
   const newK = Object.keys(W).filter(k => !S.seen[k]);
   render(`<div class="scene">☀️ DAY ${S.day} ・ 昼 ・ 準備</div>
     <div class="card"><h2>📡 今夜の攻撃<small>タップで説明</small></h2><div class="fcl">${fc}</div>${alerts.join("")}</div>
-    <div class="card"><h2>🔎 怪しいサイン<small>タップで説明</small></h2><div class="fcl">${Object.keys(SIGNS).map(k => `<button class="atk" onclick="G.infoSign('${k}')"><span class="i">${SIGNS[k].ic}</span><span class="c">${SIGNS[k].n}</span></button>`).join("")}</div></div>
     <div class="boardwrap"><canvas id="cv"></canvas></div>
     <div class="card"><h2>🛒 対策<small id="shopLeft"></small></h2><div class="slist" id="shop"></div></div>
     <button class="go" onclick="G.night()">🏠 帰宅する（夜へ）</button>`);
@@ -654,22 +621,11 @@ function drawBoard(N) {
   TKEYS.forEach(k => lanesOf(k).forEach(l => gate(ctx, k, l, TW[k].layer === "entry" ? ENTRY_Y : INSIDE_Y, col, N)));
   if (!N) return;
   N.en.forEach(e => {
-    const x = e.x * w, y = e.y * h, r = w * .048;
-    ctx.fillStyle = e.inside ? "rgba(214,222,245,.95)" : "rgba(255,255,255,.95)";
+    const x = e.x * w, y = e.y * h, r = w * .045;
+    ctx.fillStyle = e.inside ? "rgba(215,38,61,.92)" : EN[e.t].bypass ? "rgba(255,214,102,.95)" : "rgba(255,255,255,.95)";
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-    ctx.fillStyle = "#14213d"; ctx.font = `900 ${Math.round(r * 1.1)}px sans-serif`; ctx.fillText("?", x, y + 1);
-    if (e.signs.length) {
-      // サインは❓の左に、大きめに並べる
-      const sw = w * .052, n = e.signs.length;
-      const right = x - r - 3, left = right - sw * n - 4;
-      ctx.fillStyle = "rgba(255,214,102,.95)"; rr(ctx, left, y - sw * .55, right - left, sw * 1.1, 8); ctx.fill();
-      ctx.fillStyle = "#000"; ctx.font = `${Math.round(w * .042)}px sans-serif`;
-      e.signs.forEach((g, i) => ctx.fillText(SIGNS[g].ic, left + 2 + sw * (i + .5), y + 1));
-    }
+    ctx.fillStyle = "#000"; ctx.font = `${Math.round(r * 1.2)}px sans-serif`; ctx.fillText(EN[e.t].ic, x, y + 1);
   });
-  if (N.cd > 0) {
-    ctx.fillStyle = "rgba(127,179,255,.25)"; ctx.fillRect(0, h - 6, w * N.cd / COOLDOWN, 6);
-  }
   N.pops.forEach(p => {
     ctx.globalAlpha = clamp(p.life / .4, 0, 1);
     ctx.font = `900 ${Math.round(w * .03)}px sans-serif`;
@@ -693,15 +649,8 @@ function buildNight() {
   const spawns = q.map((k, i) => ({ k, at: 1.2 + (i / q.length) * span + rnd(-.3, .3), inside: k === "supply" }));
   S.extra.forEach((k, i) => spawns.push({ k, at: 3 + i * 2.5, inside: true }));
   S.extra = [];
-  // 本物の通信：攻撃が来るレーンに混ぜる
-  const lanes = [...new Set(q.filter(k => EN[k].lane != null).map(k => EN[k].lane))];
-  const nL = Math.round(q.length * 1.6);
-  for (let i = 0; i < nL; i++) {
-    const inside = W.supply && Math.random() < .25;
-    spawns.push({ legit: true, lane: inside ? pick([0, 1, 2]) : pick(lanes), inside, at: 1 + rnd(0, span) });
-  }
   spawns.sort((a, b) => a.at - b.at);
-  return { t: 0, spawns, en: [], pops: [], speed: 1, ko: 0, ff: 0, cd: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {} };
+  return { t: 0, spawns, en: [], pops: [], emerg: EMERG, speed: 1, ko: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {} };
 }
 function pop(N, x, y, t, kind) {
   const C = { ok: ["#14935a", "#fff"], ng: ["#d7263d", "#fff"], warn: ["#c27c00", "#fff"] }[kind];
@@ -718,28 +667,15 @@ function blocker(e, layer) {
 }
 function nightStep(N, dt) {
   N.t += dt;
-  N.cd = Math.max(0, N.cd - dt);
   while (N.spawns.length && N.spawns[0].at <= N.t) {
     const s = N.spawns.shift();
-    if (s.legit) {
-      N.en.push({ legit: true, lane: s.lane, x: LANES[s.lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: s.inside,
-        label: s.inside ? LEGIT[1] : LEGIT[0][s.lane], signs: rollSigns(s.inside ? INSIDE_POOL : SIGN_POOL[s.lane], signCount("legit")) });
-      continue;
-    }
     const lane = s.k === "supply" ? pick([0, 1, 2]) : s.inside ? pick([0, 2]) : EN[s.k].lane;
     const t = s.inside ? (lane === 1 ? "acct" : "mal") : s.k;
-    const signs = s.inside ? rollSigns(INSIDE_POOL, signCount("attack")) : rollSigns(SIGN_POOL[lane], signCount(EN[s.k].bypass ? "subtle" : "attack"));
-    N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: !!s.inside, signs, boss: s.k === "pw" && Math.random() < .3 });
+    N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: !!s.inside, boss: s.k === "pw" && Math.random() < .3 });
   }
   for (const k in N.flash) N.flash[k] -= dt;
   for (const e of N.en) {
-    if (e.legit) {
-      e.y += .05 * SPEED * dt;
-      if (!e.inside && e.y >= BOUND) { e.inside = true; e.signs = rollSigns(INSIDE_POOL, signCount("legit")); }
-      if (e.y >= GOAL) e.gone = true;
-      continue;
-    }
-    e.y += EN[e.t].spd * SPEED * dt;
+    e.y += EN[e.t].spd * dt;
     if (!e.inside && !e.passE && e.y >= ENTRY_Y) {
       e.passE = true;
       const b = blocker(e, "entry");
@@ -749,7 +685,6 @@ function nightStep(N, dt) {
     }
     if (!e.inside && e.y >= BOUND) {
       e.inside = true; e.t = EN[e.from].to;
-      e.signs = rollSigns(INSIDE_POOL, signCount("attack"));
       S.hp -= 1; N.dmg += 1; N.breach++;
       pop(N, e.x, BOUND, `侵入 -1`, "ng");
     }
@@ -777,7 +712,7 @@ G.night = () => {
   document.body.className = "night";
   hud();
   render(`<div class="scene" style="color:#7fb3ff">🌙 DAY ${S.day} ・ 夜</div>
-    <div class="boardwrap"><canvas id="cv"></canvas><div class="overlay" id="ov"><div><h2>💤 おやすみなさい</h2><p>攻撃と本物の通信が混ざって流れてくる。<br>サイン（🌙🌏📦…）が多い❓をタップで止めよう。<br>本物を止めると仕事が止まり、翌日の予算が減る。<br>1件止めるごとに、少しだけ手がふさがる。</p>
+    <div class="boardwrap"><canvas id="cv"></canvas><div class="overlay" id="ov"><div><h2>💤 おやすみなさい</h2><p>抜けてきた攻撃は、タップで止められる（${EMERG}回）</p>
       <button class="go blue" style="margin-top:14px" onclick="G.runNight()">眠る</button></div></div></div>
     <div class="boardbar"><span class="info" id="ninfo"></span><button class="pill" id="spd" onclick="G.speed()">▶▶ 2倍速</button></div>`);
   setupCanvas();
@@ -788,7 +723,7 @@ G.night = () => {
 };
 function updInfo() {
   const N = NT; if (!N || !$("ninfo")) return;
-  $("ninfo").textContent = `✅ 止めた ${N.ko}　🙅 本物を止めた ${N.ff}`;
+  $("ninfo").textContent = `📞 ${"●".repeat(N.emerg)}${"○".repeat(EMERG - N.emerg)}　残り ${N.spawns.length + N.en.length}体`;
 }
 G.speed = () => { if (!NT) return; NT.speed = NT.speed === 1 ? 2 : 1; $("spd").classList.toggle("on", NT.speed === 2); };
 G.runNight = () => {
@@ -805,28 +740,26 @@ G.runNight = () => {
   };
   RAF = requestAnimationFrame(loop);
 };
-const COOLDOWN = 1;   // 1件止めると、対応で少し手がふさがる
-G.block = (e) => {
+G.emergency = (e) => {
   const N = NT;
-  if (!N || !e || e.gone || N.cd > 0) return false;
-  e.gone = true; N.cd = COOLDOWN;
-  if (e.legit) { N.ff++; pop(N, e.x, e.y - .04, `🙅本物だった`, "warn"); }
-  else { N.ko++; S.ko++; pop(N, e.x, e.y - .04, `撃退 ${EN[e.t].ic}`, "ok"); }
+  if (!N || N.emerg <= 0 || !e || e.gone) return false;
+  N.emerg--; e.gone = true; N.ko++; S.ko++;
+  pop(N, e.x, e.y - .03, "📞対応", "warn");
   updInfo();
   return true;
 };
 function nightTap(ev) {
   const N = NT;
-  if (!N || $("ov")) return;
+  if (!N || N.emerg <= 0 || $("ov")) return;
   const r = $("cv").getBoundingClientRect();
   const px = ev.clientX - r.left, py = ev.clientY - r.top;
   let best = null, bd = CV.w * .09;
   N.en.forEach(e => { const d = Math.hypot(e.x * CV.w - px, e.y * CV.h - py); if (d < bd) { bd = d; best = e; } });
-  if (best) G.block(best);
+  if (best) G.emergency(best);
 }
 function endNight() {
   const N = NT;
-  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach, ff: N.ff };
+  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach };
   S.leaks += N.leak.length;
   NT = null;
   if (S.hp <= 0) return G.end(false);
@@ -834,7 +767,7 @@ function endNight() {
   if (N.leak.length > 0) S.budget = Math.min(50, Math.round(S.budget * 1.2) + 2);
   else S.budget = Math.max(15, Math.round(S.budget * .85));
   S.day++;
-  S.money += Math.max(0, S.budget - 3 * N.ff);
+  S.money += S.budget;
   if (VULN_DAYS.includes(S.day) && S.own.patch && !S.up.patch) S.vuln = true;
   G.morning();
 }
