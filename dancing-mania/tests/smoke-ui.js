@@ -166,6 +166,22 @@ let sawInfect = false, frames = 0;
     ok(g.maxWave >= 5, 'a wave formed in UI: ' + g.maxWave);
     for (let i = 0; i < 90; i++) frame();
   }
+  // 残りわずかで光る / 警備員の赤枠
+  {
+    const g = DM.createGame(21); g.startStage(1);
+    UI.setGame(g); UI.setupStage();
+    frame();
+    ok(!UI.hiliteActive(), 'no highlight at stage start');
+    const walkers = g.npcs.filter(n => n.state === 'walk');
+    walkers.slice(0, walkers.length - 4).forEach(n => { n.state = 'dancer'; });
+    frame();
+    ok(UI.hiliteActive(), 'highlight when only 4 people are left');
+    const left = g.npcs.findIndex(n => n.state === 'walk');
+    const c = UI.CROWD.torso.instanceColor.array;
+    ok(c[left * 3] < 0.9 && c[left * 3 + 2] > 0.9, 'remaining walker is tinted cyan-ish: ' + Array.from(c.slice(left * 3, left * 3 + 3)).map(v => v.toFixed(2)));
+    let outlines = 0; UI.guardPersons[0].root.traverse(o => { if (o.isMesh && o.material.side === 1 && o.material.color.getHex() === 0xff1a1a) outlines++; });
+    ok(outlines >= 7, 'guard has red outline shells: ' + outlines);
+  }
   // エンドレス: 人が入ってきて、警備員が増え、正気の人が上限で終わり、結果画面に進む
   {
     const g = DM.createGame(11); g.startStage(DM.STAGES.length);

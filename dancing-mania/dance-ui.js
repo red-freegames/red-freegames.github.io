@@ -425,12 +425,26 @@ function setupCrowdColors() {
   }
   for (const k of COLOR_PARTS) CROWD[k].instanceColor.needsUpdate = true;
 }
+// 残りわずか(まだ踊っていない人が全体の1割・最低5人以下)になったら、その人たちを水色で点滅させて目立たせる。エンドレスは対象外
+const HILITE_RATIO = 0.1, HILITE_MIN = 5;
+const hiOn = new Uint8Array(NPC_MAX), hiCol = new THREE.Color(), hiA = new THREE.Color(0x00e5ff), hiB = new THREE.Color(0x1f4dff); // 水色と濃い青(白だと白い床に溶ける)
+let hiShown = false;
+function hiliteActive() {
+  if (G.phase !== 'play' || G.isEndless()) return false;
+  const left = G.totalNpc - G.infectedCount();
+  return left > 0 && left <= Math.max(HILITE_MIN, Math.ceil(G.totalNpc * HILITE_RATIO));
+}
 function syncCrowd(t, dt, rs) {
   const R = RIG, N = Math.min(G.npcs.length, NPC_MAX);
+  const hi = hiliteActive();
+  if (hi && !hiShown) { hiShown = true; showToast('✨ 残り' + (G.totalNpc - G.infectedCount()) + '人！ まだ踊っていない人が光ってる'); }
+  hiCol.copy(hiA).lerp(hiB, 0.5 + Math.sin(t * 9) * 0.5); // 水色と濃い青を行き来する
+  let hiDirty = false;
   let ri = 0, pi = 0, si = 0, ni = 0, ai = 0;
   for (let i = 0; i < N; i++) {
     const n = G.npcs[i];
     if (n.state === 'away' || n.state === 'gone') {
+      if (hiOn[i]) { hiOn[i] = 0; setCrowdColor(i); }
       for (const k of COLOR_PARTS) CROWD[k].setMatrixAt(i, ZERO_M);
       CROWD.shadow.setMatrixAt(i, ZERO_M);
       continue;
@@ -454,11 +468,13 @@ function syncCrowd(t, dt, rs) {
     }
     R.root.updateMatrixWorld(true);
     for (const k of COLOR_PARTS) CROWD[k].setMatrixAt(i, R[k].matrixWorld);
+    if (hi && n.state === 'walk') { for (const k of COLOR_PARTS) CROWD[k].setColorAt(i, hiCol); hiOn[i] = 1; hiDirty = true; }
+    else if (hiOn[i]) { hiOn[i] = 0; setCrowdColor(i); }
     if (n.kind === 'dj') CROWD.phones.setMatrixAt(pi++, R.phones.matrixWorld);
     if (n.kind === 'bride') CROWD.skirt.setMatrixAt(si++, R.skirt.matrixWorld);
     crowdGround(CROWD.shadow, i, n.x, 0.02, n.z, sc);
   }
-  for (const k of COLOR_PARTS) { CROWD[k].count = N; CROWD[k].instanceMatrix.needsUpdate = true; }
+  for (const k of COLOR_PARTS) { CROWD[k].count = N; CROWD[k].instanceMatrix.needsUpdate = true; if (hiDirty) CROWD[k].instanceColor.needsUpdate = true; }
   CROWD.shadow.count = N; CROWD.shadow.instanceMatrix.needsUpdate = true;
   CROWD.rim.count = ri; CROWD.fill.count = ri; CROWD.rim.instanceMatrix.needsUpdate = true; CROWD.fill.instanceMatrix.needsUpdate = true;
   CROWD.phones.count = pi; CROWD.phones.instanceMatrix.needsUpdate = true;
@@ -476,6 +492,27 @@ for (let i = 0; i < 3; i++) {
 }
 const guardPersons = [];
 for (let i = 0; i < 6; i++) guardPersons.push(makePerson({ shirt: MAT.guardShirt, pants: MAT.guardPants, skin: MAT.skin[i % 3], cap: true, band: true }));
+// 警備員の赤い縁取り: 各部位に、外側へ OUTLINE_W だけ膨らませた裏面だけの赤い殻を重ねる(部位の子なので踊っても一緒に動く)
+const OUTLINE_W = 0.06;
+const outlineMat = new THREE.MeshBasicMaterial({ color: 0xff1a1a, side: THREE.BackSide });
+const outlineGeoCache = {};
+function outlineGeo(geo) {
+  if (outlineGeoCache[geo.uuid]) return outlineGeoCache[geo.uuid];
+  const g = geo.clone(); g.computeBoundingBox();
+  const bb = g.boundingBox, c = new THREE.Vector3(), sz = new THREE.Vector3();
+  bb.getCenter(c); bb.getSize(sz);
+  const k = [sz.x, sz.y, sz.z].map(function (v) { return v > 0 ? (v + OUTLINE_W * 2) / v : 1; });
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) pos.setXYZ(i, c.x + (pos.getX(i) - c.x) * k[0], c.y + (pos.getY(i) - c.y) * k[1], c.z + (pos.getZ(i) - c.z) * k[2]);
+  pos.needsUpdate = true;
+  return (outlineGeoCache[geo.uuid] = g);
+}
+function addOutline(node) { // 見えている Mesh だけ(非表示のヘッドホン等や影・円の groundG は対象外)
+  if (!node.visible) return;
+  for (const ch of node.children.slice()) addOutline(ch);
+  if (node.isMesh) node.add(new THREE.Mesh(outlineGeo(node.geometry), outlineMat));
+}
+for (const gp of guardPersons) addOutline(gp.root);
 
 // ================= エフェクト =================
 const fxPool = [];
@@ -887,6 +924,7 @@ function setupStage() {
   snapshotURL = null; finale = 0; slowMo = 0;
   buildWorld(G.stageIdx);
   setupCrowdColors();
+  hiOn.fill(0); hiShown = false;
   for (let i = 0; i < guardPersons.length; i++) { guardPersons[i].root.visible = !!G.guards[i]; guardPersons[i].groundG.visible = !!G.guards[i]; }
   playerPerson.root.visible = true;
   danceStyle = G.dance.id;
@@ -1264,5 +1302,5 @@ G.phase = 'ready';
 setupStage();
 animate();
 
-globalThis.__DM_UI__ = { CROWD: CROWD, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
+globalThis.__DM_UI__ = { CROWD: CROWD, hiliteActive: function () { return hiliteActive(); }, guardPersons: guardPersons, get paused() { return paused; }, get G() { return G; }, setGame: function (g) { G = g; }, setupStage: setupStage, get danceStyle() { return danceStyle; } };
 })();
