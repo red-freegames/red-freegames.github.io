@@ -44,6 +44,7 @@ body.night .gauge .bar{background:#26324f}
 .gauge span{float:right;color:var(--ink);font-variant-numeric:tabular-nums}
 body.night .gauge span,body.night .money b{color:#e6ecf8}
 .money{font-size:10.5px;font-weight:800;color:var(--sub)}
+.tdots{letter-spacing:2px;color:var(--accent)}.tdots i{font-style:normal;color:#cfd6e2}
 .money b{display:block;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.2}
 
 .scene{font-size:11px;font-weight:900;letter-spacing:.2em;color:var(--accent);margin-top:6px}
@@ -182,6 +183,7 @@ body.night .boardbar .info{color:#93a1c2}
 .srow .act small{display:block;font-size:10.5px;font-weight:700;opacity:.9}
 .srow .act.up{background:#e8a100}
 .srow .act.warn{background:var(--ng)}
+.srow .act.sub{background:#5b6680}
 .srow .act:disabled{opacity:.35;pointer-events:none}
 .srow .done{flex:none;min-width:64px;text-align:center;font-size:12px;font-weight:900;color:var(--ok)}
 .rline{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 0;border-top:1px dashed var(--line);font-size:13.5px}
@@ -228,7 +230,7 @@ body.night .boardbar .info{color:#93a1c2}
       <div class="day"><small>DAY</small><b id="hD">1</b><small>/ 10</small></div>
       <div class="gauge">🏢 会社の体力 <span id="hHpN"></span><div class="bar"><i id="hHp"></i></div></div>
       <div class="money">💴 使えるお金<b id="hMo"></b></div>
-      <div class="money">💥 通した攻撃<b id="hLk"></b></div>
+      <div class="money">⏱ 今日の時間<b id="hT"></b></div>
       <div class="money">🛡 撃退した攻撃<b id="hKo"></b></div>
     </div>
   </div>
@@ -271,6 +273,8 @@ const EN = {
     long: "メーカーもまだ把握していない、つまり直す更新がまだ存在しない弱点を「ゼロデイ」と呼びます。更新をきちんと当てていても防げません。機器そのものを外に公開しない仕組み（ゼロトラスト型の接続）に切り替えるか、入られたあとに社内で食い止める備えが必要です。" },
   supply: { ic: "🤝", n: "取引先経由", to: "mal", inside: true,
     long: "自社がしっかり守っていても、取引先や委託先、使っているソフトの提供元が先に乗っ取られると、そこからの「信頼された通り道」を使って入ってこられます。サプライチェーン攻撃と呼ばれ、セキュリティの甘い取引先を経由して大きな会社が被害を受ける例が相次いでいます。入口を通らないので、社内での検知と封じ込めが頼りです。" },
+  remnant: { ic: "👻", n: "残された裏口", to: "mal", inside: true,
+    long: "被害のあと原因を調べずに放っておくと、攻撃者が仕込んだ裏口（バックドア）や、盗まれたままのパスワードが残ります。攻撃者はそこを使って、何度でも入り直してきます。被害が出たら、元に戻す前に「どこから入られたか」を調べてふさぐのが鉄則です。" },
   usb: { ic: "🔌", n: "持ち込み", to: "mal",
     long: "拾ったUSBメモリを挿す、サポートの切れた古いPCを使い続ける、私物のPCを社内につなぐ。こうした「持ち込み」は、入口の対策を通らずに、いきなり社内に感染源を置くことになります。" },
   acct: { ic: "👤", n: "乗っ取りアカウント", spd: .05, goal: "情報流出", dmg: 5,
@@ -323,11 +327,40 @@ const WAVES = {
 };
 const VULN_DAYS = [7, 9];
 const EMERG = 3;
+const TIME = 4;   // 1日に使える時間（行動回数）
+
+/* ============ 情シスの日常業務 ============ */
+// ヘルプデスク：対応すると時間を1使う。放置すると翌日の予算が減る
+const TICKETS = [
+  ["💻", "PCが起動しない", "営業の山田さん"], ["🔑", "パスワードを忘れた", "総務の佐藤さん"], ["📶", "Wi-Fiがつながらない", "会議室から"],
+  ["🖨️", "プリンターが動かない", "経理の田中さん"], ["🆕", "新入社員のPCを用意して", "人事から"], ["📊", "Excelが固まる", "社長"],
+  ["📱", "スマホでメールが見られない", "営業の鈴木さん"], ["🔊", "Web会議で声が届かない", "部長"],
+];
+const TICKET_LONG = "ひとり情シスの一日の大半は、こうした社内からの問い合わせ対応です。セキュリティがどれだけ大事でも、目の前で困っている社員を放っておけば仕事が止まり、「IT担当は何をしているんだ」と評価も下がります。限られた時間を、目の前の困りごとと、まだ起きていない攻撃への備えに、どう配分するか。それが現実の情シスの悩みです。";
+// うっかり事故：朝に起き、後始末で時間を奪う
+const MISHAPS = [
+  { ic: "📤", n: "メールの誤送信", cost: 1, q: "顧客リストを、宛先を間違えて社外に送ってしまった",
+    long: "メールの宛先を間違えて、顧客情報を社外に送ってしまう事故です。相手に連絡して削除をお願いし、上司や顧客への説明、再発防止の手順づくりに追われます。情報漏えいの原因を件数で見ると、攻撃よりも誤送信や紛失といった「うっかり」が上位に入るほど身近な事故です。送信前の確認や、送信を数分遅らせる設定で減らせます。" },
+  { ic: "☁️", n: "共有設定のミス", cost: 1, q: "クラウドの共有フォルダが「誰でも見られる」設定になっていた",
+    long: "クラウドの共有フォルダが「リンクを知っていれば誰でも見られる」設定のまま、社外に丸見えになっていた事故です。ネット上で見つかる前に設定を直し、誰がアクセスしたかを調べます。攻撃を受けなくても、設定ひとつで情報が漏れる事故は実際に多く起きています。共有範囲を定期的に見直すことで防げます。" },
+  { ic: "💼", n: "PCの紛失", cost: 2, q: "社員が飲み会の帰りに、会社のノートPCを電車に置き忘れた",
+    long: "持ち出したノートPCやスマホを、電車や飲食店に置き忘れる事故です。遠隔でロックをかけ、中にどんなデータが入っていたかを確認し、警察に届け、場合によっては取引先や顧客に報告します。PCのディスクを暗号化しておけば、拾われても中身は読まれにくくなります。" },
+];
+// インシデント対応：被害の翌朝に積まれる
+const INC = {
+  inv: { ic: "🔍", n: "原因の調査", cost: 1, why: "やらないと、今夜👻裏口からまた入られる",
+    long: "被害が出たら、まず「どこから入られ、何をされたか」を調べます。ログを確かめ、怪しいPCを切り離して詳しく見ます。入口をふさがないまま元に戻しても、攻撃者が残した裏口や、盗まれたままのパスワードから、また同じように入られてしまうからです。" },
+  report: { ic: "📣", n: "漏えいの報告", cost: 1, why: "やらないと、毎朝 信用が落ちて体力 -5",
+    long: "個人情報が漏れた（おそれがある）とき、一定の条件にあたる場合は、個人情報保護委員会への報告と本人への通知が法律で義務づけられています。取引先や、場合によっては警察への連絡も必要です。報告が遅れたり隠したりすると、被害そのものより信用を失うことも少なくありません。" },
+  recover: { ic: "🔄", n: "システムの復旧", cost: 2, why: "終わるまで業務停止。毎朝 体力 -3・予算 -5万",
+    long: "ランサムウェアで暗号化されたPCやサーバーを元に戻す作業です。バックアップがあれば、きれいにした機器にデータを戻すだけで済みます。バックアップがないと一から作り直すことになり、何日もかかります（ゲームでは、バックアップがあれば時間1、なければ2）。戻るまでは業務が止まり、売上も落ちます。" },
+};
 
 let S;
 function fresh() {
   S = { day: 1, hp: 100, money: 0, budget: 30, own: {}, up: {}, backup: false, flags: {}, ko: 0, leaks: 0,
-        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {} };
+        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {},
+        time: TIME, tasks: [], mishap: null, notes: [] };
 }
 
 /* ============ 共通 ============ */
@@ -343,7 +376,7 @@ function hud() {
   $("hHpN").textContent = Math.max(0, Math.round(S.hp));
   const hp = $("hHp"); hp.style.width = clamp(S.hp, 0, 100) + "%";
   hp.style.background = S.hp > 60 ? "var(--ok)" : S.hp > 30 ? "var(--warn)" : "var(--ng)";
-  $("hLk").textContent = S.leaks + "件";
+  $("hT").innerHTML = `<span class="tdots">${"●".repeat(Math.max(0, S.time))}<i>${"●".repeat(Math.max(0, TIME - S.time))}</i></span>`;
   $("hMo").textContent = S.money + "万円";
   $("hKo").textContent = S.ko + "件";
 }
@@ -388,7 +421,7 @@ G.infoAtk = (k) => {
 G.infoDef = (k) => {
   if (k === "backup") {
     sheet(`<div class="shk">対策 ・ 最後の砦</div><h2>${BACKUP.ic} ${BACKUP.n}</h2><p class="long">${BACKUP.long}</p>
-      <div class="shbuy">${S.backup ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${S.money < BACKUP.cost ? "disabled" : ""} onclick="G.backup();G.infoDef('backup')">導入する　${BACKUP.cost}万円</button>`}</div>`);
+      <div class="shbuy">${S.backup ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${!canDo(BACKUP.cost) ? "disabled" : ""} onclick="G.backup();G.infoDef('backup')">導入する　${BACKUP.cost}万円・⏱1</button>`}</div>`);
     return;
   }
   const t = TW[k];
@@ -396,10 +429,10 @@ G.infoDef = (k) => {
   let up = "";
   if (t.up) up = `<div class="shup"><div class="shk">⬆ Lv2に強化</div><h3>${t.ic} ${t.up.n}</h3><p class="long">${t.up.long}</p>
     <div class="flow"><div><span>追加で止める</span>${t.up.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div></div>
-    <div class="shbuy">${S.up[k] ? `<button class="act off" disabled>強化済み</button>` : S.own[k] ? `<button class="act" ${S.money < t.up.cost ? "disabled" : ""} onclick="G.upgrade('${k}');G.infoDef('${k}')">強化する　${t.up.cost}万円</button>` : `<button class="act off" disabled>先に導入が必要</button>`}</div></div>`;
+    <div class="shbuy">${S.up[k] ? `<button class="act off" disabled>強化済み</button>` : S.own[k] ? `<button class="act" ${!canDo(t.up.cost) ? "disabled" : ""} onclick="G.upgrade('${k}');G.infoDef('${k}')">強化する　${t.up.cost}万円・⏱1</button>` : `<button class="act off" disabled>先に導入が必要</button>`}</div></div>`;
   sheet(`<div class="shk">対策 ・ ${where}</div><h2>${t.ic} ${t.n}</h2><p class="long">${t.long}</p>
     <div class="flow"><div><span>止める</span>${t.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div></div>
-    <div class="shbuy">${S.own[k] ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${S.money < t.cost ? "disabled" : ""} onclick="G.buy('${k}');G.infoDef('${k}')">導入する　${t.cost}万円</button>`}</div>${up}`);
+    <div class="shbuy">${S.own[k] ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${!canDo(t.cost) ? "disabled" : ""} onclick="G.buy('${k}');G.infoDef('${k}')">導入する　${t.cost}万円・⏱1</button>`}</div>${up}`);
 };
 
 /* ============ タイトル ============ */
@@ -413,7 +446,8 @@ G.title = () => {
     <h1>ひとり情シス<br>防衛戦</h1>
     <p class="lead">社員30人の会社で、IT担当はあなたひとり。<br>朝は社長に詰められ、<br>夜は、寝ている間に攻撃がやってくる。</p>
     <div class="rules">
-      ☀️ 朝、予算で<b>対策を買う</b>（1回買えば、決まった攻撃をすべて止める）<br>
+      ☀️ 昼、お金と<b>⏱時間</b>を使って<b>対策を買う</b>（1回買えば、決まった攻撃をすべて止める）<br>
+      📥 社員の問い合わせや、被害の後始末も<b>同じ時間</b>を取り合う<br>
       🌙 夜、寝ている間に<b>攻撃が来る</b><br>
       🚪 <b>入口で止める</b>、🧱 <b>社内で広げない</b><br>
       📞 抜けてきた攻撃は、<b>タップで止める</b>（1晩${EMERG}回）<br>
@@ -423,7 +457,7 @@ G.title = () => {
     <p class="note">※このゲームはフィクションです。数値はゲーム用に単純化したもので、実際の製品やサービスの性能を示すものではありません。<br>実況・配信・動画投稿・収益化OK</p>
   </div>`);
 };
-G.start = () => { stopNight(); fresh(); S.money = S.budget; G.morning(); };
+G.start = () => { stopNight(); fresh(); S.money = S.budget; S.tasks = [{ inc: false, kind: "ticket", ic: "🆕", n: "新しいPCの初期設定", from: "社長", cost: 1, sub: "社長から" }]; G.morning(); };
 
 /* ============ 朝 ============ */
 G.morning = () => {
@@ -442,6 +476,7 @@ G.morning = () => {
     report = `<div class="card"><h2>📋 昨夜の報告<small>止めた ${L.ko} ・ 被害 ${L.leak.length}</small></h2>
       ${lines || `<p class="calm">すべて止めた。……誰も褒めてくれない。</p>`}
       ${L.breach ? `<p class="calm">侵入されたぶんの対応 -${L.breach}</p>` : ""}
+      ${S.notes.map(n => `<p class="calm" style="color:var(--ng);font-weight:800">⚠ ${n}</p>`).join("")}
       ${lines ? `<p class="hint">右のアイコンは、止められた対策。タップで説明</p>` : ""}</div>`;
   }
   render(`<div class="scene">☀️ DAY ${S.day} ・ 朝 ・ 社長室</div>
@@ -523,12 +558,13 @@ G.prep = () => {
   if (S.extra.length) alerts.push(`<div class="alert">🦠 今夜、社内に直接 ${S.extra.length}体</div>`);
   const newK = Object.keys(W).filter(k => !S.seen[k]);
   render(`<div class="scene">☀️ DAY ${S.day} ・ 昼 ・ 準備</div>
+    <div class="card"><h2>📥 今日のやること<small>⏱は時間。対策の導入にも⏱1かかる</small></h2><div class="slist" id="tasks"></div></div>
     <div class="card"><h2>📡 今夜の攻撃<small>タップで説明</small></h2><div class="fcl">${fc}</div>${alerts.join("")}</div>
     <div class="boardwrap"><canvas id="cv"></canvas></div>
     <div class="card"><h2>🛒 対策<small id="shopLeft"></small></h2><div class="slist" id="shop"></div></div>
     <button class="go" onclick="G.night()">🏠 帰宅する（夜へ）</button>`);
   Object.keys(W).forEach(k => S.seen[k] = true);
-  setupCanvas(); drawBoard(); drawShop();
+  setupCanvas(); drawBoard(); drawShop(); drawTasks();
   $("cv").onclick = boardTapPrep;
   if (newK.length) setTimeout(() => G.infoAtk(newK[0]), 250);   // 新しい攻撃は説明を自動で開く
 };
@@ -537,10 +573,10 @@ function drawShop() {
     const t = TW[k], own = S.own[k];
     const broken = own && k === "patch" && S.vuln && !S.up.patch;
     let btn;
-    if (broken) btn = `<button class="act warn" ${S.money < 3 ? "disabled" : ""} onclick="event.stopPropagation();G.repatch()">当て直す<small>3万</small></button>`;
-    else if (own && t.up && !S.up[k]) btn = `<button class="act up" ${S.money < t.up.cost ? "disabled" : ""} onclick="event.stopPropagation();G.upgrade('${k}')">⬆強化<small>${t.up.cost}万</small></button>`;
+    if (broken) btn = `<button class="act warn" ${!canDo(3) ? "disabled" : ""} onclick="event.stopPropagation();G.repatch()">当て直す<small>3万</small></button>`;
+    else if (own && t.up && !S.up[k]) btn = `<button class="act up" ${!canDo(t.up.cost) ? "disabled" : ""} onclick="event.stopPropagation();G.upgrade('${k}')">⬆強化<small>${t.up.cost}万</small></button>`;
     else if (own) btn = `<span class="done">${S.up[k] ? "⭐Lv2" : "導入済"}</span>`;
-    else btn = `<button class="act" ${S.money < t.cost ? "disabled" : ""} onclick="event.stopPropagation();G.buy('${k}')">導入<small>${t.cost}万</small></button>`;
+    else btn = `<button class="act" ${!canDo(t.cost) ? "disabled" : ""} onclick="event.stopPropagation();G.buy('${k}')">導入<small>${t.cost}万・⏱1</small></button>`;
     return `<div class="srow ${own ? (broken ? "alert" : "on") : ""}" onclick="G.infoDef('${k}')"><span class="ic">${t.ic}</span>
       <span class="nm">${nameOf(k)}<small>止める ${hitsOf(k).map(h => EN[h].ic).join("")}</small></span><span class="i">ⓘ</span>${btn}</div>`;
   };
@@ -548,15 +584,47 @@ function drawShop() {
     <div class="sgrp">🧱 社内</div>${TKEYS.filter(k => TW[k].layer === "inside").map(row).join("")}
     <div class="sgrp">💼 最後の砦</div>
     <div class="srow ${S.backup ? "on" : ""}" onclick="G.infoDef('backup')"><span class="ic">💾</span><span class="nm">バックアップ<small>🦠の被害を1/4に</small></span><span class="i">ⓘ</span>
-      ${S.backup ? `<span class="done">導入済</span>` : `<button class="act" ${S.money < 15 ? "disabled" : ""} onclick="event.stopPropagation();G.backup()">導入<small>15万</small></button>`}</div>`;
-  $("shopLeft").textContent = `残り ${S.money}万円`;
+      ${S.backup ? `<span class="done">導入済</span>` : `<button class="act" ${!canDo(15) ? "disabled" : ""} onclick="event.stopPropagation();G.backup()">導入<small>15万・⏱1</small></button>`}</div>`;
+  $("shopLeft").textContent = `残り ${S.money}万円 ・ ⏱${S.time}`;
 }
-function refresh() { if ($("shop")) { drawShop(); drawBoard(); } }
-function spend(c) { S.money -= c; S.spent += c; hud(); }
-G.buy = (k) => { if (S.own[k] || S.money < TW[k].cost) return; spend(TW[k].cost); S.own[k] = true; refresh(); };
-G.upgrade = (k) => { const u = TW[k].up; if (!S.own[k] || S.up[k] || S.money < u.cost) return; spend(u.cost); S.up[k] = true; if (k === "patch") S.vuln = false; refresh(); };
-G.repatch = () => { if (S.money < 3) return; spend(3); S.vuln = false; refresh(); };
-G.backup = () => { if (S.backup || S.money < BACKUP.cost) return; spend(BACKUP.cost); S.backup = true; refresh(); };
+function refresh() { if ($("shop")) { drawShop(); drawBoard(); drawTasks(); } }
+function drawTasks() {
+  const box = $("tasks"); if (!box) return;
+  S.tasks.forEach(t => { if (t.kind === "recover") t.cost = taskCost(t); });
+  const rows = S.tasks.map((t, i) => {
+    const btn = t.done ? `<span class="done">済</span>` : `<button class="act ${t.inc ? "warn" : "sub"}" ${S.time < t.cost ? "disabled" : ""} onclick="event.stopPropagation();G.doTask(${i})">対応<small>⏱${t.cost}</small></button>`;
+    return `<div class="srow ${t.done ? "on" : t.inc ? "alert" : ""}" onclick="G.infoTask(${i})"><span class="ic">${t.ic}</span>
+      <span class="nm">${t.n}<small>${t.done ? "片づいた" : t.sub}</small></span><span class="i">ⓘ</span>${btn}</div>`;
+  }).join("");
+  const mis = S.mishap ? `<button class="alert" onclick="G.infoMishap()">${S.mishap.ic} ${S.mishap.n}の後始末で ⏱-${S.mishap.cost}<span>ⓘ</span></button>` : "";
+  box.innerHTML = mis + (rows || (S.mishap ? "" : `<p class="calm">今日は問い合わせなし。</p>`));
+}
+G.infoTask = (i) => {
+  const t = S.tasks[i];
+  const long = t.inc ? INC[t.kind].long : TICKET_LONG;
+  sheet(`<div class="shk">${t.inc ? "インシデント対応" : "ヘルプデスク"}</div><h2>${t.ic} ${t.n}</h2>${t.inc ? "" : `<p class="calm">${t.from}から</p>`}<p class="long">${long}</p>
+    <div class="flow"><div><span>放っておくと</span><b>${t.inc ? INC[t.kind].why : "明日の予算 -3万円（仕事が止まる）"}</b></div></div>
+    <div class="shbuy">${t.done ? `<button class="act off" disabled>対応済み</button>` : `<button class="act" ${S.time < t.cost ? "disabled" : ""} onclick="G.doTask(${i});G.infoTask(${i})">対応する　⏱${t.cost}</button>`}</div>`);
+};
+G.infoMishap = () => {
+  const m = S.mishap;
+  sheet(`<div class="shk">うっかり事故</div><h2>${m.ic} ${m.n}</h2><p class="calm">${m.q}</p><p class="long">${m.long}</p>
+    <div class="flow"><div><span>後始末</span><b>今日の時間 -${m.cost}</b></div></div>`);
+};
+function spend(c) { S.money -= c; S.spent += c; S.time -= 1; hud(); }
+const canDo = (money) => S.time >= 1 && S.money >= money;
+G.buy = (k) => { if (S.own[k] || !canDo(TW[k].cost)) return; spend(TW[k].cost); S.own[k] = true; refresh(); };
+G.upgrade = (k) => { const u = TW[k].up; if (!S.own[k] || S.up[k] || !canDo(u.cost)) return; spend(u.cost); S.up[k] = true; if (k === "patch") S.vuln = false; refresh(); };
+G.repatch = () => { if (!canDo(3)) return; spend(3); S.vuln = false; refresh(); };
+G.backup = () => { if (S.backup || !canDo(BACKUP.cost)) return; spend(BACKUP.cost); S.backup = true; refresh(); };
+// やること（問い合わせ・インシデント対応）を片づける
+G.doTask = (i) => {
+  const t = S.tasks[i];
+  if (!t || t.done || S.time < t.cost) return;
+  S.time -= t.cost; t.done = true;
+  hud(); refresh();
+};
+function taskCost(t) { return t.kind === "recover" ? (S.backup ? 1 : 2) : t.cost; }
 // 盤面の関門をタップしても説明が開く
 function boardTapPrep(ev) {
   const r = $("cv").getBoundingClientRect();
@@ -669,7 +737,7 @@ function nightStep(N, dt) {
   N.t += dt;
   while (N.spawns.length && N.spawns[0].at <= N.t) {
     const s = N.spawns.shift();
-    const lane = s.k === "supply" ? pick([0, 1, 2]) : s.inside ? pick([0, 2]) : EN[s.k].lane;
+    const lane = (s.k === "supply" || s.k === "remnant") ? pick([0, 1, 2]) : s.inside ? pick([0, 2]) : EN[s.k].lane;
     const t = s.inside ? (lane === 1 ? "acct" : "mal") : s.k;
     N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: !!s.inside, boss: s.k === "pw" && Math.random() < .3 });
   }
@@ -709,6 +777,8 @@ function nightStep(N, dt) {
 }
 G.night = () => {
   closeSheet();
+  // 原因を調べなかった被害は、裏口から今夜また入ってくる
+  S.tasks.filter(t => t.kind === "inv" && !t.done).forEach(() => S.extra.push("remnant"));
   document.body.className = "night";
   hud();
   render(`<div class="scene" style="color:#7fb3ff">🌙 DAY ${S.day} ・ 夜</div>
@@ -766,8 +836,29 @@ function endNight() {
   if (S.day >= DAYS) return G.end(true);
   if (N.leak.length > 0) S.budget = Math.min(50, Math.round(S.budget * 1.2) + 2);
   else S.budget = Math.max(15, Math.round(S.budget * .85));
+  // 片づけなかった仕事のツケ
+  const notes = [];
+  let cut = 0;
+  const left = S.tasks.filter(t => !t.done);
+  const tix = left.filter(t => !t.inc).length;
+  if (tix) { cut += 3 * tix; notes.push(`問い合わせを${tix}件放置 → 予算 -${3 * tix}万`); }
+  const keep = [];
+  left.filter(t => t.kind === "report").forEach(t => { S.hp -= 5; notes.push("報告が遅れている → 信用低下 体力 -5"); keep.push(t); });
+  left.filter(t => t.kind === "recover").forEach(t => { S.hp -= 3; cut += 5; notes.push("システムが止まったまま → 体力 -3・予算 -5万"); keep.push(t); });
+  S.notes = notes;
   S.day++;
-  S.money += S.budget;
+  S.money += Math.max(0, S.budget - cut);
+  // 新しい日のやること
+  S.time = TIME;
+  S.tasks = keep;
+  if (N.leak.length) S.tasks.push({ inc: true, kind: "inv", ...INC.inv, sub: "放置すると今夜また入られる" });
+  if (N.leak.some(x => x.as === "acct") && !S.tasks.some(t => t.kind === "report")) S.tasks.push({ inc: true, kind: "report", ...INC.report, sub: "放置すると毎朝 体力-5" });
+  if (N.leak.some(x => x.as === "mal") && !S.tasks.some(t => t.kind === "recover")) S.tasks.push({ inc: true, kind: "recover", ...INC.recover, sub: "終わるまで毎朝 体力-3・予算-5万" });
+  S.tasks.forEach(t => { if (t.kind === "recover") t.cost = taskCost(t); });
+  const nT = S.day <= 2 ? 1 : pick([1, 2, 2]);
+  shuffle(TICKETS.slice()).slice(0, nT).forEach(([ic, n, from]) => S.tasks.push({ inc: false, kind: "ticket", ic, n, from, cost: 1, sub: from + "から" }));
+  S.mishap = null;
+  if (S.day >= 3 && Math.random() < .35) { S.mishap = pick(MISHAPS); S.time -= S.mishap.cost; }
   if (VULN_DAYS.includes(S.day) && S.own.patch && !S.up.patch) S.vuln = true;
   G.morning();
 }
