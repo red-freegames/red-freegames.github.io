@@ -828,7 +828,7 @@ function drawShop() {
   $("shop").innerHTML = `<div class="sgrp">🚪 入口</div>${TKEYS.filter(k => TW[k].layer === "entry").map(row).join("")}
     <div class="sgrp">🧱 社内</div>${TKEYS.filter(k => TW[k].layer === "inside").map(row).join("")}
     <div class="sgrp">👥 人</div>
-    <div class="srow ${S.train ? "on" : ""}" onclick="G.infoDef('train')"><span class="ic">🎓</span><span class="nm">社員研修<small>📞放置しても正しく判断しやすく</small></span><span class="i">ⓘ</span>
+    <div class="srow ${S.train ? "on" : ""}" onclick="G.infoDef('train')"><span class="ic">🎓</span><span class="nm">社員研修<small>📞社員が自分で判断できる</small></span><span class="i">ⓘ</span>
       ${S.train ? `<span class="done">実施済</span>` : `<button class="act" ${S.money < TRAIN.cost ? "disabled" : ""} onclick="event.stopPropagation();G.train()">実施<small>${TRAIN.cost}万</small></button>`}</div>
     <div class="sgrp">💼 最後の砦</div>
     <div class="srow ${S.backup ? "on" : ""}" onclick="G.infoDef('backup')"><span class="ic">💾</span><span class="nm">バックアップ<small>🦠の被害を1/4に</small></span><span class="i">ⓘ</span>
