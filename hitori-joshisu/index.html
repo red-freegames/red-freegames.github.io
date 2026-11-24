@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ひとり情シス防衛戦</title>
-<meta name="description" content="朝、社長に予算を削られながら対策を買う。夜、寝ている間に攻撃がやってくる。二段階認証はパスワード泥棒に、監視ソフトはマルウェアに。入口をすり抜ける新型には社内で備える。10日間会社を守り抜くサイバー防衛ゲーム。">
+<meta name="description" content="朝、社長に予算を削られながら対策を買う。昼、攻撃と社員からの問い合わせが同時にやってくる。二段階認証はパスワード泥棒に、監視ソフトはマルウェアに。入口をすり抜ける新型には社内で備える。10日間会社を守り抜くサイバー防衛ゲーム。">
 <meta property="og:title" content="ひとり情シス防衛戦">
-<meta property="og:description" content="朝は社長に詰められ、夜は寝ている間に攻撃が来る。対策と攻撃の相性を覚えて、10日間会社を守り抜け。">
+<meta property="og:description" content="朝は社長に詰められ、昼は攻撃と問い合わせが同時に来る。対策と攻撃の相性を覚えて、10日間会社を守り抜け。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://red-freegames.github.io/hitori-joshisu/">
 <meta property="og:site_name" content="RED FREE GAMES">
@@ -18,7 +18,7 @@
 <meta name="twitter:image" content="https://red-freegames.github.io/hitori-joshisu/og.png">
 <link rel="canonical" href="https://red-freegames.github.io/hitori-joshisu/">
 <style>
-/* 昼はオフィスの淡いグレー、夜は紺の監視画面。状態は信号色で示す */
+/* オフィスの淡いグレー。状態は信号色で示す */
 :root{color-scheme:light;--bg:#e9edf3;--panel:#fff;--ink:#14213d;--sub:#5b6680;--line:#d3d9e4;--accent:#0a64d8;--acbg:#e3eefc;--ok:#14935a;--okbg:#e2f6ec;--ng:#d7263d;--ngbg:#fde6e9;--warn:#c27c00;--warnbg:#fff3d6;--boss:#2b2f3a;--night:#0d1424}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.6;overflow-x:hidden;transition:background .6s}
@@ -87,8 +87,23 @@ canvas{display:block;width:100%;border-radius:16px;touch-action:manipulation}
 .boardbar{display:flex;gap:8px;align-items:center;margin-top:8px}
 .boardbar .info{flex:1;font-size:12px;font-weight:800;color:var(--sub)}
 body.night .boardbar .info{color:#93a1c2}
-.pill{border-radius:99px;padding:6px 14px;font-weight:900;font-size:13px;background:#26324f;color:#e6ecf8}
+.pill{border-radius:99px;padding:6px 14px;font-weight:900;font-size:13px;background:#dfe5ef;color:var(--ink)}
 .pill.on{background:var(--accent);color:#fff}
+.inbox{margin-top:10px;min-height:150px}
+.inbox .empty{display:grid;place-items:center;min-height:150px;border:2px dashed var(--line);border-radius:14px;color:var(--sub);font-size:13px;font-weight:800}
+.call{background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:12px 14px;animation:callIn .25s ease-out}
+.call.ok{border-color:var(--ok);background:var(--okbg)}
+.call.ng{border-color:var(--ng);background:var(--ngbg)}
+@keyframes callIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.call .who{display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:var(--accent)}
+.call .who span{color:var(--sub)}
+.call .q{margin-top:4px;font-size:14.5px;font-weight:700;line-height:1.7}
+.call .tb{height:4px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden}
+.call .tb i{display:block;height:100%;background:var(--accent)}
+.call .ans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.call .ans button{border:2px solid var(--line);border-radius:12px;padding:11px 8px;font-weight:900;font-size:14px;background:var(--panel);line-height:1.4}
+.call .r{font-size:13.5px;line-height:1.75;margin-top:6px}
+.call .r b{font-size:15px}
 .overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(13,20,36,.78);border-radius:16px;color:#e6ecf8;padding:20px}
 .overlay h2{font-size:22px;font-weight:900}
 .overlay p{font-size:13.5px;margin-top:8px;line-height:1.8;color:#b8c4de}
@@ -167,6 +182,9 @@ body.night .boardbar .info{color:#93a1c2}
 .fcl .atk .i{font-size:22px;line-height:1}
 .fcl .atk .c{font-size:13px;font-weight:900;color:var(--sub)}
 .fcl .atk.new{border-color:var(--ng);background:var(--ngbg)}
+.fcl .atk.aim{border-color:var(--warn);background:var(--warnbg)}
+.fcl .atk.less{opacity:.55}
+.fcl .atk .m{font-size:11px;font-weight:900;color:var(--warn)}
 .alert{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;margin-top:8px;background:var(--ngbg);color:var(--ng);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:800}
 .alert span{opacity:.7}
 .slist{display:flex;flex-direction:column;gap:6px;margin-top:6px}
@@ -308,7 +326,7 @@ const lanesOf = k => [].concat(TW[k].lane);
 const nameOf = k => S.up[k] ? TW[k].up.n : TW[k].n;
 const hitsOf = k => TW[k].hits.concat(S.up[k] ? TW[k].up.hits : []);
 
-/* ============ 夜ごとの攻撃 ============ */
+/* ============ 日ごとの攻撃 ============ */
 const WAVES = {
   1: { pw: 4 },
   2: { pw: 6 },
@@ -322,12 +340,22 @@ const WAVES = {
   10: { pw: 6, pw2: 4, phish: 6, phish2: 4, vpn: 4, vpn2: 3, supply: 6 },
 };
 const VULN_DAYS = [7, 9];
-const EMERG = 3;
+// 攻撃者は、入口で止められる攻撃を減らし、通る攻撃を増やしてくる（守りの薄いところを狙う）
+function entryBlocked(k) { return EN[k].lane !== undefined && TKEYS.some(t => TW[t].layer === "entry" && hitsOf(t).includes(k) && active(t)); }
+function waveNow() {
+  const W = Object.assign({}, WAVES[S.day]), moved = {};
+  const open = Object.keys(W).filter(k => EN[k].lane !== undefined && !entryBlocked(k));
+  if (!open.length) return { W, moved };
+  let pool = 0;
+  Object.keys(W).filter(entryBlocked).forEach(k => { const m = Math.floor(W[k] / 3); W[k] -= m; pool += m; });
+  for (let i = 0; pool > 0; i++, pool--) { const k = open[i % open.length]; W[k]++; moved[k] = (moved[k] || 0) + 1; }
+  return { W, moved };
+}
 
 let S;
 function fresh() {
   S = { day: 1, hp: 100, money: 0, budget: 30, own: {}, up: {}, backup: false, flags: {}, ko: 0, leaks: 0,
-        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {} };
+        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {}, usedCall: {}, off: {}, calls: 0, callsOk: 0 };
 }
 
 /* ============ 共通 ============ */
@@ -347,7 +375,7 @@ function hud() {
   $("hMo").textContent = S.money + "万円";
   $("hKo").textContent = S.ko + "件";
 }
-function active(k) { return S.own[k] && !(k === "patch" && S.vuln && !S.up.patch); }
+function active(k) { return S.own[k] && !S.off[k] && !(k === "patch" && S.vuln && !S.up.patch); }
 // その攻撃を止められる対策（アイコン付きの短い名前）
 function stoppers(type) {
   const r = [];
@@ -411,12 +439,12 @@ G.title = () => {
   render(`<div class="title">
     <div class="kick">CYBER DEFENSE SIMULATOR</div>
     <h1>ひとり情シス<br>防衛戦</h1>
-    <p class="lead">社員30人の会社で、IT担当はあなたひとり。<br>朝は社長に詰められ、<br>夜は、寝ている間に攻撃がやってくる。</p>
+    <p class="lead">社員30人の会社で、IT担当はあなたひとり。<br>朝は社長に詰められ、<br>昼は、攻撃と問い合わせが同時にやってくる。</p>
     <div class="rules">
       ☀️ 朝、予算で<b>対策を買う</b>（1回買えば、決まった攻撃をすべて止める）<br>
-      🌙 夜、寝ている間に<b>攻撃が来る</b><br>
+      🎯 攻撃者は<b>守りの薄いところ</b>を狙ってくる<br>
       🚪 <b>入口で止める</b>、🧱 <b>社内で広げない</b><br>
-      📞 抜けてきた攻撃は、<b>タップで止める</b>（1晩${EMERG}回）<br>
+      📞 業務中は、<b>社員からの問い合わせ</b>にも答える<br>
       <span style="color:var(--sub)">攻撃や対策をタップすると、くわしい説明が読めます</span>
     </div>
     <button class="go blue" onclick="G.start()">▶ 着任する</button>
@@ -435,13 +463,16 @@ G.morning = () => {
   if (!L) {
     boss = "君が新しいIT担当か。全部任せる。今日の予算は30万。……最近、パスワードが盗まれる事件が多いらしいぞ。";
   } else {
-    if (L.dmg >= 20) { angry = true; boss = pick(["昨夜のアレはなんだ！取引先から電話が鳴りっぱなしだぞ！……予算は出す。二度と起こすな。", "朝から警察と保険会社の対応だよ。……わかった、予算は増やそう。"]); }
-    else if (L.dmg > 0) { angry = true; boss = pick(["昨夜、少しやられたそうじゃないか。……まあいい、予算は少し増やす。", "「ちょっとした被害」で済んでよかったな、とは言わんぞ。予算は増やしておく。"]); }
-    else boss = pick(["昨夜も何も起きなかったな。本当に攻撃なんて来てるのか？予算は減らすぞ。", "平和だな。もう対策は足りてるんだろう？予算は減らす。", "何も起きないなら、その予算は営業に回したいんだがね。"]);
-    const lines = L.leak.map(x => `<button class="rline" onclick="G.infoAtk('${x.from}')"><span>${EN[x.from].ic}→${EN[x.as].ic}</span><span class="g">${EN[x.as].goal}${x.mit ? "（💾軽減）" : ""}</span><b>-${x.dmg}</b><span class="fix">${stoppers(x.from).concat(stoppers(x.as)).map(s => s.slice(0, 2)).filter((v, i, a) => a.indexOf(v) === i).join("")}</span></button>`).join("");
-    report = `<div class="card"><h2>📋 昨夜の報告<small>止めた ${L.ko} ・ 被害 ${L.leak.length}</small></h2>
-      ${lines || `<p class="calm">すべて止めた。……誰も褒めてくれない。</p>`}
-      ${L.breach ? `<p class="calm">侵入されたぶんの対応 -${L.breach}</p>` : ""}
+    if (L.leak.length && L.dmg >= 20) { angry = true; boss = pick(["昨日のアレはなんだ！取引先から電話が鳴りっぱなしだぞ！……予算は出す。二度と起こすな。", "朝から警察と保険会社の対応だよ。……わかった、予算は増やそう。"]); }
+    else if (L.leak.length) { angry = true; boss = pick(["昨日、少しやられたそうじゃないか。……まあいい、予算は少し増やす。", "「ちょっとした被害」で済んでよかったな、とは言わんぞ。予算は増やしておく。"]); }
+    else boss = pick(["昨日も何も起きなかったな。本当に攻撃なんて来てるのか？予算は減らすぞ。", "平和だな。もう対策は足りてるんだろう？予算は減らす。", "何も起きないなら、その予算は営業に回したいんだがね。"]);
+    const lines = L.leak.filter(x => x.from !== "call").map(x => `<button class="rline" onclick="G.infoAtk('${x.from}')"><span>${EN[x.from].ic}→${EN[x.as].ic}</span><span class="g">${EN[x.as].goal}${x.mit ? "（💾軽減）" : ""}</span><b>-${x.dmg}</b><span class="fix">${stoppers(x.from).concat(stoppers(x.as)).map(s => s.slice(0, 2)).filter((v, i, a) => a.indexOf(v) === i).join("")}</span></button>`).join("");
+    const bad = (L.calls || []).filter(x => !x.ok);
+    if (bad.length) { angry = true; boss += pick(["　それと、社員の問い合わせにまずい返事をしたそうだな。", "　あと、社員から『情シスに聞いたらいいって言われた』と聞いたぞ。"]); }
+    const clines = bad.map(x => { const c = CALLS.find(y => y.id === x.id); return `<button class="rline" onclick="G.infoCall('${c.id}')"><span>📞</span><span class="g">${c.who}「${c.bad}」${x.auto ? "（自己判断）" : ""}</span><span class="fix">ⓘ</span></button>`; }).join("");
+    report = `<div class="card"><h2>📋 昨日の報告<small>止めた ${L.ko} ・ 被害 ${L.leak.length} ・ 📞 ${(L.calls || []).length - bad.length}/${(L.calls || []).length}</small></h2>
+      ${lines || (clines ? "" : `<p class="calm">すべて止めた。……誰も褒めてくれない。</p>`)}${clines}
+      ${L.breach ? `<p class="calm">侵入されたぶんの対応 ${L.breach}件 -${Math.round(L.breach / 2)}</p>` : ""}
       ${lines ? `<p class="hint">右のアイコンは、止められた対策。タップで説明</p>` : ""}</div>`;
   }
   render(`<div class="scene">☀️ DAY ${S.day} ・ 朝 ・ 社長室</div>
@@ -453,36 +484,94 @@ G.morning = () => {
 };
 G.afterBoss = () => { const e = pickEvent(); if (e) return showEvent(e); G.prep(); };
 
-/* ============ イベント ============ */
+/* ============ 社員からの問い合わせ（業務時間中に届く） ============
+   good: 正しい対応 / bad: まずい対応。hit: まずいときに起きること
+   spawn: 社内に敵が湧く（社内の対策で止められる） / hp: 直接の被害 / off: その対策がその日止まる */
+const CALL_T = 10;
+const CALLS = [
+  { id: "pwchat", who: "営業", q: "パスワードを忘れました！チャットで新しいのを送ってください。急ぎです！",
+    good: "本人確認してリセット", bad: "チャットで送る", hit: { spawn: "acct" },
+    ok: "電話で本人と確かめてからリセットした。", ng: "チャットの相手は、乗っ取られた同僚のアカウントだった。",
+    long: "「急ぎで」「パスワードを教えて」は、なりすましの定番です。チャットやメールのアカウント自体が乗っ取られていることもあります。パスワードの再発行は、別の手段（電話や対面など）で本人だと確かめてから行うのが基本です。" },
+  { id: "sms", who: "総務", q: "宅配の不在通知SMSのリンクを開いて、会社のIDとパスワードを入れちゃいました……",
+    good: "すぐパスワードを変えさせる", bad: "様子を見る", hit: { spawn: "acct" },
+    ok: "すぐに変えたので、盗まれたパスワードは使えなくなった。", ng: "数時間後、そのIDで社内にログインされた。",
+    long: "入力してしまったら、とにかく早くパスワードを変えるのが一番の対策です。攻撃者は盗んだ情報をすぐに試します。正直に報告してくれた社員を責めないことも大切です。責めると、次から隠されてしまいます。" },
+  { id: "zip", who: "経理", q: "取引先から「請求書.zip」が届きました。開いていいですか？",
+    good: "開かずに電話で確認", bad: "開いていい", hit: { spawn: "mal" },
+    ok: "取引先は送っていなかった。なりすましメールだった。", ng: "開いた瞬間、PCがマルウェアに感染した。",
+    long: "請求書・見積書・配送伝票を装った添付ファイルは、マルウェア感染の入口の定番です。圧縮ファイルやパスワード付きの添付は、メールのチェックをすり抜けやすい形でもあります。心当たりがなければ、メールに書かれていない連絡先で送り主に確かめます。" },
+  { id: "invoice", who: "経理", min: 2, q: "取引先から「振込先の口座が変わりました」とメール。今日の支払いから変えておきますね。",
+    good: "元の番号に電話で確認", bad: "そのまま変える", hit: { hp: 8, n: "振込詐欺" },
+    ok: "取引先は口座を変えていなかった。詐欺メールだった。", ng: "取引先になりすました詐欺だった。お金は戻らない。",
+    long: "取引先になりすまして振込先を変えさせる手口（ビジネスメール詐欺）は、被害額が大きくなりがちです。確認の電話は、メールに書かれた番号ではなく、元から知っている番号にかけるのがコツです。" },
+  { id: "ceo", who: "経理", min: 5, q: "社長から電話で「極秘の買収だ、今日中に500万振り込め」と。声も社長そのものでした！",
+    good: "社長の携帯に折り返す", bad: "急ぎなら振り込む", hit: { hp: 12, n: "なりすまし電話" },
+    ok: "社長は何も知らなかった。AIで声をまねた詐欺だった。", ng: "社長はその時間、ゴルフ場にいた。AIで声をまねた詐欺だった。",
+    long: "数十秒の音声があれば、AIで声をまねられるようになりました。声や話し方では本人かどうか判断できません。お金の話は一度切って、こちらから知っている番号に折り返す。これだけで防げます。" },
+  { id: "usb", who: "社員", min: 2, q: "駐車場でUSBメモリを拾いました。誰のか、中身を見て確かめてもいいですか？",
+    good: "挿さずに捨てる", bad: "見ていいよ", hit: { spawn: "mal" },
+    ok: "挿さずに捨てた。拾ったUSBは挿さないのが鉄則。", ng: "中には「給与一覧.xlsx」。開いた瞬間、何かが動いた。",
+    long: "わざとUSBメモリを落として拾わせる手口は、実際にあります。「給与」「人事」など、つい開きたくなる名前のファイルが入っていることも。拾ったものは挿さずに、落とし物として扱います。" },
+  { id: "reboot", who: "設計", min: 3, q: "更新のための再起動、今日は忙しいので来週でいいですか？",
+    good: "昼休みに再起動して", bad: "来週でいい", hit: { off: "patch" },
+    ok: "昼休みに更新が終わった。", ng: "更新されていない機器が、さっそく狙われた。",
+    long: "更新は「出たらすぐ」が基本です。弱点が公開されると、攻撃者はそれを突く方法をすぐに作り、まだ更新していない会社を探して回ります。忙しさで後回しにした数日のすきが狙われます。" },
+  { id: "mfaspam", who: "営業", min: 3, q: "身に覚えのない「ログインを承認しますか？」がスマホに何度も来ます。押せば止まりますか？",
+    good: "押さずにパスワード変更", bad: "押して止める", hit: { spawn: "acct" },
+    ok: "パスワードが漏れていた。変えたので、もう入れない。", ng: "押した瞬間、攻撃者のログインが通った。",
+    long: "パスワードを盗んだ攻撃者が、承認の通知を何十回も送りつけて、根負けして押させる手口です（MFA疲労攻撃）。身に覚えのない承認は絶対に押さず、パスワードが漏れていると考えてすぐ変えます。数字を入力させる方式や、パスキーなら防ぎやすくなります。" },
+  { id: "remote", who: "社員", min: 3, q: "大手ソフト会社のサポートから電話。「PCが感染している、遠隔操作ソフトを入れて」と……",
+    good: "電話を切らせる", bad: "言われた通りに入れる", hit: { spawn: "mal" },
+    ok: "大手のサポートから突然電話が来ることはない。", ng: "遠隔操作で、PCを乗っ取られた。",
+    long: "サポートを名乗って遠隔操作ソフトを入れさせる手口（サポート詐欺）は、画面に「ウイルス感染」と出して電話させる形も多くあります。本物のメーカーが突然電話してきて、ソフトを入れさせることはありません。" },
+  { id: "ai", who: "企画", min: 4, q: "顧客リストを無料のAIサービスに貼って、分析させてもいいですか？",
+    good: "個人情報は入れない", bad: "いいよ", hit: { hp: 6, n: "情報流出" },
+    ok: "名前や連絡先を消してから使うことにした。", ng: "入力した内容は、サービス側の学習に使われる設定だった。",
+    long: "生成AIは便利ですが、入力した内容がサービス側に保存されたり、学習に使われたりすることがあります。顧客の個人情報や社外秘は入れない、会社として使ってよいサービスと設定を決めておく、が基本です。" },
+  { id: "share", who: "設計", min: 3, q: "取引先にファイルを送りたいので、共有リンクを「誰でも見られる」にしていいですか？",
+    good: "相手だけ見られる設定に", bad: "いいよ", hit: { hp: 5, n: "情報流出" },
+    ok: "相手のアカウントだけに共有した。", ng: "リンクが転送されて、関係ない人にも見られていた。",
+    long: "「リンクを知っている人なら誰でも見られる」設定は、リンクが転送されたり、検索に拾われたりすると、誰でも見られる状態になります。共有は相手を指定し、期限を付けるのが基本です。" },
+  { id: "quit", who: "人事", min: 2, q: "先月辞めた人のアカウント、まだ残ってます。消したほうがいいですか？",
+    good: "今日中に消す", bad: "そのうちで", hit: { spawn: "acct" },
+    ok: "使われていないアカウントを消した。", ng: "誰も見ていないアカウントは、攻撃者の格好の隠れ家だった。",
+    long: "退職者や使われていないアカウントは、パスワードを変える人も、不審なログインに気づく人もいないため、乗っ取りに使われやすい入口です。辞めた日に止めるのが基本です。" },
+];
+function callsFor(day) {
+  const n = Math.min(6, 1 + Math.ceil(day / 2));
+  const pool = shuffle(CALLS.filter(c => day >= (c.min || 1)));
+  // まだ出していないものを優先
+  pool.sort((a, b) => (S.usedCall[a.id] || 0) - (S.usedCall[b.id] || 0));
+  return pool.slice(0, n).map(c => { S.usedCall[c.id] = (S.usedCall[c.id] || 0) + 1; return c; });
+}
+G.infoCall = (id) => {
+  const c = CALLS.find(x => x.id === id);
+  const h = c.hit;
+  const what = h.spawn ? `社内に${EN[h.spawn].ic}${EN[h.spawn].n}が現れる` : h.hp ? `${h.n}（体力 -${h.hp}）` : `${TW[h.off].ic}${TW[h.off].n}がその日止まる`;
+  sheet(`<div class="shk">問い合わせ ・ ${c.who}</div><h2>📞 ${c.q}</h2><p class="long">${c.long}</p>
+    <div class="flow"><div><span>正しい対応</span><i>${c.good}</i></div><div><span>まずい対応</span><i class="ng">${c.bad}</i></div><div><span>まずいと</span><b>${what}</b></div>
+    ${h.spawn ? `<div><span>社内で止める</span>${chipsOf(stoppers(h.spawn), "in")}</div>` : ""}</div>`);
+};
+
+/* ============ イベント（朝） ============ */
 const EV = [
   { id: "boss2fa", min: 2, cond: () => S.own.mfa && !S.flags.no2fa, kick: "社長", title: "社長からの頼み",
     q: "「二段階認証、毎回スマホを出すのが面倒なんだ。俺のアカウントだけ外してくれないか？」",
     o: [["外してあげる", () => { S.flags.no2fa = true; S.money += 10; return "社長は上機嫌で、予算を10万円上乗せしてくれた。……ただ、一番狙われるアカウントの守りに穴が空いた。攻撃者は、権限の大きい人ほど狙う。（🔑の一部が📱をすり抜ける）"; }],
         ["丁寧に断る", () => { S.money = Math.max(0, S.money - 5); return "「融通がきかないな」社長はむっとした。（お金 -5万円）"; }]] },
-  { id: "usb", min: 3, kick: "社員", title: "拾ったUSBメモリ",
-    q: "「駐車場でUSBメモリを拾いました。誰のか、中身を見て確かめてもいいですか？」",
-    o: [["見ていいよ", () => { S.extra.push("usb", "usb"); return "中には「給与一覧.xlsx」。開いた瞬間、何かが動いた気がする……。わざとUSBを落として拾わせる手口は、実際にある。（今夜、🦠が社内に直接2体）"; }],
-        ["触らずに捨てさせる", () => "「もったいない……」と言いつつ、捨ててくれた。拾ったUSBは挿さないのが鉄則。"]] },
   { id: "snake", min: 3, kick: "営業電話", title: "「100%防ぐ」製品",
     q: "「AIがあらゆる攻撃を100%防ぐ『完全防御ボックス』！今なら20万円です。社長さんにもご案内済みです」",
     o: [["買う", () => { S.money = Math.max(0, S.money - 20); return "届いた箱の中身は、古いメールフィルタだった。20万円が消えた。「100%防ぐ」製品は存在しない。"; }],
         ["断る", () => "「100%防ぐ」製品は存在しない。正しい判断だ。"]] },
-  { id: "invoice", min: 2, kick: "経理", title: "振込先の変更",
-    q: "経理「取引先から『振込先の口座が変わりました』とメールが来ました。来週の支払いから変えておきますね」",
-    o: [["そのまま任せる", () => { S.hp -= 10; return "……取引先になりすました詐欺メールだった。支払ったお金は戻ってこない。（体力 -10）"; }],
-        ["取引先に電話で確認させる", () => "取引先は口座を変えていなかった。詐欺メールだった。メールに書かれた番号ではなく、元から知っている番号にかけるのがコツ。"]] },
-  { id: "ceo", min: 5, kick: "経理", title: "社長からの電話",
-    q: "経理「さっき社長から電話があって、『極秘の買収で、今日中に500万振り込んでくれ』と。声も社長そのものでした。振り込みますね」",
-    o: [["急ぎなら振り込ませる", () => { S.hp -= 15; return "社長はその時間、ゴルフ場にいた。AIで声をまねた詐欺だった。（体力 -15）"; }],
-        ["一度切って、社長の携帯に折り返させる", () => "社長は何も知らなかった。声はAIでまねできても、こちらからの折り返しまではまねできない。"]] },
   { id: "byod", min: 4, cond: () => !S.flags.byod, kick: "社員", title: "在宅勤務の相談",
     q: "「家の私物パソコンでも仕事できるようにしてほしいです。みんなそう言ってます」",
-    o: [["許可する", () => { S.flags.byod = true; S.extra.push("usb"); return "社員は大喜びだ。ただ、守れていない私物PCが社内につながるようになった。（今夜、🦠が社内に直接1体）"; }],
+    o: [["許可する", () => { S.flags.byod = true; S.extra.push("usb"); return "社員は大喜びだ。ただ、守れていない私物PCが社内につながるようになった。（今日、🦠が社内に直接1体）"; }],
         ["会社のPCを貸し出す（10万円）", () => { S.money = Math.max(0, S.money - 10); return "少しお金はかかったが、守れるPCで安全に在宅できるようになった。"; }]] },
   { id: "oldpc", min: 4, kick: "社員", title: "古いパソコン",
     q: "「総務のパソコン、もうサポートが切れたWindowsらしいです。でも動くし、いいですよね？」",
     o: [["買い替える（8万円）", () => { S.money = Math.max(0, S.money - 8); return "新しいPCに入れ替えた。更新が届かないPCは、それだけで穴になる。"; }],
-        ["動くならそのままで", () => { S.extra.push("usb"); return "更新されないPCは、攻撃者にとって鍵の開いたドアだ。（今夜、🦠が社内に直接1体）"; }]] },
+        ["動くならそのままで", () => { S.extra.push("usb"); return "更新されないPCは、攻撃者にとって鍵の開いたドアだ。（今日、🦠が社内に直接1体）"; }]] },
 ];
 function pickEvent() {
   if (S.day < 2) return null;
@@ -501,7 +590,7 @@ G.ev = (i) => {
   const r = S.curEv.o[i][1]();
   hud();
   $("evo").innerHTML = `<button disabled style="border-color:var(--accent)">${S.curEv.o[i][0]}</button>`;
-  $("evr").innerHTML = `<div class="res">${r}</div><button class="go" onclick="${S.hp <= 0 ? "G.end(false)" : "G.prep()"}">${S.hp <= 0 ? "……" : "準備へ ▶"}</button>`;
+  $("evr").innerHTML = `<div class="res">${r}</div><button class="go" onclick="G.prep()">準備へ ▶</button>`;
 };
 
 /* ============ 準備（買う） ============ */
@@ -516,19 +605,19 @@ const NEWS = {
 G.prep = () => {
   hud();
   const W = WAVES[S.day];
-  const fc = Object.keys(W).map(k => `<button class="atk ${S.seen[k] ? "" : "new"}" onclick="G.infoAtk('${k}')"><span class="i">${EN[k].ic}</span><span class="c">×${W[k]}</span></button>`).join("");
   const alerts = [];
   if (NEWS[S.day]) alerts.push(`<button class="alert" onclick="G.infoAtk('${Object.keys(EN).find(k => EN[k].ic === NEWS[S.day][0])}')">${NEWS[S.day][0]} ${NEWS[S.day][1]}<span>ⓘ</span></button>`);
   if (S.vuln && !S.up.patch) alerts.push(`<button class="alert" onclick="G.infoDef('patch')">🔧 機器に新しい弱点。当て直しが必要<span>ⓘ</span></button>`);
-  if (S.extra.length) alerts.push(`<div class="alert">🦠 今夜、社内に直接 ${S.extra.length}体</div>`);
+  if (S.extra.length) alerts.push(`<div class="alert">🦠 今日、社内に直接 ${S.extra.length}体</div>`);
   const newK = Object.keys(W).filter(k => !S.seen[k]);
+  S.seenOld = Object.assign({}, S.seen);
   render(`<div class="scene">☀️ DAY ${S.day} ・ 昼 ・ 準備</div>
-    <div class="card"><h2>📡 今夜の攻撃<small>タップで説明</small></h2><div class="fcl">${fc}</div>${alerts.join("")}</div>
+    <div class="card"><h2>📡 今日の攻撃<small>タップで説明</small></h2><div class="fcl" id="fcl"></div><p class="hint" id="aim"></p>${alerts.join("")}</div>
     <div class="boardwrap"><canvas id="cv"></canvas></div>
     <div class="card"><h2>🛒 対策<small id="shopLeft"></small></h2><div class="slist" id="shop"></div></div>
-    <button class="go" onclick="G.night()">🏠 帰宅する（夜へ）</button>`);
+    <button class="go" onclick="G.night()">💼 始業する</button>`);
   Object.keys(W).forEach(k => S.seen[k] = true);
-  setupCanvas(); drawBoard(); drawShop();
+  setupCanvas(); drawBoard(); drawShop(); drawForecast();
   $("cv").onclick = boardTapPrep;
   if (newK.length) setTimeout(() => G.infoAtk(newK[0]), 250);   // 新しい攻撃は説明を自動で開く
 };
@@ -551,7 +640,12 @@ function drawShop() {
       ${S.backup ? `<span class="done">導入済</span>` : `<button class="act" ${S.money < 15 ? "disabled" : ""} onclick="event.stopPropagation();G.backup()">導入<small>15万</small></button>`}</div>`;
   $("shopLeft").textContent = `残り ${S.money}万円`;
 }
-function refresh() { if ($("shop")) { drawShop(); drawBoard(); } }
+function drawForecast() {
+  const { W, moved } = waveNow(), seen = WAVES[S.day];
+  $("fcl").innerHTML = Object.keys(W).map(k => `<button class="atk ${!S.seenOld[k] ? "new" : ""} ${moved[k] ? "aim" : ""} ${W[k] < seen[k] ? "less" : ""}" onclick="G.infoAtk('${k}')"><span class="i">${EN[k].ic}</span><span class="c">×${W[k]}</span>${moved[k] ? `<span class="m">🎯+${moved[k]}</span>` : ""}</button>`).join("");
+  $("aim").innerHTML = Object.keys(moved).length ? "🎯 止められる攻撃は減り、守りの薄いところに回ってくる" : "";
+}
+function refresh() { if ($("shop")) { drawShop(); drawBoard(); drawForecast(); } }
 function spend(c) { S.money -= c; S.spent += c; hud(); }
 G.buy = (k) => { if (S.own[k] || S.money < TW[k].cost) return; spend(TW[k].cost); S.own[k] = true; refresh(); };
 G.upgrade = (k) => { const u = TW[k].up; if (!S.own[k] || S.up[k] || S.money < u.cost) return; spend(u.cost); S.up[k] = true; if (k === "patch") S.vuln = false; refresh(); };
@@ -569,9 +663,9 @@ function boardTapPrep(ev) {
 
 /* ============ 盤面の描画 ============ */
 const CV = { w: 360, h: 480, ctx: null };
-function setupCanvas() {
+function setupCanvas(work) {
   const c = $("cv");
-  const w = c.clientWidth || 360, h = Math.min(600, Math.round(w * 1.3));
+  const w = c.clientWidth || 360, h = Math.min(work ? 440 : 600, Math.round(w * (work ? 1.05 : 1.3)));
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.height = h + "px";
   const ctx = c.getContext("2d");
@@ -597,7 +691,7 @@ function gate(ctx, k, lane, y, col, N) {
 function drawBoard(N) {
   const { w, h, ctx } = CV;
   if (!ctx || !$("cv")) return;
-  const night = !!N;
+  const night = false;
   const col = night
     ? { bg: "#0f1a30", zoneIn: "#132241", lane: "rgba(120,150,210,.08)", txt: "#8fa0c4", line: "#3d5385", slot: "rgba(143,160,196,.45)", gate: "#1d3b3a", gateOff: "#3a1a26", ok: "#2fe3a5", goal: "#3a1a26" }
     : { bg: "#f7f9fc", zoneIn: "#eef3fb", lane: "rgba(20,33,61,.045)", txt: "#5b6680", line: "#9aa6bd", slot: "rgba(91,102,128,.45)", gate: "#e2f6ec", gateOff: "#fde6e9", ok: "#14935a", goal: "#fdeef0" };
@@ -624,6 +718,7 @@ function drawBoard(N) {
     const x = e.x * w, y = e.y * h, r = w * .045;
     ctx.fillStyle = e.inside ? "rgba(215,38,61,.92)" : EN[e.t].bypass ? "rgba(255,214,102,.95)" : "rgba(255,255,255,.95)";
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = e.inside ? "#a0162a" : "rgba(20,33,61,.35)"; ctx.stroke();
     ctx.fillStyle = "#000"; ctx.font = `${Math.round(r * 1.2)}px sans-serif`; ctx.fillText(EN[e.t].ic, x, y + 1);
   });
   N.pops.forEach(p => {
@@ -638,11 +733,11 @@ function drawBoard(N) {
   });
 }
 
-/* ============ 夜（ウェーブ） ============ */
+/* ============ 業務時間（ウェーブ＋問い合わせ） ============ */
 let NT = null, RAF = 0;
 function stopNight() { if (RAF) cancelAnimationFrame(RAF); RAF = 0; NT = null; closeSheet(); }
 function buildNight() {
-  const W = WAVES[S.day], q = [];
+  const W = waveNow().W, q = [];
   Object.entries(W).forEach(([k, n]) => { for (let i = 0; i < n; i++) q.push(k); });
   shuffle(q);
   const span = 6 + q.length * 1.2;
@@ -650,7 +745,9 @@ function buildNight() {
   S.extra.forEach((k, i) => spawns.push({ k, at: 3 + i * 2.5, inside: true }));
   S.extra = [];
   spawns.sort((a, b) => a.at - b.at);
-  return { t: 0, spawns, en: [], pops: [], emerg: EMERG, speed: 1, ko: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {} };
+  const cl = callsFor(S.day);
+  const calls = cl.map((c, i) => ({ c, at: 3 + (i + rnd(.1, .6)) * (span + 4) / cl.length }));
+  return { t: 0, spawns, en: [], pops: [], speed: 1, ko: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {}, calls, cur: null, callLog: [] };
 }
 function pop(N, x, y, t, kind) {
   const C = { ok: ["#14935a", "#fff"], ng: ["#d7263d", "#fff"], warn: ["#c27c00", "#fff"] }[kind];
@@ -665,8 +762,59 @@ function blocker(e, layer) {
   }
   return null;
 }
+// 敵を社内に直接出す（問い合わせのミスなど）
+function spawnInside(N, t, from) {
+  const lane = t === "acct" ? 1 : pick([0, 2]);
+  N.en.push({ t, from, lane, x: LANES[lane].x - .09, y: BOUND + .02, inside: true });
+}
+function stepCalls(N, dt) {
+  if (N.cur) {
+    N.cur.t -= dt;
+    if (N.cur.t <= 0) { if (N.cur.res) { N.cur = null; drawCall(N); } else answerCall(N, null); }
+    else if (!N.cur.res && $("tbar")) $("tbar").style.width = (N.cur.t / CALL_T * 100) + "%";
+  }
+  if (!N.cur && N.calls.length && N.calls[0].at <= N.t) {
+    const c = N.calls.shift().c;
+    N.cur = { c, t: CALL_T, flip: Math.random() < .5 };
+    drawCall(N);
+  }
+}
+function answerCall(N, good) {
+  const cur = N.cur; if (!cur || cur.res) return;
+  const auto = good === null;
+  if (auto) good = Math.random() < .5;
+  const c = cur.c, h = c.hit;
+  S.calls++; if (good) S.callsOk++;
+  N.callLog.push({ id: c.id, ok: good, auto });
+  if (!good) {
+    if (h.spawn) { spawnInside(N, h.spawn, "call"); pop(N, LANES[h.spawn === "acct" ? 1 : 0].x, BOUND + .06, "📞ミス", "warn"); }
+    if (h.hp) { const d = Math.round(h.hp * (1 + (S.day - 1) * .05)); S.hp -= d; N.dmg += d; N.leak.push({ from: "call", as: c.id, dmg: d, mit: false }); pop(N, .5, GOAL - .02, `${h.n} -${d}`, "ng"); }
+    if (h.off) { if (S.own[h.off]) { S.off[h.off] = true; pop(N, LANES[lanesOf(h.off)[0]].x, ENTRY_Y - .05, "更新が止まった", "ng"); } else spawnInside(N, "mal", "call"); }
+  }
+  cur.res = { good, auto }; cur.t = 2.6;
+  drawCall(N); hud();
+}
+G.answer = (i) => { const N = NT; if (!N || !N.cur || N.cur.res) return; answerCall(N, (i === 0) !== N.cur.flip); };
+function drawCall(N) {
+  const box = $("inbox"); if (!box) return;
+  const cur = N.cur;
+  if (!cur) { box.innerHTML = `<div class="empty">📭 問い合わせはありません${N.calls.length ? "" : "（今日はもう来ない）"}</div>`; return; }
+  const c = cur.c;
+  if (cur.res) {
+    const g = cur.res.good;
+    box.innerHTML = `<div class="call ${g ? "ok" : "ng"}" onclick="G.skipCall()"><div class="who">📞 ${c.who}<span>${cur.res.auto ? "⏳ 返事がないので自分で判断" : ""}</span></div>
+      <div class="r"><b>${g ? "⭕ " + c.good : "❌ " + c.bad}</b><br>${g ? c.ok : c.ng}</div></div>`;
+    return;
+  }
+  const opts = [[c.good, 1], [c.bad, 0]]; if (cur.flip) opts.reverse();
+  box.innerHTML = `<div class="call"><div class="who">📞 ${c.who}から<span>返事がないと自分で判断します</span></div><p class="q">${c.q}</p>
+    <div class="tb"><i id="tbar" style="width:100%"></i></div>
+    <div class="ans">${opts.map((o, i) => `<button onclick="G.answer(${i})">${o[0]}</button>`).join("")}</div></div>`;
+}
+G.skipCall = () => { const N = NT; if (N && N.cur && N.cur.res) { N.cur = null; drawCall(N); } };
 function nightStep(N, dt) {
   N.t += dt;
+  stepCalls(N, dt);
   while (N.spawns.length && N.spawns[0].at <= N.t) {
     const s = N.spawns.shift();
     const lane = s.k === "supply" ? pick([0, 1, 2]) : s.inside ? pick([0, 2]) : EN[s.k].lane;
@@ -685,8 +833,8 @@ function nightStep(N, dt) {
     }
     if (!e.inside && e.y >= BOUND) {
       e.inside = true; e.t = EN[e.from].to;
-      S.hp -= 1; N.dmg += 1; N.breach++;
-      pop(N, e.x, BOUND, `侵入 -1`, "ng");
+      S.hp -= .5; N.dmg += .5; N.breach++;
+      pop(N, e.x, BOUND, `侵入`, "ng");
     }
     if (e.inside && !e.passI && e.y >= INSIDE_Y) {
       e.passI = true;
@@ -698,32 +846,33 @@ function nightStep(N, dt) {
       let mit = false;
       if (e.t === "mal" && S.backup) { dmg = Math.round(dmg / 4); mit = true; }
       N.dmg += dmg; S.hp -= dmg;
-      N.leak.push({ from: e.from, as: e.t, dmg, mit });
+      N.leak.push({ from: e.from === "call" ? e.t : e.from, as: e.t, dmg, mit, call: e.from === "call" });
       pop(N, e.x, GOAL - .02, `-${dmg}`, "ng");
       e.gone = true;
     }
   }
   N.en = N.en.filter(e => !e.gone);
   N.pops.forEach(p => p.life -= dt); N.pops = N.pops.filter(p => p.life > 0);
-  if (!N.spawns.length && !N.en.length) N.done = true;
+  if (!N.spawns.length && !N.en.length && !N.calls.length && !N.cur) N.done = true;
 }
 G.night = () => {
   closeSheet();
-  document.body.className = "night";
+  document.body.className = "";
   hud();
-  render(`<div class="scene" style="color:#7fb3ff">🌙 DAY ${S.day} ・ 夜</div>
-    <div class="boardwrap"><canvas id="cv"></canvas><div class="overlay" id="ov"><div><h2>💤 おやすみなさい</h2><p>抜けてきた攻撃は、タップで止められる（${EMERG}回）</p>
-      <button class="go blue" style="margin-top:14px" onclick="G.runNight()">眠る</button></div></div></div>
-    <div class="boardbar"><span class="info" id="ninfo"></span><button class="pill" id="spd" onclick="G.speed()">▶▶ 2倍速</button></div>`);
-  setupCanvas();
+  render(`<div class="scene">💼 DAY ${S.day} ・ 業務時間</div>
+    <div class="boardwrap"><canvas id="cv"></canvas><div class="overlay" id="ov"><div><h2>💼 始業</h2><p>攻撃は、買った対策が自動で止める。<br>あなたは、社員からの📞問い合わせに答えよう。<br>放っておくと、社員が自分で判断してしまう。</p>
+      <button class="go blue" style="margin-top:14px" onclick="G.runNight()">業務開始</button></div></div></div>
+    <div class="boardbar"><span class="info" id="ninfo"></span><button class="pill" id="spd" onclick="G.speed()">▶▶ 2倍速</button></div>
+    <div class="inbox" id="inbox"></div>`);
+  setupCanvas(true);
   NT = buildNight();
-  drawBoard(NT); updInfo();
-  $("cv").onpointerdown = nightTap;
+  drawBoard(NT); updInfo(); drawCall(NT);
   window.scrollTo(0, 0);
 };
 function updInfo() {
   const N = NT; if (!N || !$("ninfo")) return;
-  $("ninfo").textContent = `📞 ${"●".repeat(N.emerg)}${"○".repeat(EMERG - N.emerg)}　残り ${N.spawns.length + N.en.length}体`;
+  const ok = N.callLog.filter(x => x.ok).length;
+  $("ninfo").textContent = `攻撃 残り ${N.spawns.length + N.en.length}　📞 ${ok}/${N.callLog.length}`;
 }
 G.speed = () => { if (!NT) return; NT.speed = NT.speed === 1 ? 2 : 1; $("spd").classList.toggle("on", NT.speed === 2); };
 G.runNight = () => {
@@ -735,37 +884,21 @@ G.runNight = () => {
     const dt = Math.min(.05, (now - last) / 1000) * N.speed; last = now;
     nightStep(N, dt);
     drawBoard(N); updInfo(); hud();
-    if (N.done || S.hp <= 0) { RAF = 0; setTimeout(() => { if (NT === N) endNight(); }, 800); return; }
+    if (N.done || S.hp <= 0) { RAF = 0; setTimeout(() => { if (NT === N) endNight(); }, 900); return; }
     RAF = requestAnimationFrame(loop);
   };
   RAF = requestAnimationFrame(loop);
 };
-G.emergency = (e) => {
-  const N = NT;
-  if (!N || N.emerg <= 0 || !e || e.gone) return false;
-  N.emerg--; e.gone = true; N.ko++; S.ko++;
-  pop(N, e.x, e.y - .03, "📞対応", "warn");
-  updInfo();
-  return true;
-};
-function nightTap(ev) {
-  const N = NT;
-  if (!N || N.emerg <= 0 || $("ov")) return;
-  const r = $("cv").getBoundingClientRect();
-  const px = ev.clientX - r.left, py = ev.clientY - r.top;
-  let best = null, bd = CV.w * .09;
-  N.en.forEach(e => { const d = Math.hypot(e.x * CV.w - px, e.y * CV.h - py); if (d < bd) { bd = d; best = e; } });
-  if (best) G.emergency(best);
-}
 function endNight() {
   const N = NT;
-  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach };
+  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach, calls: N.callLog };
+  S.off = {};
   S.leaks += N.leak.length;
   NT = null;
   if (S.hp <= 0) return G.end(false);
   if (S.day >= DAYS) return G.end(true);
   if (N.leak.length > 0) S.budget = Math.min(50, Math.round(S.budget * 1.2) + 2);
-  else S.budget = Math.max(15, Math.round(S.budget * .85));
+  else S.budget = Math.max(18, Math.round(S.budget * .85));
   S.day++;
   S.money += S.budget;
   if (VULN_DAYS.includes(S.day) && S.own.patch && !S.up.patch) S.vuln = true;
@@ -784,7 +917,7 @@ G.end = (ok) => {
   else if (hp >= 50) { rank = "現場の守護神"; lead = "いくつか被害は出た。それでも会社は回り続けた。"; }
   else if (hp >= 25) { rank = "満身創痍の情シス"; lead = "会社は生き残った。ぎりぎりで。<br>今日も社長室に呼ばれている。"; }
   else { rank = "首の皮一枚"; lead = "倒産だけは免れた。<br>机には、取引先へのお詫び状の束が残っている。"; }
-  const text = `「ひとり情シス防衛戦」${ok ? "10日間を守り抜いた" : S.day + "日目に倒産した"}。\n称号【${rank}】 体力${hp} / 止めた攻撃${S.ko}件\n#ひとり情シス防衛戦`;
+  const text = `「ひとり情シス防衛戦」${ok ? "10日間を守り抜いた" : S.day + "日目に倒産した"}。\n称号【${rank}】 体力${hp} / 止めた攻撃${S.ko}件 / 問い合わせ正解${S.callsOk}/${S.calls}\n#ひとり情シス防衛戦`;
   const sheetRows = OUTER.map(k => {
     const nt = NEWTYPE.find(x => EN[x].base === k);
     return `<div class="crow"><button onclick="G.infoAtk('${k}')">${EN[k].ic}</button><span>→</span><b>${stoppers(k).map(s => s.slice(0, 2)).join("")}</b>
@@ -813,7 +946,7 @@ G.end = (ok) => {
   window.scrollTo(0, 0);
 };
 
-window.addEventListener("resize", () => { if ($("cv")) { setupCanvas(); drawBoard(NT || undefined); } });
+window.addEventListener("resize", () => { if ($("cv")) { setupCanvas(!!NT); drawBoard(NT || undefined); } });
 window.G = G;
 G.title();
 </script>
