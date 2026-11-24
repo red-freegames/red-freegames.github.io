@@ -322,6 +322,8 @@ const TW = {
 const TKEYS = Object.keys(TW);
 const BACKUP = { ic: "💾", n: "バックアップ", cost: 15,
   long: "データのコピーを、ネットから切り離した場所に定期的に保管しておくことです。ネットにつながったままのバックアップは、ランサムウェアに一緒に暗号化されてしまうことがあります。攻撃を止める力はありませんが、やられても身代金を払わずに元に戻せる「最後の砦」です。ゲームでは🦠マルウェアの被害を1/4にします。現実では、本当に戻せるかをときどき試しておくことも大切です。" };
+const TRAIN = { ic: "🎓", n: "社員研修", cost: 20,
+  long: "怪しいメールの見分け方、パスワードの扱い、お金の話は折り返して確かめる、おかしいと思ったらすぐ報告する。こうした基本を、社員全員に定期的に教えることです。どんなに機械の対策を積んでも、最後に判断するのは人です。実際の被害も、社員のうっかりから始まるものが少なくありません。ゲームでは、あなたが返事できなかった📞問い合わせで、社員が自分で正しく判断できる確率が50%から80%に上がります。現実では、一度きりではなく、訓練メールなどで繰り返すことが大切です。" };
 const lanesOf = k => [].concat(TW[k].lane);
 const nameOf = k => S.up[k] ? TW[k].up.n : TW[k].n;
 const hitsOf = k => TW[k].hits.concat(S.up[k] ? TW[k].up.hits : []);
@@ -414,6 +416,11 @@ G.infoAtk = (k) => {
   sheet(`<div class="shk">攻撃</div><h2>${e.ic} ${e.n}</h2><p class="long">${e.long}</p>${flow}`);
 };
 G.infoDef = (k) => {
+  if (k === "train") {
+    sheet(`<div class="shk">対策 ・ 人への投資</div><h2>${TRAIN.ic} ${TRAIN.n}</h2><p class="long">${TRAIN.long}</p>
+      <div class="shbuy">${S.train ? `<button class="act off" disabled>実施済み</button>` : `<button class="act" ${S.money < TRAIN.cost ? "disabled" : ""} onclick="G.train();G.infoDef('train')">実施する　${TRAIN.cost}万円</button>`}</div>`);
+    return;
+  }
   if (k === "backup") {
     sheet(`<div class="shk">対策 ・ 最後の砦</div><h2>${BACKUP.ic} ${BACKUP.n}</h2><p class="long">${BACKUP.long}</p>
       <div class="shbuy">${S.backup ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${S.money < BACKUP.cost ? "disabled" : ""} onclick="G.backup();G.infoDef('backup')">導入する　${BACKUP.cost}万円</button>`}</div>`);
@@ -444,7 +451,7 @@ G.title = () => {
       ☀️ 朝、予算で<b>対策を買う</b>（1回買えば、決まった攻撃をすべて止める）<br>
       🎯 攻撃者は<b>守りの薄いところ</b>を狙ってくる<br>
       🚪 <b>入口で止める</b>、🧱 <b>社内で広げない</b><br>
-      📞 業務中は、<b>社員からの問い合わせ</b>にも答える<br>
+      📞 業務中は、<b>社員からの問い合わせ</b>にも答える（🎓研修で社員も賢くなる）<br>
       <span style="color:var(--sub)">攻撃や対策をタップすると、くわしい説明が読めます</span>
     </div>
     <button class="go blue" onclick="G.start()">▶ 着任する</button>
@@ -680,6 +687,23 @@ const CALLS = [
     good: "転送はやめてもらう", bad: "いいよ", hit: { hp: 5, n: "情報流出" },
     ok: "スマホに会社のメールアプリを入れてもらった。", ng: "個人メールが乗っ取られ、会社のメールも全部筒抜けに。",
     long: "外部への自動転送は、本人が気づかないまま情報を流し続けます。攻撃者がアカウントを乗っ取ったあと、こっそり転送設定を仕込む手口もよくあります。" },
+  /* ---- 内部不正 ---- */
+  { id: "bulkdl", who: "システム", min: 3, q: "（自動通知）来月辞める営業さんが、顧客データを夜中に大量にダウンロードしています。",
+    good: "本人と上司に確認する", bad: "本人の自由", hit: { hp: 8, n: "内部不正" },
+    ok: "転職先に持っていくつもりだった。止められた。", ng: "顧客データは、転職先の会社に持ち出されていた。",
+    long: "情報漏えいは外からの攻撃だけでなく、社員や元社員による持ち出しからも起きます。退職前に大量のデータを持ち出す例は特に多くあります。ふだんと違う大量のダウンロードに気づける仕組みと、退職時の権限の見直しが大切です。" },
+  { id: "usbcopy", who: "設計", min: 2, q: "今月で辞めるんですが、自分が作った図面を私物のUSBにコピーして持って帰っていいですか？",
+    good: "会社の資料なので断る", bad: "自分で作ったならいい", hit: { hp: 6, n: "内部不正" },
+    ok: "仕事で作ったものは会社の資料。丁寧に断った。", ng: "図面は、競合の会社に渡っていた。",
+    long: "仕事で作った資料は、本人が作ったものでも会社の資料です。私物のUSBへのコピーを許すと、どこに渡ったか追えなくなります。USBへの書き出しを制限する仕組みや、退職時のルールを決めておきます。" },
+  { id: "solo", who: "経理", min: 4, q: "振込の手続き、ベテランの○○さんが一人で全部やってます。任せておいて大丈夫ですよね？",
+    good: "2人で確認する仕組みに", bad: "任せておく", hit: { hp: 8, n: "内部不正" },
+    ok: "入力と承認を別の人が行う仕組みにした。", ng: "数年にわたって、少しずつお金が抜かれていた。",
+    long: "お金の流れを一人だけが握っていると、不正も間違いも誰にも気づかれません。入力する人と承認する人を分ける（職務の分離）のが基本です。疑うためではなく、本人を守るための仕組みでもあります。" },
+  { id: "adminpw", who: "総務", min: 3, q: "サーバーの管理者パスワード、全員が知ってます。辞めた人も知ってますけど、変えなくていいですか？",
+    good: "変えて、人ごとのIDに", bad: "そのままでいい", hit: { spawn: "acct" },
+    ok: "パスワードを変え、管理者は人ごとのIDにした。", ng: "辞めた人のところから、パスワードが漏れていた。",
+    long: "みんなで共有するパスワードは、誰が使ったか分からず、辞めた人も使えたままになります。管理者の作業は人ごとのIDで行い、共有のパスワードは人が抜けるたびに変えます。" },
   /* ---- 対策を止めてしまう ---- */
   { id: "reboot", who: "設計", min: 3, q: "更新のための再起動、今日は忙しいので来週でいいですか？",
     good: "昼休みに再起動して", bad: "来週でいい", hit: { off: "patch" },
@@ -803,6 +827,9 @@ function drawShop() {
   };
   $("shop").innerHTML = `<div class="sgrp">🚪 入口</div>${TKEYS.filter(k => TW[k].layer === "entry").map(row).join("")}
     <div class="sgrp">🧱 社内</div>${TKEYS.filter(k => TW[k].layer === "inside").map(row).join("")}
+    <div class="sgrp">👥 人</div>
+    <div class="srow ${S.train ? "on" : ""}" onclick="G.infoDef('train')"><span class="ic">🎓</span><span class="nm">社員研修<small>📞放置しても正しく判断しやすく</small></span><span class="i">ⓘ</span>
+      ${S.train ? `<span class="done">実施済</span>` : `<button class="act" ${S.money < TRAIN.cost ? "disabled" : ""} onclick="event.stopPropagation();G.train()">実施<small>${TRAIN.cost}万</small></button>`}</div>
     <div class="sgrp">💼 最後の砦</div>
     <div class="srow ${S.backup ? "on" : ""}" onclick="G.infoDef('backup')"><span class="ic">💾</span><span class="nm">バックアップ<small>🦠の被害を1/4に</small></span><span class="i">ⓘ</span>
       ${S.backup ? `<span class="done">導入済</span>` : `<button class="act" ${S.money < 15 ? "disabled" : ""} onclick="event.stopPropagation();G.backup()">導入<small>15万</small></button>`}</div>`;
@@ -818,6 +845,7 @@ function spend(c) { S.money -= c; S.spent += c; hud(); }
 G.buy = (k) => { if (S.own[k] || S.money < TW[k].cost) return; spend(TW[k].cost); S.own[k] = true; refresh(); };
 G.upgrade = (k) => { const u = TW[k].up; if (!S.own[k] || S.up[k] || S.money < u.cost) return; spend(u.cost); S.up[k] = true; if (k === "patch") S.vuln = false; refresh(); };
 G.repatch = () => { if (S.money < 3) return; spend(3); S.vuln = false; refresh(); };
+G.train = () => { if (S.train || S.money < TRAIN.cost) return; spend(TRAIN.cost); S.train = true; refresh(); };
 G.backup = () => { if (S.backup || S.money < BACKUP.cost) return; spend(BACKUP.cost); S.backup = true; refresh(); };
 // 盤面の関門をタップしても説明が開く
 function boardTapPrep(ev) {
@@ -950,7 +978,7 @@ function stepCalls(N, dt) {
 function answerCall(N, good) {
   const cur = N.cur; if (!cur || cur.res) return;
   const auto = good === null;
-  if (auto) good = Math.random() < .5;
+  if (auto) good = Math.random() < (S.train ? .8 : .5);
   const c = cur.c, h = c.hit;
   S.calls++; if (good) S.callsOk++;
   N.callLog.push({ id: c.id, ok: good, auto });
@@ -977,12 +1005,12 @@ function drawCall(N) {
   const c = cur.c;
   if (cur.res) {
     const g = cur.res.good;
-    box.innerHTML = `<div class="call ${g ? "ok" : "ng"}" onclick="G.skipCall()"><div class="who">📞 ${c.who}<span>${cur.res.auto ? "⏳ 返事がないので自分で判断" : ""}</span></div>
+    box.innerHTML = `<div class="call ${g ? "ok" : "ng"}" onclick="G.skipCall()"><div class="who">📞 ${c.who}<span>${cur.res.auto ? (S.train ? "🎓 研修を思い出して自分で判断" : "⏳ 返事がないので自分で判断") : ""}</span></div>
       <div class="r"><b>${g ? "⭕ " + c.good : "❌ " + c.bad}</b><br>${g ? c.ok : c.ng}</div></div>`;
     return;
   }
   const opts = [[c.good, 1], [c.bad, 0]]; if (cur.flip) opts.reverse();
-  box.innerHTML = `<div class="call"><div class="who">📞 ${c.who}から<span>返事がないと自分で判断します</span></div><p class="q">${c.q}</p>
+  box.innerHTML = `<div class="call"><div class="who">📞 ${c.who}から<span>${S.train ? "🎓 返事がなくても8割は正しく判断" : "返事がないと自分で判断します"}</span></div><p class="q">${c.q}</p>
     <div class="tb"><i id="tbar" style="width:100%"></i></div>
     <div class="ans">${opts.map((o, i) => `<button onclick="G.answer(${i})">${o[0]}</button>`).join("")}</div></div>`;
 }
