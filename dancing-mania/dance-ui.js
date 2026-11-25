@@ -36,27 +36,29 @@ function unlockAudio() { // iOS Safari: ユーザー操作の中で生成・resu
 }
 function buzz(ms) { try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 function sInfect(chain) { beep(500 + Math.min(chain, 24) * 32, 0.12, 'sine', 0.16); }
-// 波モード: 連鎖が伸びるほどペンタトニック(ドレミソラ)で上がっていき、踊りの半拍に合わせて鳴る
+// 感染音: 連鎖が伸びるほどペンタトニック(ドレミソラ)で上がる。
+// 一度にたくさん感染しても重ならないよう、1音ずつ NOTE_GAP 秒間隔で順番に鳴らす(「ピロロロッ」と駆け上がる)。
+// 待ちが NOTE_MAX_Q 音を超えた分は鳴らさない(音が遅れて鳴り続けないように)。
+// (以前は踊りの半拍にそろえて鳴らしていたが、同じ半拍の音が同時に鳴って団子になると利用者から指摘があった)
 const PENTA = [0, 2, 4, 7, 9];
-const HALF_BEAT = Math.PI / 18; // 踊りの1拍は π/9 秒(p = t*9)。その半分
-let noteSlot = -1, noteSlotCount = 0;
+const NOTE_GAP = 0.055, NOTE_DUR = 0.05, NOTE_MAX_Q = 12;
+let noteAt = 0; // 次の音を鳴らせる時刻(audioCtx の時計)
 function sInfectMusic(chain) {
   if (!soundOn) return;
   const i = Math.min(chain - 1, 17);
   const semi = Math.floor(i / 5) * 12 + PENTA[i % 5];
   const f = 523.25 * Math.pow(2, semi / 12);
-  const tNow = performance.now() / 1000, slot = Math.ceil(tNow / HALF_BEAT);
-  if (slot === noteSlot) { if (++noteSlotCount > 2) return; } else { noteSlot = slot; noteSlotCount = 1; } // 同じ拍は和音2つまで
-  const delay = slot * HALF_BEAT - tNow;
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const t = audioCtx.currentTime + Math.max(0, delay);
+    const now = audioCtx.currentTime, t = Math.max(now, noteAt);
+    if (t - now > NOTE_GAP * NOTE_MAX_Q) return; // 待ちが溜まりすぎ
+    noteAt = t + NOTE_GAP;
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.type = chain >= 18 ? 'square' : 'triangle';
     o.frequency.setValueAtTime(f, t);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(chain >= 18 ? 0.08 : 0.16, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.25);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(chain >= 18 ? 0.08 : 0.16, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0005, t + NOTE_DUR); // 次の音が始まる前に消える
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + NOTE_DUR + 0.005);
   } catch (e) {}
 }
 function sWave(n) { seq(n >= 30 ? [523, 659, 784, 1047, 1319, 1568] : [523, 659, 784, 1047], 60, 'square', 0.1, 0.18); }
