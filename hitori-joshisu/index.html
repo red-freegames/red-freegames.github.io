@@ -212,6 +212,33 @@ body.night .boardbar .info{color:#93a1c2}
 .onrow .o{font-size:12.5px;color:var(--sub);text-decoration:line-through;grid-column:1}
 .onrow .n{font-size:14px;font-weight:900;grid-column:1}
 .onrow em{grid-column:2;grid-row:1/3;align-self:center;font-style:normal;font-size:16px;min-width:22px;text-align:center}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bdg{position:relative;border:1.5px dashed var(--line);border-radius:12px;padding:8px 10px;color:var(--sub)}
+.bdg .bi{font-size:22px;display:block;line-height:1.2}
+.bdg b{display:block;font-size:13px;font-weight:900;line-height:1.35}
+.bdg small{display:block;font-size:10.5px;line-height:1.45;margin-top:2px}
+.bdg.on{border-style:solid;border-color:var(--accent);background:var(--acbg);color:var(--ink)}
+.bdg.new{animation:pop .5s ease-out}
+.bdg i{position:absolute;top:6px;right:8px;font-style:normal;font-size:10px;font-weight:900;color:#fff;background:var(--ng);border-radius:6px;padding:0 5px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:none;opacity:1}}
+.end .rank{animation:stamp .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes stamp{from{transform:scale(2.4) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+.shake{animation:shake .5s 2}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(6px,-2px)}60%{transform:translate(-4px,-1px)}80%{transform:translate(4px,1px)}}
+body.crash{animation:redflash 1s}
+@keyframes redflash{0%{background:#d7263d}100%{background:var(--bg)}}
+.ransom{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:#07090f;color:#ff4d61;border-radius:16px;padding:18px;animation:fi .4s}
+.ransom .rk{font-size:46px}
+.ransom .big{font-size:21px;font-weight:900;line-height:1.5;color:#fff;margin-top:4px}
+.ransom p{font-size:13.5px;line-height:1.8;margin-top:8px}
+.ransom .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.08em;color:#ff4d61;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.gogai{display:flex;margin-top:10px;background:#f6f1e3;color:#1a1a1a;border:2px solid #1a1a1a;border-radius:4px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;animation:fi .5s}
+.gogai .gk{writing-mode:vertical-rl;background:#c3121f;color:#fff;font-weight:900;font-size:22px;padding:10px 8px;letter-spacing:.2em}
+.gogai .gb{padding:10px 14px}
+.gogai small{font-size:11px;color:#555}
+.gogai h2{font-size:26px;font-weight:900;line-height:1.3;margin-top:2px}
+.gogai p{font-size:14px;font-weight:700;margin-top:4px;border-top:1px solid #1a1a1a;padding-top:4px}
 .calm{font-size:13px;color:var(--sub);margin-top:6px}
 .hint{font-size:11px;color:var(--sub);margin-top:6px}
 .crow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px dashed var(--line);font-size:18px}
@@ -362,7 +389,8 @@ function waveNow() {
 let S;
 function fresh() {
   S = { day: 1, hp: 100, money: 0, budget: 30, own: {}, up: {}, backup: false, flags: {}, ko: 0, leaks: 0,
-        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {}, usedCall: {}, off: {}, calls: 0, callsOk: 0 };
+        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {}, usedCall: {}, off: {}, calls: 0, callsOk: 0, callRes: {},
+        st: { biz: 0, holes: 0, sur: 0, mitig: 0, inKO: 0, quiet: 0, autoOk: 0 } };
 }
 
 /* ============ 共通 ============ */
@@ -460,6 +488,7 @@ G.title = () => {
       <span style="color:var(--sub)">攻撃や対策をタップすると、くわしい説明が読めます</span>
     </div>
     <button class="go blue" onclick="G.start()">▶ 着任する</button>
+    <button class="go" style="background:var(--panel);color:var(--ink);box-shadow:0 4px 0 var(--line);border:1.5px solid var(--line)" onclick="G.badges()">🏅 称号コレクション ${BADGES.filter(b => loadBadges()[b.id]).length}/${BADGES.length}</button>
     <p class="note">※このゲームはフィクションです。数値はゲーム用に単純化したもので、実際の製品やサービスの性能を示すものではありません。<br>実況・配信・動画投稿・収益化OK</p>
   </div>`);
 };
@@ -811,7 +840,7 @@ const EV = [
         ["丁寧に断る", () => { S.money = Math.max(0, S.money - 5); return "「融通がきかないな」社長はむっとした。（お金 -5万円）"; }]] },
   { id: "snake", min: 3, kick: "営業電話", title: "「100%防ぐ」製品",
     q: "「AIがあらゆる攻撃を100%防ぐ『完全防御ボックス』！今なら20万円です。社長さんにもご案内済みです」",
-    o: [["買う", () => { S.money = Math.max(0, S.money - 20); return "届いた箱の中身は、古いメールフィルタだった。20万円が消えた。「100%防ぐ」製品は存在しない。"; }],
+    o: [["買う", () => { S.flags.snake = true; S.money = Math.max(0, S.money - 20); return "届いた箱の中身は、古いメールフィルタだった。20万円が消えた。「100%防ぐ」製品は存在しない。"; }],
         ["断る", () => "「100%防ぐ」製品は存在しない。正しい判断だ。"]] },
   { id: "byod", min: 4, cond: () => !S.flags.byod, kick: "社員", title: "在宅勤務の相談",
     q: "「家の私物パソコンでも仕事できるようにしてほしいです。みんなそう言ってます」",
@@ -1077,17 +1106,18 @@ function answerCall(N, good) {
   if (auto) good = Math.random() < (S.train ? .8 : .5);
   const c = cur.c, h = c.hit;
   S.calls++; if (good) S.callsOk++;
+  if (auto && good && S.train) S.st.autoOk++;
   N.callLog.push({ id: c.id, ok: good, auto });
   (S.callRes = S.callRes || {})[c.id] = good;
   if (!good) {
     if (h.hole !== undefined) {
       const l = h.hole, base = ["phish", "pw", "vpn"][l];
-      N.hole[l] = HOLE_T;
+      N.hole[l] = HOLE_T; S.st.holes++;
       N.en.push({ t: base, from: base, lane: l, x: LANES[l].x - .08, y: TOP, inside: false, call: true });   // 攻撃者がすかさず穴を突く
       pop(N, LANES[l].x, ENTRY_Y + .07, "📞ミスで穴が開いた", "ng");
     }
     if (h.spawn) { spawnInside(N, h.spawn, "call"); pop(N, .5, BOUND + .06, "📞ミス：社内に直接", "warn"); }
-    if (h.biz) { S.money = Math.max(0, S.money - h.biz); pop(N, .5, GOAL - .02, `業務が止まった 予算-${h.biz}万`, "warn"); }
+    if (h.biz) { S.st.biz++; S.money = Math.max(0, S.money - h.biz); pop(N, .5, GOAL - .02, `業務が止まった 予算-${h.biz}万`, "warn"); }
     if (h.hp) { const d = Math.round(h.hp * (1 + (S.day - 1) * .05)); S.hp -= d; N.dmg += d; N.leak.push({ from: "call", as: c.id, dmg: d, mit: false }); pop(N, .5, GOAL - .02, `${h.n} -${d}`, "ng"); }
     if (h.off) {
       const has = h.off === "backup" ? S.backup : S.own[h.off];
@@ -1149,12 +1179,12 @@ function nightStep(N, dt) {
     if (e.inside && !e.passI && e.y >= INSIDE_Y) {
       e.passI = true;
       const b = blocker(e, "inside");
-      if (b) { e.gone = true; N.ko++; S.ko++; N.flash[b + e.lane] = .4; pop(N, e.x, INSIDE_Y - .05, "ブロック", "ok"); continue; }
+      if (b) { e.gone = true; N.ko++; S.ko++; S.st.inKO++; N.flash[b + e.lane] = .4; pop(N, e.x, INSIDE_Y - .05, "ブロック", "ok"); continue; }
     }
     if (e.y >= GOAL) {
       let dmg = Math.round(EN[e.t].dmg * (1 + (S.day - 1) * .05));
       let mit = false;
-      if (e.t === "mal" && S.backup && !S.off.backup) { dmg = Math.round(dmg / 4); mit = true; }
+      if (e.t === "mal" && S.backup && !S.off.backup) { dmg = Math.round(dmg / 4); mit = true; S.st.mitig++; }
       N.dmg += dmg; S.hp -= dmg;
       N.leak.push({ from: e.from === "call" ? e.t : e.from, as: e.t, dmg, mit, call: e.from === "call" || !!e.call });
       pop(N, e.x, GOAL - .02, `-${dmg}`, "ng");
@@ -1194,16 +1224,58 @@ G.runNight = () => {
     const dt = Math.min(.05, (now - last) / 1000) * N.speed; last = now;
     nightStep(N, dt);
     drawBoard(N); updInfo(); hud();
-    if (N.done || S.hp <= 0) { RAF = 0; setTimeout(() => { if (NT === N) endNight(); }, 900); return; }
+    if (S.hp <= 0) { RAF = 0; return gameOver(N); }
+    if (N.done) { RAF = 0; setTimeout(() => { if (NT === N) endNight(); }, 900); return; }
     RAF = requestAnimationFrame(loop);
   };
   RAF = requestAnimationFrame(loop);
+};
+// 何で倒れたか（最後の被害）
+function causeOf(N) {
+  const L = N.leak[N.leak.length - 1];
+  if (!L) return { k: "mal" };
+  if (L.from === "call") { const c = CALLS.find(x => x.id === L.as); return { k: "fraud", n: c ? c.hit.n : "詐欺" }; }
+  return { k: L.as === "acct" ? "acct" : "mal" };
+}
+const CRASH = {
+  mal: { scr: `<div class="rk">🔒</div><p class="big">会社のファイルは<br>すべて暗号化されました</p><p>戻してほしければ、72時間以内に<br>身代金を支払え。</p><p class="mono">FILES ENCRYPTED: 128,406</p>`,
+    head: "社内システム全面停止", sub: "ランサムウェア被害、復旧のめど立たず", boss: "……工場も止まった、請求書も出せない。君ひとりに任せきりにした、私の責任でもある。" },
+  acct: { scr: `<div class="rk">📤</div><p class="big">顧客情報 30,000件が<br>ネットに公開されました</p><p>取引先から、電話が鳴りやまない。</p><p class="mono">LEAKED: customers.xlsx</p>`,
+    head: "顧客情報 大量流出", sub: "不正ログインで、取引先にも被害広がる", boss: "……お客様に、どう説明すればいいんだ。謝罪会見の原稿を、一緒に考えてくれ。" },
+  fraud: { scr: `<div class="rk">💸</div><p class="big">口座の残高が<br>尽きました</p><p>「本物だと思ったんです」</p><p class="mono">BALANCE: ¥0</p>`,
+    head: "詐欺被害で資金繰り悪化", sub: "「本物だと思った」担当者が証言", boss: "……声も、メールも、本物にしか見えなかったそうだ。今の詐欺は、そういうものなんだな。" },
+};
+function gameOver(N) {
+  S.cause = causeOf(N);
+  const C = CRASH[S.cause.k];
+  const bw = document.querySelector(".boardwrap");
+  document.body.classList.add("crash");
+  if (bw) bw.classList.add("shake");
+  setTimeout(() => {
+    if (NT !== N || !bw) return;
+    const d = document.createElement("div");
+    d.className = "ransom";
+    d.innerHTML = `<div>${C.scr}<button class="go" style="margin-top:16px;background:#d7263d;box-shadow:0 4px 0 #7a0f1c" onclick="G.crashNext()">翌朝 ▶</button></div>`;
+    bw.appendChild(d);
+    if ($("inbox")) $("inbox").innerHTML = `<div class="empty" style="border-color:#d7263d;color:#d7263d">📵 問い合わせの電話が、鳴りやまない</div>`;
+  }, 1100);
+}
+G.crashNext = () => {
+  const N = NT;
+  if (!N) return;
+  document.body.classList.remove("crash");
+  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach, calls: N.callLog, surprise: N.surprise };
+  S.leaks += N.leak.length;
+  NT = null;
+  G.end(false);
 };
 function endNight() {
   const N = NT;
   S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach, calls: N.callLog, surprise: N.surprise };
   S.off = {};
   S.leaks += N.leak.length;
+  if (N.surprise) S.st.sur++;
+  if (!N.leak.length && S.day >= 2) S.st.quiet++;
   NT = null;
   if (S.hp <= 0) return G.end(false);
   if (S.day >= DAYS) return G.end(true);
@@ -1214,6 +1286,41 @@ function endNight() {
   if (VULN_DAYS.includes(S.day) && S.own.patch && !S.up.patch) S.vuln = true;
   G.morning();
 }
+
+/* ============ 称号 ============ */
+const BADGES = [
+  { id: "clear", ic: "🛡️", n: "生還", d: "10日間、会社を守り抜いた", ok: (w) => w },
+  { id: "iron", ic: "🏰", n: "鉄壁のひとり情シス", d: "体力75以上でクリア", ok: (w) => w && S.hp >= 75 },
+  { id: "call", ic: "📞", n: "問い合わせの鬼", d: "問い合わせ20件以上、正解率90%以上", ok: () => S.calls >= 20 && S.callsOk / S.calls >= .9 },
+  { id: "layer", ic: "🧱", n: "多層防御の使い手", d: "社内で20件以上の攻撃を止めた", ok: () => S.st.inKO >= 20 },
+  { id: "backup", ic: "💾", n: "最後の砦", d: "バックアップで3回以上被害を軽くした", ok: () => S.st.mitig >= 3 },
+  { id: "train", ic: "🎓", n: "研修のたまもの", d: "研修のおかげで、社員が5回以上正しく判断した", ok: () => S.st.autoOk >= 5 },
+  { id: "sur", ic: "⚠️", n: "予報は当てにならない", d: "予報にない攻撃を3回以上しのいだ", ok: (w) => S.st.sur >= 3 && (w || S.day >= 9) },
+  { id: "passkey", ic: "🔑", n: "パスキー推進派", d: "二段階認証をパスキーに強化した", ok: () => !!S.up.mfa },
+  { id: "zt", ic: "🌐", n: "ゼロトラスト導入", d: "機器の更新をゼロトラストに強化した", ok: () => !!S.up.patch },
+  { id: "full", ic: "🧰", n: "全部入り", d: "すべての対策・強化・バックアップ・研修をそろえた", ok: () => TKEYS.every(k => S.own[k] && (!TW[k].up || S.up[k])) && S.backup && S.train },
+  { id: "quiet", ic: "🌙", n: "誰にも褒められない", d: "被害ゼロの日が5日以上", ok: () => S.st.quiet >= 5 },
+  { id: "thrift", ic: "💴", n: "倹約家", d: "使ったお金150万円以下でクリア", ok: (w) => w && S.spent <= 150 },
+  { id: "doubt", ic: "🙅", n: "疑いすぎ注意", d: "慎重すぎて、仕事を2回以上止めた", ok: () => S.st.biz >= 2 },
+  { id: "holes", ic: "🕳️", n: "穴だらけ", d: "問い合わせのミスで、入口に5回以上穴を開けた", ok: () => S.st.holes >= 5 },
+  { id: "old", ic: "📼", n: "昔の常識の人", d: "「昔の常識」の問い合わせで3回以上まちがえた", ok: () => OLDNEW.filter(r => r[2] && S.callRes[r[2]] === false).length >= 3 },
+  { id: "yes", ic: "🙇", n: "社長のイエスマン", d: "社長の二段階認証を外してあげた", ok: () => !!S.flags.no2fa },
+  { id: "box", ic: "📦", n: "100%を信じた", d: "「完全防御ボックス」を買った", ok: () => !!S.flags.snake },
+  { id: "dead", ic: "💀", n: "倒産", d: "会社を倒産させた", ok: (w) => !w },
+];
+const BKEY = "hitori-joshisu-badges";
+function loadBadges() { try { return JSON.parse(localStorage.getItem(BKEY) || "{}") || {}; } catch (e) { return {}; } }
+function saveBadges(o) { try { localStorage.setItem(BKEY, JSON.stringify(o)); } catch (e) {} }
+function badgeGrid(have, fresh) {
+  return `<div class="bgrid">${BADGES.map(b => have[b.id]
+    ? `<div class="bdg on ${fresh && fresh[b.id] ? "new" : ""}"><span class="bi">${b.ic}</span><b>${b.n}</b><small>${b.d}</small>${fresh && fresh[b.id] ? `<i>NEW</i>` : ""}</div>`
+    : `<div class="bdg"><span class="bi">？</span><b>？？？</b><small>${b.d}</small></div>`).join("")}</div>`;
+}
+G.badges = () => {
+  const have = loadBadges();
+  sheet(`<div class="shk">コレクション</div><h2>🏅 称号 ${BADGES.filter(b => have[b.id]).length}/${BADGES.length}</h2>
+    <p class="long">プレイの結果に応じて、称号がもらえます。集めた称号は、このブラウザに保存されます。</p>${badgeGrid(have)}`);
+};
 
 /* ============ エンディング ============ */
 G.end = (ok) => {
@@ -1227,7 +1334,14 @@ G.end = (ok) => {
   else if (hp >= 50) { rank = "現場の守護神"; lead = "いくつか被害は出た。それでも会社は回り続けた。"; }
   else if (hp >= 25) { rank = "満身創痍の情シス"; lead = "会社は生き残った。ぎりぎりで。<br>今日も社長室に呼ばれている。"; }
   else { rank = "首の皮一枚"; lead = "倒産だけは免れた。<br>机には、取引先へのお詫び状の束が残っている。"; }
-  const text = `「ひとり情シス防衛戦」${ok ? "10日間を守り抜いた" : S.day + "日目に倒産した"}。\n称号【${rank}】 体力${hp} / 止めた攻撃${S.ko}件 / 問い合わせ正解${S.callsOk}/${S.calls}\n#ひとり情シス防衛戦`;
+  const got = BADGES.filter(b => b.ok(ok)), have = loadBadges(), fresh = {};
+  got.forEach(b => { if (!have[b.id]) fresh[b.id] = true; have[b.id] = true; });
+  saveBadges(have);
+  const nHave = BADGES.filter(b => have[b.id]).length;
+  const C = !ok && CRASH[(S.cause || { k: "mal" }).k];
+  const gogai = C ? `<div class="gogai"><div class="gk">号外</div><div class="gb"><small>DAY ${S.day} ・ 社員30人の会社</small><h2>${C.head}</h2><p>${C.sub}</p></div></div>
+    <div class="boss angry" style="margin-top:12px"><div class="av">👔</div><div class="say"><b>社長</b>${C.boss}</div></div>` : "";
+  const text = `「ひとり情シス防衛戦」${ok ? "10日間を守り抜いた" : S.day + "日目に倒産した"}。\n称号【${rank}】${got.length ? " ほか" + got.map(b => b.ic).join("") : ""} 体力${hp} / 止めた攻撃${S.ko}件 / 問い合わせ正解${S.callsOk}/${S.calls}\n#ひとり情シス防衛戦`;
   const sheetRows = OUTER.map(k => {
     const nt = NEWTYPE.find(x => EN[x].base === k);
     return `<div class="crow"><button onclick="G.infoAtk('${k}')">${EN[k].ic}</button><span>→</span><b>${stoppers(k).map(s => s.slice(0, 2)).join("")}</b>
@@ -1235,6 +1349,7 @@ G.end = (ok) => {
       <span class="sep"></span><button onclick="G.infoAtk('${EN[k].to}')">${EN[EN[k].to].ic}</button><span>→</span><b>${stoppers(EN[k].to).map(s => s.slice(0, 2)).join("")}</b></div>`;
   }).join("");
   render(`<div class="end">
+    ${gogai}
     <div class="rank ${ok ? "" : "bad"}">${rank}</div>
     <h1>${ok ? "10日間、守り抜いた。" : "会社は倒産した。"}</h1>
     <p class="lead">${lead}</p>
@@ -1243,6 +1358,9 @@ G.end = (ok) => {
       <div><b>${S.ko}</b><small>止めた攻撃</small></div>
       <div><b>${S.leaks}</b><small>通した攻撃</small></div>
     </div>
+    <div class="card"><h2>🏅 今回の称号<small>コレクション ${nHave}/${BADGES.length}</small></h2>
+      ${got.length ? `<div class="bgrid">${got.map(b => `<div class="bdg on ${fresh[b.id] ? "new" : ""}"><span class="bi">${b.ic}</span><b>${b.n}</b><small>${b.d}</small>${fresh[b.id] ? `<i>NEW</i>` : ""}</div>`).join("")}</div>` : `<p class="calm">今回は称号なし。</p>`}
+      <button class="pill" style="margin-top:10px;background:var(--acbg);color:var(--accent)" onclick="G.badges()">すべての称号を見る</button></div>
     <div class="card"><h2>📘 攻撃と対策<small>アイコンをタップで説明</small></h2>${sheetRows}
       <div class="crow"><button onclick="G.infoAtk('supply')">🤝</button><span>→</span><b>🗂️🛡️</b><span class="sep"></span><button onclick="G.infoDef('backup')">💾</button><span style="font-size:12px;color:var(--sub)">やられても戻せる</span></div>
       <p class="long" style="margin-top:12px">どんな対策にも、すり抜ける手口がある。だから入口で止めるだけでなく、社内で広げず、最後はバックアップで立ち直る。これを「多層防御」という。</p>
