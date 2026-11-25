@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ねえ、起きてる？ 〜メンヘラ彼女の尋問電話〜</title>
+<meta name="description" content="眠いのに終わらない、彼女からの尋問電話。眠気と不信感の板挟みで耐えきれるか？ 最終ステージ「もう疲れた」は最初からブチギレ。">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+    background:#07060e; color:#eef1f6;
+    display:flex; align-items:flex-start; justify-content:center;
+    min-height:100dvh; overflow-x:hidden;
+    user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  }
+  #stage { position:relative; width:min(480px,100vw); height:100dvh; background:linear-gradient(180deg,#141126 0%,#0a0918 55%,#060510 100%); overflow:hidden; display:flex; flex-direction:column; }
+  @media (min-width:520px){ #stage{ height:96dvh; margin:2dvh 0; border-radius:28px; border:1px solid #2c2750; box-shadow:0 24px 70px rgba(0,0,0,.7); } }
+  /* 通話ヘッダー */
+  #callbar { display:flex; align-items:center; gap:10px; padding:14px 16px 10px; z-index:10; flex:none; }
+  #callbar .ava { width:46px; height:46px; border-radius:50%; background:linear-gradient(140deg,#ff7eb0,#b04df0); display:flex; align-items:center; justify-content:center; font-size:24px; flex:none; box-shadow:0 0 0 2px rgba(255,255,255,.15); }
+  #callbar .who { flex:1; }
+  #callbar .name { font-size:16px; font-weight:800; }
+  #callbar .stat { font-size:11.5px; color:#9fe8a8; }
+  #callTime { font-size:13px; font-weight:700; opacity:.8; font-variant-numeric:tabular-nums; }
+  /* ゲージ */
+  #gauges { padding:2px 16px 8px; z-index:10; flex:none; }
+  .gauge { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .gauge .gl { font-size:12px; font-weight:800; width:86px; flex:none; }
+  .gauge .gtrack { flex:1; height:11px; border-radius:999px; background:rgba(255,255,255,.10); overflow:hidden; }
+  .gauge .gfill { height:100%; width:0%; border-radius:999px; transition:width .4s ease; }
+  #gSleep { background:linear-gradient(90deg,#6a5cff,#b04df0); }
+  #gSusp { background:linear-gradient(90deg,#ff9d5c,#ff4d6d); }
+  .gauge .gv { font-size:12px; font-weight:800; width:30px; text-align:right; font-variant-numeric:tabular-nums; }
+  #rateMul, .rmPad { font-size:11px; font-weight:800; color:#c9b8ff; width:76px; flex:none; font-variant-numeric:tabular-nums; }
+  /* 現在のセリフ（上部固定） */
+  #nowBox { flex:none; margin:8px 14px 2px; background:linear-gradient(160deg,#2c2145,#1d1832); border:1px solid rgba(255,126,176,.45); border-radius:16px; padding:12px 14px; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  #nowBox .nwho { font-size:11.5px; font-weight:800; color:#ff9db4; margin-bottom:5px; }
+  #nowText { font-size:16.5px; font-weight:700; line-height:1.6; }
+  /* 会話ログ */
+  #log { flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:10px 14px 6px; display:flex; flex-direction:column; gap:9px; z-index:5; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.25) transparent; }
+  #log::-webkit-scrollbar { width:5px; }
+  #log::-webkit-scrollbar-thumb { background:rgba(255,255,255,.22); border-radius:999px; }
+  .bbl { max-width:82%; padding:10px 13px; border-radius:16px; font-size:14.5px; line-height:1.55; animation:bin .25s ease; word-break:break-word; }
+  @keyframes bin { from{ transform:translateY(8px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  .bbl.her { align-self:flex-start; background:#262038; border-bottom-left-radius:4px; }
+  .bbl.me { align-self:flex-end; background:#31456e; border-bottom-right-radius:4px; }
+  .bbl.sys { align-self:center; background:transparent; color:#ffd76a; font-size:12.5px; font-weight:700; text-align:center; padding:2px 8px; }
+  .bbl.react { align-self:flex-start; background:#33222f; border:1px solid rgba(255,126,176,.35); border-bottom-left-radius:4px; }
+  /* 操作エリア */
+  #ctrl { padding:10px 14px 16px; z-index:10; flex:none; background:linear-gradient(180deg,rgba(6,5,16,0),rgba(6,5,16,.92) 30%); }
+  #qcount { font-size:12px; font-weight:800; color:#aab4d4; margin-bottom:8px; text-align:center; }
+  .opt { display:block; width:100%; text-align:left; padding:13px 15px; margin-top:8px; border-radius:14px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.07); color:#fff; font-size:14.5px; line-height:1.5; cursor:pointer; font-family:inherit; }
+  .opt:active { background:rgba(255,255,255,.16); }
+  #honneBtn { display:none; width:100%; margin-top:12px; padding:16px; border-radius:14px; border:2px solid #ff4d6d; background:linear-gradient(180deg,#5e1630,#3d0f22); color:#ffd7e0; font-size:15.5px; font-weight:900; cursor:pointer; font-family:inherit; animation:hpulse 1.1s infinite; }
+  @keyframes hpulse { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.03); } }
+  #honneBtn .hl { display:block; font-size:11px; font-weight:700; color:#ff9db4; margin-bottom:3px; }
+  #optsWrap.sway, #nowBox.sway { animation:sway 2.6s ease-in-out infinite; }
+  @keyframes sway { 0%,100%{ transform:rotate(-.5deg); } 50%{ transform:rotate(.5deg); } }
+  /* 相づち */
+  #aizuchi { display:none; }
+  #aizuchi .amon { font-size:13.5px; line-height:1.6; background:#262038; border-radius:14px; padding:11px 13px; }
+  #timingWrap { margin-top:12px; }
+  #timingBar { position:relative; height:22px; border-radius:999px; background:rgba(255,255,255,.10); overflow:hidden; }
+  #timingZone { position:absolute; top:0; bottom:0; background:rgba(110,255,160,.45); border-left:2px solid #6effa0; border-right:2px solid #6effa0; }
+  #timingMark { position:absolute; top:0; bottom:0; width:4px; background:#fff; border-radius:2px; box-shadow:0 0 8px #fff; }
+  #unBtn { display:block; width:100%; margin-top:12px; padding:15px; border-radius:999px; border:none; background:linear-gradient(90deg,#ff7eb0,#b04df0); color:#fff; font-size:17px; font-weight:900; cursor:pointer; font-family:inherit; }
+  #aizuchi .ahint { text-align:center; font-size:12px; opacity:.7; margin-top:8px; }
+  /* ほっぺたボタン */
+  #slapBtn { display:none; width:100%; margin-top:10px; padding:10px; border-radius:999px; border:1px dashed rgba(255,255,255,.4); background:rgba(255,255,255,.05); color:#dfe6ff; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
+  /* ステージ選択 */
+  #stageList { width:100%; margin-top:18px; display:flex; flex-direction:column; gap:9px; }
+  #stageList .sl-t { font-size:12px; font-weight:800; color:#aab4d4; text-align:center; }
+  .stageCard { text-align:left; padding:13px 15px; border-radius:14px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#fff; cursor:pointer; font-family:inherit; width:100%; }
+  .stageCard .st-t { font-size:15.5px; font-weight:900; }
+  .stageCard .st-d { font-size:12px; opacity:.75; margin-top:3px; line-height:1.6; }
+  .stageCard .st-badge { font-size:11.5px; font-weight:800; color:#ffd76a; margin-left:8px; }
+  .stageCard.sel { border-color:#ff7eb0; background:rgba(255,126,176,.14); box-shadow:0 0 0 1px #ff7eb0 inset; }
+  .stageCard.rage { border-color:rgba(255,77,109,.55); }
+  .stageCard.rage.sel { border-color:#ff4d6d; background:rgba(255,77,109,.16); box-shadow:0 0 0 1px #ff4d6d inset; }
+  /* 開始・結果オーバーレイ */
+  .overlay { position:absolute; inset:0; z-index:80; background:rgba(5,4,12,.94); display:none; flex-direction:column; align-items:center; justify-content:flex-start; padding:28px 24px; text-align:center; overflow-y:auto; }
+  .overlay.on { display:flex; }
+  /* 中身が画面より高いときは上から並べてスクロール（center だと上端が見切れて戻れない） */
+  .overlay > :first-child { margin-top:auto; }
+  .overlay > :last-child { margin-bottom:auto; }
+  .overlay .ttl { font-size:30px; font-weight:900; line-height:1.35; }
+  .overlay .sub { margin-top:12px; font-size:14px; line-height:1.8; opacity:.85; }
+  .overlay .howto { margin-top:16px; text-align:left; font-size:13px; line-height:1.9; background:rgba(255,255,255,.06); border-radius:14px; padding:14px 18px; }
+  .bigbtn { margin-top:22px; padding:15px 42px; border-radius:999px; border:none; background:linear-gradient(90deg,#ff7eb0,#b04df0); color:#fff; font-size:17px; font-weight:900; cursor:pointer; font-family:inherit; box-shadow:0 10px 30px rgba(176,77,240,.4); }
+  .ghostbtn { margin-top:12px; padding:11px 30px; border-radius:999px; border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+  #endLine { margin-top:16px; background:#fff; color:#131722; border-radius:14px; padding:16px 18px; width:100%; }
+  #endLine .el { font-size:11.5px; font-weight:800; color:#8a5a70; }
+  #endLine .ev { font-size:19px; font-weight:900; margin-top:4px; line-height:1.5; }
+  #endStats { margin-top:14px; font-size:13.5px; line-height:1.9; opacity:.9; }
+  #zukan { margin-top:16px; width:100%; text-align:left; }
+  #zukan .zt { font-size:13px; font-weight:800; margin-bottom:8px; text-align:center; }
+  .zend { display:flex; gap:9px; align-items:center; background:rgba(255,255,255,.06); border-radius:10px; padding:9px 12px; margin-top:6px; font-size:13px; }
+  .zend .zi { font-size:18px; }
+  .zend.locked { opacity:.45; }
+  .foot { padding:10px 16px 14px; text-align:center; font-size:10px; color:rgba(255,255,255,.35); }
+  /* 縦が短い端末：操作エリアを詰めて会話ログの高さを確保 */
+  @media (max-height:700px){
+    #callbar { padding:8px 14px 4px; }
+    #callbar .ava { width:36px; height:36px; font-size:19px; }
+    #gauges { padding:0 14px 4px; }
+    .gauge { margin-top:4px; }
+    #nowBox { margin:6px 12px 0; padding:8px 12px; }
+    #nowBox .nwho { margin-bottom:2px; }
+    #nowText { font-size:15px; line-height:1.5; }
+    #ctrl { padding:6px 12px 8px; }
+    #qcount { margin-bottom:4px; }
+    .opt { padding:9px 12px; margin-top:6px; font-size:13.5px; line-height:1.4; }
+    #honneBtn { margin-top:8px; padding:9px; font-size:14px; }
+    #slapBtn { margin-top:6px; padding:7px; font-size:12px; }
+    .foot { padding:4px 16px 6px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="callbar">
+    <div class="ava">👩</div>
+    <div class="who"><div class="name">ミサキ ❤️</div><div class="stat" id="callStat">● 通話中</div></div>
+    <div id="callTime">00:00</div>
+  </div>
+  <div id="gauges">
+    <div class="gauge"><span class="gl">😴 眠気</span><div class="gtrack"><div class="gfill" id="gSleep"></div></div><span class="gv" id="vSleep">0</span><span id="rateMul"></span></div>
+    <div class="gauge"><span class="gl">💔 不信感</span><div class="gtrack"><div class="gfill" id="gSusp"></div></div><span class="gv" id="vSusp">0</span><span class="rmPad"></span></div>
+  </div>
+
+  <div id="nowBox"><div class="nwho">👩 ミサキ ─ いまのセリフ</div><div id="nowText">…</div></div>
+
+  <div id="log"></div>
+
+  <div id="ctrl">
+    <div id="qcount"></div>
+    <div id="optsWrap"></div>
+    <button id="honneBtn" onclick="NK.honne()"></button>
+    <div id="aizuchi">
+      <div class="amon" id="amonText"></div>
+      <div id="timingWrap"><div id="timingBar"><div id="timingZone"></div><div id="timingMark"></div></div></div>
+      <button id="unBtn" onclick="NK.un()">うん</button>
+      <div class="ahint">緑のゾーンで「うん」を押せ（外すと怪しまれる）</div>
+    </div>
+    <button id="slapBtn" onclick="NK.slap()">👋 ほっぺたを叩く（残り<span id="slapLeft">3</span>回／音で怪しまれる）</button>
+  </div>
+
+  <div class="foot">フィクションです。実在の彼女はもう少し優しい、はず。</div>
+
+  <div class="overlay on" id="startScr">
+    <div class="ttl">ねえ、起きてる？</div>
+    <div class="sub">深夜1時。眠いのに、彼女からの電話が終わらない。<br>しかも今日は、尋問モード。</div>
+    <div class="howto">
+      😴 <b>眠気</b>は時間で上がる。100で寝落ちバレ。<br>
+      ⏱️ 返事を<b>悩むほど眠気が加速</b>する。通話が長引くほど、さらに加速。<br>
+      🌊 ときどき<b>眠気の波</b>が来て、眠気が一気に加速する。<br>
+      💔 <b>不信感</b>は返事を間違えると上がる。100で「もういい、別れる」。溜まると機嫌が悪くなり、許してもらいにくくなる。<br>
+      質問は毎回ランダム、正解の場所もシャッフルされる。<br>
+      眠気が限界に近づくと、言ってはいけない<b>「本音」</b>のボタンが出てくる。押すなよ、絶対に押すなよ。
+    </div>
+    <div id="stageList"></div>
+    <button class="bigbtn" onclick="NK.start()">📞 電話に出る</button>
+    <div id="zukanStart" style="width:100%"></div>
+  </div>
+
+  <div class="overlay" id="endScr">
+    <div class="ttl" id="endTitle"></div>
+    <div class="sub" id="endSub"></div>
+    <div id="endLine" style="display:none"><div class="el">最後に言ってしまった一言</div><div class="ev" id="endLineText"></div></div>
+    <div id="endStats"></div>
+    <button class="bigbtn" onclick="NK.shareImage()">結果画像を保存</button>
+    <button class="ghostbtn" onclick="NK.shareX()">Xでシェア</button>
+    <button class="ghostbtn" onclick="location.reload()">もう一度電話に出る</button>
+    <div id="zukan" style="width:100%"></div>
+  </div>
+
+  <canvas id="shareCanvas" width="1200" height="630" style="display:none"></canvas>
+</div>
+
+<script>
+'use strict';
+/* ================= 設定・データ・ロジック ================= */
+const STAGES = [
+  { id:'s1', short:'まだ起きてる？', totalQ:10, tick:0.32, slowSec:12, slowPenalty:4, suspStart:0, creep:0, slapMax:4, honneAt:70, azBase:2.1, azWidthMul:1.3, aizuchiAfter:[2,5,8], rage:false,
+    accelDiv:14, rampDiv:360, waveStart:55, waveCycle:70, waveDur:7, waveMul:1.5,
+    desc:'彼女はまだ穏やか。眠気もゆるやか。全10問。' },
+  { id:'s2', short:'ねえ、起きてる？', totalQ:15, tick:0.45, slowSec:9, slowPenalty:6, suspStart:0, creep:0, slapMax:3, honneAt:65, azBase:1.7, azWidthMul:1.0, aizuchiAfter:[2,5,8,11,14], rage:false,
+    accelDiv:10, rampDiv:240, waveStart:45, waveCycle:55, waveDur:8, waveMul:1.8,
+    desc:'いつもの尋問電話。全15問。悩むほど眠気が加速する。' },
+  { id:'s3', short:'もう疲れた', totalQ:18, tick:0.56, slowSec:6, slowPenalty:8, suspStart:30, creep:0.22, slapMax:2, honneAt:55, azBase:1.25, azWidthMul:0.7, aizuchiAfter:[2,5,8,11,14,17], rage:true,
+    accelDiv:7, rampDiv:200, waveStart:38, waveCycle:45, waveDur:7, waveMul:2.0,
+    desc:'最終ステージ。彼女は最初から不機嫌。優しくしても怒るし、時間でもイライラが溜まる。眠気の加速も波も最大。地雷質問あり。全18問。' },
+];
+const AIZUCHI_HIT = -4, AIZUCHI_MISS = 7, SLAP_SLEEP = -12, SLAP_SUSP = 5;
+/* opts: t=返答 d=不信感の増減 s=眠気の増減 r=彼女の反応（並びは表示時にシャッフルされる） */
+const QUESTIONS = [
+  { q:'なんで今日、返信遅かったの？', honne:'いちいち報告しなきゃダメなの？', opts:[
+    { t:'ごめん、会議が長引いて。ミサキのことはずっと気になってた', d:-6, s:2, r:'…ほんと？ ならいいけど' },
+    { t:'仕事が立て込んでて、気づかなかった', d:4, s:0, r:'ふーん…' },
+    { t:'え、遅かった？ 普通じゃない？', d:14, s:-4, r:'普通って何？ 私からの連絡、そんなもんなんだ' } ] },
+  { q:'今日、飲み会に女の子いた？', honne:'いたよ。可愛い子もいた', opts:[
+    { t:'いたけど、ずっと男と野球の話してた。写真送ろうか？', d:-6, s:2, r:'…送らなくていい。信じる' },
+    { t:'会社の人たちだけだよ', d:4, s:0, r:'会社の人たち、ね…' },
+    { t:'いたけど何もないって', d:14, s:-4, r:'『何もない』って言う人ほど何かある' } ] },
+  { q:'私と仕事、どっちが大事？', honne:'そりゃ仕事でしょ', opts:[
+    { t:'ミサキ。仕事はミサキと生きるための手段だよ', d:-6, s:2, r:'…っ、もう、そういうとこ' },
+    { t:'比べるものじゃないよ', d:4, s:0, r:'逃げたね、今' },
+    { t:'今は仕事が忙しい時期でさ', d:14, s:-4, r:'はぁ…優先順位、決まってるんだ' } ] },
+  { q:'私のどこが好き？ 3つ言って', honne:'顔', opts:[
+    { t:'声、笑い方、それとこうやって心配してくれるとこ', d:-6, s:2, r:'…ふふ、合格' },
+    { t:'優しいところ、かな', d:4, s:0, r:'1個だけ？ あと2つは？' },
+    { t:'えー…全部？', d:14, s:-4, r:'『全部』は一番信用できない' } ] },
+  { q:'昨日の夢に私、出てきた？', honne:'出てきたけど、追いかけてくる夢だった', opts:[
+    { t:'出てきたよ。二人で旅行してた', d:-6, s:2, r:'ほんと？ じゃあ正夢にしなきゃね' },
+    { t:'夢は覚えてないことが多いな', d:4, s:0, r:'…私、毎晩あんたの夢見てるのに' },
+    { t:'夢の話されても困る', d:14, s:-4, r:'困るんだ。へぇ' } ] },
+  { q:'元カノと私、どっちが可愛い？', honne:'元カノ', opts:[
+    { t:'比べる対象じゃない。ミサキが一番だよ', d:-6, s:2, r:'…今のは、ちょっと嬉しい' },
+    { t:'昔のことは覚えてないよ', d:4, s:0, r:'覚えてない、ね。便利だね' },
+    { t:'性格は元カノのほうが穏やかだった', d:14, s:-4, r:'……今、何て言った？' } ] },
+  { q:'私が死んだら、どうする？', honne:'新しい彼女作るかも', opts:[
+    { t:'考えたくない。ミサキなしの人生なんてない', d:-6, s:2, r:'…うん、それでいい' },
+    { t:'縁起でもないこと言うなよ', d:4, s:0, r:'答えてないじゃん' },
+    { t:'人間いつか死ぬからな', d:14, s:-4, r:'冷た…' } ] },
+  { q:'浮気したこと、ある？', honne:'今まさに電話で浮気中', opts:[
+    { t:'ないし、しない。ミサキだけだよ', d:-6, s:2, r:'…証拠はないけど、信じる' },
+    { t:'ないよ、多分', d:4, s:0, r:'多分って何？ 曖昧なのやめて' },
+    { t:'男はみんな浮気する生き物だろ', d:14, s:-4, r:'開き直ったね' } ] },
+  { q:'今、私のこと考えてた？', honne:'正直、寝ることしか考えてない', opts:[
+    { t:'考えてた。声聞けてよかった', d:-6, s:2, r:'えへへ…私も' },
+    { t:'ぼーっとしてた', d:4, s:0, r:'ぼーっ、ね' },
+    { t:'寝ること考えてた', d:14, s:-4, r:'…私より睡眠？' } ] },
+  { q:'私の声、かわいい？', honne:'ちょっと耳が痛い', opts:[
+    { t:'かわいい。世界一好きな声', d:-6, s:2, r:'…もっと言って' },
+    { t:'うん、普通に', d:4, s:0, r:'普通に、か' },
+    { t:'電話越しだとよく聞こえない', d:14, s:-4, r:'聞く気がないだけじゃない？' } ] },
+  { q:'明日、私と会うの楽しみ？', honne:'正直、家で寝てたい', opts:[
+    { t:'もちろん。何時にどこ行くか、もう決めてる', d:-6, s:2, r:'ほんと？ 楽しみにしてる' },
+    { t:'楽しみだよ', d:4, s:0, r:'棒読み…' },
+    { t:'明日はゆっくり寝たいかも', d:14, s:-4, r:'私より睡眠なんだ、やっぱり' } ] },
+  { q:'私って、重い？', honne:'重い。かなり重い', opts:[
+    { t:'重くない。ミサキの気持ちは全部受け止める', d:-6, s:2, r:'…泣きそう' },
+    { t:'たまに、かな', d:4, s:0, r:'たまに、ね…' },
+    { t:'重い自覚あるなら直して', d:14, s:-4, r:'……最低' } ] },
+  { q:'他の女とLINEしてない？', honne:'してるよ、さっきまで', opts:[
+    { t:'してない。履歴、今度見せるよ', d:-6, s:2, r:'見せなくていい。…今度見せて' },
+    { t:'仕事の連絡だけだよ', d:4, s:0, r:'仕事の女の人、ね' },
+    { t:'いちいち詮索しないで', d:14, s:-4, r:'詮索って…怪しい' } ] },
+  { q:'愛してるって言って', honne:'そういうの強制しないで', opts:[
+    { t:'愛してるよ、ミサキ', d:-6, s:2, r:'…うん。私も' },
+    { t:'電話で言うのは恥ずかしい', d:4, s:0, r:'恥ずかしい、ね' },
+    { t:'言葉より態度だろ', d:14, s:-4, r:'言えない理由があるんだ' } ] },
+  { q:'…ねえ、私と結婚する気、ある？', honne:'ない', opts:[
+    { t:'あるよ。ミサキとずっと一緒にいるつもり', d:-6, s:2, r:'…ほんとに？ …うん、わかった' },
+    { t:'将来のことはこれから考えよう', d:4, s:0, r:'逃げた。…でも、今日はもういいや' },
+    { t:'結婚はまだ考えられない', d:14, s:-4, r:'……そう' } ] },
+  { q:'今、何時か分かる？', honne:'知らない。もう寝たい', opts:[
+    { t:'1時すぎ。ミサキと話してたら、あっという間だね', d:-6, s:2, r:'…ふふ、時計見てくれたんだ' },
+    { t:'1時くらいじゃない？', d:4, s:0, r:'くらい、ね。適当…' },
+    { t:'時計なんて見てない', d:14, s:-4, r:'私との時間、数える気もないんだ' } ] },
+  { q:'私の誕生日、ちゃんと覚えてる？', honne:'やばい、ど忘れした', opts:[
+    { t:'もちろん。サプライズも考えてるから楽しみにしてて', d:-6, s:2, r:'…ほんと？ 期待しちゃう' },
+    { t:'覚えてるよ、多分', d:4, s:0, r:'多分って言った。今、多分って言った' },
+    { t:'え、何月だっけ', d:14, s:-4, r:'……忘れてたんだ' } ] },
+  { q:'昨日送った私の写真、ちゃんと見た？', honne:'見てない', opts:[
+    { t:'見た。あの笑顔、保存したよ', d:-6, s:2, r:'…！ 保存したの？ …えへへ' },
+    { t:'見たよ', d:4, s:0, r:'感想は？ …ないの？' },
+    { t:'写真、多すぎてどれか分からない', d:14, s:-4, r:'送ったの1枚だけど' } ] },
+  { q:'あんたのスマホ、パスワード教えて', honne:'絶対に無理', opts:[
+    { t:'教えるよ。でもミサキのも教えてね', d:-6, s:2, r:'…え、私のは…まあ、いいけど' },
+    { t:'なんで急に？', d:4, s:0, r:'答えられない理由があるんだ' },
+    { t:'嫌だ。プライバシーはあるし', d:14, s:-4, r:'プライバシー、ね。私にはないんだ' } ] },
+  { q:'私が5キロ太ったら、どうする？', honne:'さすがに引く', opts:[
+    { t:'一緒に運動しよう。ミサキはミサキだよ', d:-6, s:2, r:'…うん、そういうとこ好き' },
+    { t:'健康ならいいんじゃない', d:4, s:0, r:'健康なら、ね…見た目は？' },
+    { t:'太る前に言ってほしい', d:14, s:-4, r:'太ったら終わりなんだ' } ] },
+  { q:'私の料理、正直どう思う？', honne:'味が迷子', opts:[
+    { t:'美味しいよ。この前の煮物、店レベルだった', d:-6, s:2, r:'…作りがいあるなあ、もう' },
+    { t:'普通に美味しいよ', d:4, s:0, r:'普通に、が一番傷つくって知ってる？' },
+    { t:'正直、味が薄い時ある', d:14, s:-4, r:'……二度と作らない' } ] },
+  { q:'私の実家への挨拶、来てくれる？', honne:'荷が重い', opts:[
+    { t:'行くよ。緊張するけど、ミサキのためなら', d:-6, s:2, r:'…ほんとに？ お父さんに言っとく' },
+    { t:'そのうちね', d:4, s:0, r:'そのうちっていつ？' },
+    { t:'まだ早いんじゃない？', d:14, s:-4, r:'私のことは、その程度なんだ' } ] },
+  { q:'私のこと、世界で何番目に好き？', honne:'圏外', opts:[
+    { t:'1番。比べるまでもない', d:-6, s:2, r:'…即答じゃん。…嬉しい' },
+    { t:'上位ではあるよ', d:4, s:0, r:'上位って何位？ 1位じゃないんだ' },
+    { t:'順位つけるものじゃないだろ', d:14, s:-4, r:'逃げた。つまり1位じゃない' } ] },
+  { q:'元カノとまだ連絡、取ってないよね？', honne:'たまに生存確認はしてる', opts:[
+    { t:'取ってない。連絡先も消した', d:-6, s:2, r:'…消したんだ。…うん、信じる' },
+    { t:'向こうからは来ないよ', d:4, s:0, r:'来たら返すの？ 聞き方、怪しい' },
+    { t:'誕生日に一言くらいは送る', d:14, s:-4, r:'……なんで覚えてるの、誕生日' } ] },
+  { q:'声が小さい。…寝そうになってない？', honne:'なってる', opts:[
+    { t:'なってない。ミサキの声、ちゃんと聞いてる', d:-6, s:2, r:'…ほんと？ じゃあ次、行くよ' },
+    { t:'ちょっと眠いのは事実', d:4, s:0, r:'正直なのはいいけどさ…' },
+    { t:'正直、限界近い', d:14, s:-4, r:'限界、ね。私との電話が' } ] },
+];
+/* 最終ステージ専用の地雷質問：どの答えも不信感が上がる */
+const TRAPS = [
+  { q:'あんたの元カノの話、もっと詳しく聞かせて', honne:'語りたくない', trap:true, opts:[
+    { t:'元気にしてるらしいよ、この前…', d:16, s:-2, r:'へぇ、連絡取ってるんだ' },
+    { t:'覚えてない。本当に何も', d:10, s:0, r:'覚えてないわけないじゃん。付き合ってたんでしょ' },
+    { t:'その話はしたくない', d:12, s:-2, r:'隠すってことは、未練があるってことだよね' } ] },
+  { q:'私と元カノが同時に溺れたら、どっち助ける？', honne:'泳げないから無理', trap:true, opts:[
+    { t:'ミサキに決まってる', d:8, s:2, r:'…なんで一瞬、間があったの？' },
+    { t:'両方助ける', d:12, s:0, r:'欲張り。現実見て' },
+    { t:'元カノは泳げるはず…', d:22, s:-4, r:'泳げること、知ってるんだ' } ] },
+  { q:'私のこと、数字で言って。何点？', honne:'面倒くさい', trap:true, opts:[
+    { t:'100点', d:8, s:2, r:'満点って言う人ほど、嘘くさい' },
+    { t:'点数なんてつけられない', d:10, s:0, r:'つけられないって、0点ってこと？' },
+    { t:'85点くらい', d:14, s:-2, r:'残りの15点は何？ 言ってみて' } ] },
+];
+/* 最終ステージ：正解を言っても彼女はこう返す */
+const RAGE_GOOD_REACTS = [
+  '…ふーん、優しいじゃん。……なんで今日に限って優しいの？ 怪しい',
+  '……今の、誰にでも言ってるんじゃないの？',
+  '……っ。そういうこと言うの、ずるい。……もっと言って',
+  '……信じたいけど、今日のあんた、なんか変',
+  '……うん。……うん、じゃあ次もちゃんと答えて',
+];
+const AIZUCHI = [
+  { line:'今日さ、職場の先輩がね、後輩の前で私だけ注意してきて…あれ絶対、私のこと嫌いだよね？ ねえ？', zone:[0.52, 0.74] },
+  { line:'でね、友達の彼氏が浮気してたらしくて…男って、なんでああなんだろうね。…ねえ、聞いてる？', zone:[0.45, 0.65] },
+  { line:'あ、そういえば聞いて。この前、駅で小学生の時の同級生に会ってさ、全然変わってなくて…', zone:[0.58, 0.78] },
+  { line:'私さ、あんたにだけは言えるけど…ほんとは今日、仕事でだいぶ凹んでて…', zone:[0.40, 0.58] },
+  { line:'ねえ、明日の話なんだけど、私、朝からあんたに会いたいなって思ってて…', zone:[0.50, 0.70] },
+  { line:'あのね、この前あんたが言ってた店、今度二人で行こうって話…あれ、本気だからね？', zone:[0.48, 0.68] },
+];
+const ENDINGS = {
+  clear:   { icon:'🌙', name:'エンディング「おやすみ」', title:'「…寝ていいよ」', sub:'全問に耐えきった。彼女は満足して、ようやく眠らせてくれた。' },
+  sleep:   { icon:'💤', name:'エンディング「寝落ちバレ」', title:'「…寝てるでしょ。いびき、聞こえてる」', sub:'限界だった。静寂のあと、遠くで電話が切れる音がした。' },
+  breakup: { icon:'💔', name:'エンディング「もういい、別れる」', title:'「もういい。別れる」', sub:'不信感が限界を超えた。明日の朝、謝罪の電話から始まる。' },
+  honne:   { icon:'🗯️', name:'エンディング「本音漏れ」', title:'言ってはいけない一言が、出た。', sub:'眠気は、人間の本音のロックを外す。' },
+};
+function clamp100(v){ return Math.max(0, Math.min(100, v)); }
+function shuffled(arr, rng){
+  const a = arr.slice();
+  const r = rng || Math.random;
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(r() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function drawQuestions(stageIdx, rng){
+  const sd = STAGES[stageIdx];
+  let pool = QUESTIONS.slice();
+  if (sd.rage) pool = pool.concat(TRAPS);
+  return shuffled(pool, rng).slice(0, sd.totalQ);
+}
+function newState(stageIdx, qs){
+  const sd = STAGES[stageIdx];
+  return { stage: stageIdx, qs: qs, sleep: 0, susp: sd.suspStart, qi: 0,
+    slapsLeft: sd.slapMax, fatalLine: null, end: null, aizuchiDone: 0,
+    tick: sd.tick, slowSec: sd.slowSec, slowPenalty: sd.slowPenalty, honneAt: sd.honneAt,
+    creep: sd.creep, rage: sd.rage, totalQ: sd.totalQ, azBase: sd.azBase, azWidthMul: sd.azWidthMul,
+    aizuchiAfter: sd.aizuchiAfter,
+    accelDiv: sd.accelDiv, rampDiv: sd.rampDiv, waveStart: sd.waveStart, waveCycle: sd.waveCycle,
+    waveDur: sd.waveDur, waveMul: sd.waveMul };
+}
+/* 彼女の機嫌：不信感の蓄積で変わる。不機嫌だと許してもらいにくく、疑い状態だと失点が重い */
+function moodOf(st){
+  return st.susp >= 60 ? 'bad' : (st.susp >= 30 ? 'doubt' : 'normal');
+}
+/* 眠気の進む速さ：悩む時間（質問経過）×通話の長さ×眠気の波 で加速する */
+function sleepRate(st, ctx){
+  const c = ctx || {};
+  let mul = 1 + (c.callElapsed || 0) / st.rampDiv;
+  if (c.phase === 'question') mul *= 1 + (c.qElapsed || 0) / st.accelDiv;
+  if (c.wave) mul *= st.waveMul;
+  if (mul > 6) mul = 6;
+  return { rate: st.tick * mul, mul };
+}
+/* 眠気の波：開始 waveStart 秒から waveCycle 秒ごとに waveDur 秒間 */
+function isWave(st, t){
+  if (t < st.waveStart) return false;
+  return ((t - st.waveStart) % st.waveCycle) < st.waveDur;
+}
+function checkEnd(st){
+  if (st.susp >= 100) return 'breakup';
+  if (st.sleep >= 100) return 'sleep';
+  return null;
+}
+function advanceTime(st, sec, ctx){
+  st.sleep = clamp100(st.sleep + sec * sleepRate(st, ctx).rate);
+  if (st.creep) st.susp = clamp100(st.susp + sec * st.creep);
+  return checkEnd(st);
+}
+function applyAnswer(st, opt, elapsedSec){
+  const slow = elapsedSec > st.slowSec;
+  if (slow) st.susp += st.slowPenalty;
+  const mood = moodOf(st);
+  let d = opt.d;
+  if (d < 0 && (st.rage || mood === 'bad')) d = Math.ceil(d / 2); /* 不機嫌だと機嫌が直りにくい */
+  if (d > 0){ if (mood === 'doubt') d += 2; else if (mood === 'bad') d += 3; } /* 疑われていると失点が重い */
+  st.susp = clamp100(st.susp + d);
+  st.sleep = clamp100(st.sleep + opt.s);
+  st.qi++;
+  return { slow, end: checkEnd(st) };
+}
+function applyAizuchi(st, hit){
+  st.susp = clamp100(st.susp + (hit ? AIZUCHI_HIT : AIZUCHI_MISS));
+  st.aizuchiDone++;
+  return checkEnd(st);
+}
+function applySlap(st){
+  if (st.slapsLeft <= 0) return false;
+  st.slapsLeft--;
+  st.sleep = clamp100(st.sleep + SLAP_SLEEP);
+  st.susp = clamp100(st.susp + SLAP_SUSP);
+  return true;
+}
+globalThis.__NK__ = { STAGES, QUESTIONS, TRAPS, AIZUCHI, ENDINGS, RAGE_GOOD_REACTS, newState, drawQuestions, shuffled, advanceTime, applyAnswer, applyAizuchi, applySlap, checkEnd, moodOf, sleepRate, isWave };
+</script>
+
+<script>
+'use strict';
+/* ================= UI・進行 ================= */
+const $ = id => document.getElementById(id);
+const nowS = () => performance.now() / 1000;
+let S = null;
+function storeGet(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } }
+function storeSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function unlockedEndings(){ return storeGet('nk_endings_v1') || {}; }
+function clearedStages(){ return storeGet('nk_clears_v1') || {}; }
+function addBubble(cls, text){
+  const d = document.createElement('div');
+  d.className = 'bbl ' + cls; d.textContent = text;
+  const log = $('log');
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  setTimeout(() => { log.scrollTop = log.scrollHeight; }, 60);
+  if (cls === 'her' || cls === 'react'){
+    const nt = $('nowText');
+    if (nt) nt.textContent = text;
+  }
+}
+function fmtTime(sec){
+  const m = Math.floor(sec/60), s = Math.floor(sec%60);
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+/* 到達した問題番号（最後に出題された問題）。結果画面・画像・Xシェアで共通に使う */
+function reachedNo(){ return S.qNo || 0; }
+function renderGauges(){
+  const st = S.st;
+  $('gSleep').style.width = st.sleep + '%';
+  $('gSusp').style.width = st.susp + '%';
+  $('vSleep').textContent = Math.round(st.sleep);
+  $('vSusp').textContent = Math.round(st.susp);
+  const ow = $('optsWrap');
+  ow.style.filter = (S.phase === 'question' && st.sleep >= 50) ? 'blur(' + Math.min(2.6, (st.sleep - 50) / 18).toFixed(1) + 'px)' : '';
+  ow.classList.toggle('sway', S.phase === 'question' && st.sleep >= 70);
+  const nb = $('nowBox');
+  if (nb) nb.classList.toggle('sway', S.phase === 'question' && st.sleep >= 70);
+  const hb = $('honneBtn');
+  const cur = st.qs && st.qs[st.qi];
+  if (S.phase === 'question' && cur && st.sleep >= st.honneAt){
+    hb.style.display = 'block';
+    hb.innerHTML = '<span class="hl">💤 眠すぎて、本音が出そう…</span>「' + cur.honne + '」';
+  } else hb.style.display = 'none';
+  $('slapLeft').textContent = st.slapsLeft;
+  $('slapBtn').style.display = (S.phase === 'question' || S.phase === 'aizuchi') && st.slapsLeft > 0 ? 'block' : 'none';
+  const rm = $('rateMul');
+  if (rm){
+    let txt = '';
+    if (S.waveOn) txt = '🌊波 ×' + st.waveMul.toFixed(1);
+    else if (S.curMul && S.curMul >= 1.3) txt = '加速 ×' + S.curMul.toFixed(1);
+    rm.textContent = txt;
+  }
+  const cs = $('callStat');
+  if (cs){
+    const mood = moodOf(st);
+    if (mood === 'bad'){ cs.textContent = '● 通話中（不機嫌！）'; cs.style.color = '#ff8fa5'; }
+    else if (mood === 'doubt'){ cs.textContent = '● 通話中（疑ってる…）'; cs.style.color = '#ffd76a'; }
+    else { cs.textContent = '● 通話中'; cs.style.color = '#9fe8a8'; }
+  }
+}
+function renderStageList(){
+  const cl = clearedStages();
+  $('stageList').innerHTML = '<div class="sl-t">ステージを選んでね</div>' + STAGES.map((sd, i) =>
+    '<button class="stageCard' + (sd.rage ? ' rage' : '') + (S.selStage === i ? ' sel' : '') + '" id="stageCard' + i + '" onclick="NK.pickStage(' + i + ')">' +
+    '<span class="st-t">' + (sd.rage ? '最終ステージ' : 'ステージ' + (i + 1)) + '「' + sd.short + '」</span>' +
+    (cl[sd.id] ? '<span class="st-badge">🏅 クリア済み</span>' : '') +
+    '<div class="st-d">' + sd.desc + '</div></button>'
+  ).join('');
+}
+function showQuestion(){
+  if (S.phase === 'end') return;
+  const st = S.st;
+  S.phase = 'question'; S.qStart = nowS(); S.qNo = st.qi + 1;
+  const q = st.qs[st.qi];
+  $('qcount').textContent = '「' + STAGES[st.stage].short + '」質問 ' + (st.qi + 1) + ' / ' + st.totalQ;
+  addBubble('her', q.q);
+  const order = shuffled([0, 1, 2]);
+  S.curOrder = order;
+  $('optsWrap').innerHTML = order.map(oi => '<button class="opt" onclick="NK.answer(' + oi + ')">' + q.opts[oi].t + '</button>').join('');
+  renderGauges();
+}
+function afterReaction(){
+  if (S.phase === 'end') return;
+  const st = S.st;
+  const over = checkEnd(st); /* 反応中は判定を猶予しているので、ここで清算する（最終問で寝落ちしたのにクリア、を防ぐ） */
+  if (over){ endGame(over); return; }
+  if (st.qi >= st.totalQ){ endGame('clear'); return; }
+  if (st.aizuchiAfter.includes(st.qi)) startAizuchi();
+  else showQuestion();
+}
+function startAizuchi(){
+  const st = S.st;
+  S.phase = 'aizuchi';
+  const a = AIZUCHI[Math.min(st.aizuchiDone, AIZUCHI.length - 1)];
+  const width = Math.min(0.34, (a.zone[1] - a.zone[0]) * st.azWidthMul * (1 - st.sleep / 300));
+  S.az = { t0: nowS(), dur: Math.max(0.85, st.azBase - st.sleep * 0.005), a: a.zone[0], b: a.zone[0] + width };
+  $('amonText').textContent = a.line;
+  const nt2 = $('nowText'); if (nt2) nt2.textContent = a.line;
+  $('aizuchi').style.display = 'block';
+  const z = $('timingZone');
+  z.style.left = (S.az.a * 100) + '%'; z.style.width = ((S.az.b - S.az.a) * 100) + '%';
+  $('qcount').textContent = '彼女が話している…相づちの間をはかれ';
+  renderGauges();
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(azFrame);
+}
+/* 相づちバー：100ms刻みだと最終ステージのゾーン(約0.1秒)をマーカーが飛び越えるので毎フレーム描画 */
+function azFrame(){
+  if (S.phase !== 'aizuchi' || !S.az) return;
+  const pos = (nowS() - S.az.t0) / S.az.dur;
+  $('timingMark').style.left = Math.min(100, pos * 100) + '%';
+  requestAnimationFrame(azFrame);
+}
+function resolveAizuchi(hit){
+  const st = S.st;
+  S.phase = 'reaction';
+  $('aizuchi').style.display = 'none';
+  const end = applyAizuchi(st, hit);
+  addBubble('sys', hit ? '（相づち成功。彼女の声が少し柔らかくなった）' : '（相づちを外した。「…ねえ、聞いてる？」）');
+  renderGauges();
+  if (end) setTimeout(() => endGame(end), 900);
+  else setTimeout(showQuestion, 1100);
+}
+function endGame(kind){
+  if (S.phase === 'end') return;
+  S.phase = 'end'; S.st.end = kind;
+  $('aizuchi').style.display = 'none';
+  $('optsWrap').innerHTML = ''; $('honneBtn').style.display = 'none'; $('slapBtn').style.display = 'none';
+  $('qcount').textContent = '';
+  const un = unlockedEndings(); un[kind] = true; storeSet('nk_endings_v1', un);
+  if (kind === 'clear'){
+    const cl = clearedStages(); cl[STAGES[S.st.stage].id] = true; storeSet('nk_clears_v1', cl);
+  }
+  const E = ENDINGS[kind];
+  $('endTitle').textContent = E.title;
+  $('endSub').textContent = E.sub;
+  if (kind === 'honne' && S.st.fatalLine){
+    $('endLine').style.display = 'block';
+    $('endLineText').textContent = '「' + S.st.fatalLine + '」';
+  } else $('endLine').style.display = 'none';
+  const reached = kind === 'clear' ? '全' + S.st.totalQ + '問クリア' : reachedNo() + '問目で終了';
+  $('endStats').innerHTML = 'ステージ：' + STAGES[S.st.stage].short + '<br>到達：' + reached + '<br>最終ゲージ：眠気 ' + Math.round(S.st.sleep) + ' ／ 不信感 ' + Math.round(S.st.susp) + '<br>通話時間：' + fmtTime(nowS() - S.startedAt);
+  renderZukan($('zukan'));
+  setTimeout(() => $('endScr').classList.add('on'), 700);
+  S.lastEnding = kind;
+}
+function renderZukan(el){
+  const un = unlockedEndings();
+  const got = Object.keys(ENDINGS).filter(k => un[k]).length;
+  el.innerHTML = '<div class="zt">📖 エンディング図鑑（' + got + ' / ' + Object.keys(ENDINGS).length + '）</div>' +
+    Object.keys(ENDINGS).map(k => {
+      const e = ENDINGS[k];
+      return un[k]
+        ? '<div class="zend"><span class="zi">' + e.icon + '</span><span>' + e.name + '</span></div>'
+        : '<div class="zend locked"><span class="zi">🔒</span><span>？？？</span></div>';
+    }).join('');
+}
+const NK = {
+  pickStage(i){
+    S.selStage = i;
+    storeSet('nk_stage_v1', i); /* 「もう一度」は reload なので、選んだステージを覚えておく */
+    renderStageList();
+  },
+  start(){
+    const qs = drawQuestions(S.selStage);
+    S.st = newState(S.selStage, qs); S.phase = 'question'; S.startedAt = nowS(); S.waveOn = false; S.curMul = 1;
+    $('startScr').classList.remove('on');
+    $('log').innerHTML = '';
+    addBubble('sys', '深夜1:07 ─ ミサキから着信');
+    addBubble('sys', 'ステージ「' + STAGES[S.selStage].short + '」');
+    addBubble('her', S.st.rage ? 'ねえ。…あんたに言いたいことがあるんだけど' : 'ねえ、起きてる？ …じゃあ聞いて。');
+    showQuestion();
+  },
+  answer(i){
+    if (S.phase !== 'question') return;
+    const st = S.st, q = st.qs[st.qi], opt = q.opts[i];
+    const res = applyAnswer(st, opt, nowS() - S.qStart);
+    $('optsWrap').innerHTML = '';
+    addBubble('me', opt.t);
+    if (res.slow) addBubble('sys', '（返事が遅かった…彼女の声が少し冷たくなった）');
+    addBubble('react', (st.rage && opt.d < 0) ? RAGE_GOOD_REACTS[st.qi % RAGE_GOOD_REACTS.length] : opt.r);
+    S.phase = 'reaction';
+    renderGauges();
+    if (res.end) setTimeout(() => endGame(res.end), 1300);
+    else setTimeout(afterReaction, 1700);
+  },
+  un(){
+    if (S.phase !== 'aizuchi') return;
+    const pos = (nowS() - S.az.t0) / S.az.dur;
+    resolveAizuchi(pos >= S.az.a && pos <= S.az.b);
+  },
+  slap(){
+    if (S.phase !== 'question' && S.phase !== 'aizuchi') return;
+    if (!applySlap(S.st)) return;
+    addBubble('sys', '（バチン！ …「今の音、何？」怪しまれたが、目は覚めた）');
+    renderGauges();
+    const end = checkEnd(S.st);
+    if (end) endGame(end);
+  },
+  honne(){
+    if (S.phase !== 'question' || S.st.sleep < S.st.honneAt) return;
+    const st = S.st;
+    st.fatalLine = st.qs[st.qi].honne;
+    $('optsWrap').innerHTML = ''; $('honneBtn').style.display = 'none';
+    addBubble('me', st.fatalLine);
+    S.phase = 'reaction';
+    setTimeout(() => endGame('honne'), 900);
+  },
+  shareImage(){
+    try {
+      const kind = S.lastEnding || 'clear', E = ENDINGS[kind];
+      const cv = $('shareCanvas'), ctx = cv.getContext('2d');
+      ctx.fillStyle = '#0d0a1a'; ctx.fillRect(0, 0, 1200, 630);
+      ctx.fillStyle = '#b04df0'; ctx.fillRect(0, 0, 1200, 10);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#8a94a6'; ctx.font = '700 34px sans-serif';
+      ctx.fillText('ねえ、起きてる？ 〜メンヘラ彼女の尋問電話〜', 600, 84);
+      ctx.fillStyle = '#ffffff'; ctx.font = '900 62px sans-serif';
+      ctx.fillText(E.name, 600, 210);
+      ctx.font = '900 54px sans-serif'; ctx.fillStyle = '#ffd76a';
+      const main = (kind === 'honne' && S.st.fatalLine) ? '「' + S.st.fatalLine + '」' : E.title;
+      ctx.fillText(main, 600, 330);
+      ctx.fillStyle = '#c9d2e8'; ctx.font = '700 38px sans-serif';
+      ctx.fillText((kind === 'clear' ? '全' + S.st.totalQ + '問に耐えきった' : '到達 ' + reachedNo() + '問目') + ' ／ ステージ「' + STAGES[S.st.stage].short + '」', 600, 440);
+      ctx.fillStyle = '#8a94a6'; ctx.font = '400 28px sans-serif';
+      ctx.fillText('眠気 ' + Math.round(S.st.sleep) + ' ・ 不信感 ' + Math.round(S.st.susp) + ' ｜ 眠いのに終わらない、尋問電話に耐えるゲーム', 600, 545);
+      const a = document.createElement('a');
+      a.download = 'ne-oki-result.png'; a.href = cv.toDataURL('image/png'); a.click();
+    } catch(e){}
+  },
+  shareX(){
+    const kind = S.lastEnding || 'clear', E = ENDINGS[kind];
+    const stg = 'ステージ「' + STAGES[S.st.stage].short + '」';
+    let text;
+    if (kind === 'clear') text = 'メンヘラ彼女の尋問電話（' + stg + '）、全' + S.st.totalQ + '問に耐えきって「寝ていいよ」をもらいました。';
+    else if (kind === 'honne') text = '眠すぎて彼女に言ってしまいました。「' + (S.st.fatalLine || '') + '」…終わりました。（' + stg + '）';
+    else text = '彼女の尋問電話（' + stg + '）、' + reachedNo() + '問目で力尽きました（' + E.name + '）。';
+    text += ' #ねえ起きてる';
+    try { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank'); } catch(e){}
+  },
+};
+/* ---- 初期化＆ティック ---- */
+S = { st: newState(1, []), phase: 'start', qStart: 0, startedAt: 0, az: null, lastEnding: null, selStage: 1, curOrder: [0, 1, 2], waveOn: false, curMul: 1 };
+{ const ls = storeGet('nk_stage_v1'); if (typeof ls === 'number' && STAGES[ls]) S.selStage = ls; }
+renderStageList();
+renderZukan($('zukanStart'));
+/* ティック：実経過時間で進める（端末が重くて間隔が延びても眠気が遅れない）。
+   画面を離れている間（ロック・タブ切替）は通話を一時停止する */
+let lastTick = nowS(), hiddenAt = null;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ hiddenAt = nowS(); return; }
+  if (hiddenAt === null) return;
+  const gap = nowS() - hiddenAt; hiddenAt = null; lastTick = nowS();
+  if (S && S.phase !== 'start' && S.phase !== 'end'){ S.startedAt += gap; S.qStart += gap; if (S.az) S.az.t0 += gap; }
+});
+setInterval(() => {
+  const tNow = nowS(), dt = Math.min(0.25, Math.max(0, tNow - lastTick)); lastTick = tNow;
+  if (!S || S.phase === 'start' || S.phase === 'end' || document.hidden) return;
+  const callElapsed = nowS() - S.startedAt;
+  const wave = isWave(S.st, callElapsed);
+  if (wave && !S.waveOn) addBubble('sys', '（🌊 眠気の波が来た…！ 眠気が加速している）');
+  S.waveOn = wave;
+  const ctx = { phase: S.phase, qElapsed: S.phase === 'question' ? nowS() - S.qStart : 0, callElapsed: callElapsed, wave: wave };
+  S.curMul = sleepRate(S.st, ctx).mul;
+  if (S.phase !== 'reaction'){
+    const end = advanceTime(S.st, dt, ctx);
+    if (end){ endGame(end); return; }
+  } else {
+    advanceTime(S.st, dt, ctx); /* 反応中は終了判定せず、時間だけ進める */
+  }
+  $('callTime').textContent = fmtTime(nowS() - S.startedAt);
+  if (S.phase === 'aizuchi' && S.az){
+    const pos = (nowS() - S.az.t0) / S.az.dur;
+    $('timingMark').style.left = Math.min(100, pos * 100) + '%';
+    if (pos > 1) resolveAizuchi(false);
+  }
+  renderGauges();
+}, 100);
+globalThis.__NK_UI__ = { NK, state: () => S, setSleep: v => { S.st.sleep = v; renderGauges(); }, setSusp: v => { S.st.susp = v; renderGauges(); } };
+</script>
+</body>
+</html>
