@@ -207,6 +207,11 @@ body.night .boardbar .info{color:#93a1c2}
 .rline .g{flex:1;font-weight:800}
 .rline b{color:var(--ng)}
 .rline .fix{font-size:16px;min-width:46px;text-align:right}
+.onrow{display:grid;grid-template-columns:1fr auto;gap:0 8px;width:100%;text-align:left;padding:7px 0;border-top:1px dashed var(--line)}
+.onrow:first-of-type{border:0}
+.onrow .o{font-size:12.5px;color:var(--sub);text-decoration:line-through;grid-column:1}
+.onrow .n{font-size:14px;font-weight:900;grid-column:1}
+.onrow em{grid-column:2;grid-row:1/3;align-self:center;font-style:normal;font-size:16px;min-width:22px;text-align:center}
 .calm{font-size:13px;color:var(--sub);margin-top:6px}
 .hint{font-size:11px;color:var(--sub);margin-top:6px}
 .crow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px dashed var(--line);font-size:18px}
@@ -705,6 +710,27 @@ const CALLS = [
     good: "変えて、人ごとのIDに", bad: "辞めた人に口外しない誓約をさせる", hit: { hole: 1 },
     ok: "パスワードを変え、管理者は人ごとのIDにした。", ng: "誓約では、もう広まったパスワードは戻らなかった。",
     long: "みんなで共有するパスワードは、誰が使ったか分からず、辞めた人も使えたままになります。管理者の作業は人ごとのIDで行い、共有のパスワードは人が抜けるたびに変えます。" },
+  /* ---- 昔の常識が、いまは逆効果 ---- */
+  { id: "complexity", who: "総務", q: "パスワードのルール、「大文字・小文字・数字・記号を全部入れて8文字以上」にしましょうか？",
+    good: "長さを優先し、記号は強制しない", bad: "全部必須にする", hit: { hole: 1 },
+    ok: "「長く、使い回さない」をルールにした。", ng: "みんな「Password1!」のような型どおりのパスワードになり、推測された。",
+    long: "以前は「記号や大文字を必ず混ぜる」が常識でしたが、こうしたルールを強制すると、人は「Password1!」のような型どおりのパスワードを作りがちで、攻撃者もそれを知っています。米国のガイドライン（NIST）の改訂版では、混ぜ方のルールを課すべきではないとし、代わりに長さと、漏れたことのあるパスワードを使わせないことを重視しています。" },
+  { id: "secretq", who: "総務", q: "パスワードを忘れたときのために、「母親の旧姓」を秘密の質問に設定してもらいますね。",
+    good: "秘密の質問は使わない", bad: "設定してもらう", hit: { hole: 1 },
+    ok: "忘れたときは、本人確認をしてから情シスがリセットする形にした。", ng: "社員の母親の旧姓は、SNSの親族の投稿から調べられた。",
+    long: "母親の旧姓、出身校、ペットの名前といった「秘密の質問」の答えは、SNSや公開情報から調べられることが多く、いまは本人確認の方法として使わないことが推奨されています。" },
+  { id: "sms2fa", who: "営業", q: "二段階認証、SMSでコードが届く方式とスマホのアプリで承認する方式、手軽なSMSでいいですよね？",
+    good: "認証アプリかパスキーにする", bad: "手軽なSMSでいい", hit: { hole: 1 },
+    ok: "認証アプリに切り替えた。", ng: "電話番号を乗っ取られ、SMSのコードが攻撃者に届いた。",
+    long: "SMSのコードは、何もしないよりずっと安全です。ただ、携帯電話の番号を乗っ取る手口（SIMスワップ）や、偽サイトでの中継に弱く、米国のガイドラインでは制限付きの扱いになっています。選べるなら、認証アプリやパスキーのほうが強い方式です。" },
+  { id: "wifi", who: "営業", q: "出張先のカフェで仕事したいです。公衆Wi-Fiって、絶対に使っちゃダメなんですよね？",
+    good: "お店の正式なWi-Fiなら使っていい", bad: "絶対ダメ、使わないで", hit: { biz: 5 },
+    ok: "お店の掲示と同じ名前のWi-Fiにつないで、仕事を進めた。", ng: "スマホの通信量が尽きて、取引先に資料を送れなかった。",
+    long: "以前は「公衆Wi-Fiは危険」が定番でしたが、いまはほとんどのサイトやサービスの通信が暗号化されているため、昔ほどの危険はありません。ただし、お店の名前に似せた偽のアクセスポイントには注意が必要です。お店の掲示と名前を確かめる、会社が用意した安全な接続を使う、が基本です。" },
+  { id: "breachrpt", who: "総務", min: 3, q: "不正アクセスで、顧客300人分の情報が漏れたかもしれません。まだ確定じゃないので、調べ終わってから考えればいいですよね？",
+    good: "「おそれ」の段階で国と本人に報告", bad: "確定するまで待つ", hit: { hp: 6, n: "報告遅れ" },
+    ok: "数日のうちに国へ速報を出し、顧客にも知らせた。", ng: "「おそれ」の段階でも報告が必要だった。報告が遅れ、信用を失った。",
+    long: "2022年4月の個人情報保護法の改正で、不正アクセスなどによる漏えいは、確定していない「おそれ」の段階でも、国（個人情報保護委員会）への報告と本人への通知が義務になりました。まず速やかに速報を出し、調べがついてから詳しい報告をします。隠したり遅らせたりするほど、信用を失います。" },
   /* ---- 慎重すぎても困る（正しい依頼） ---- */
   { id: "okpdf", who: "経理", q: "さっき電話で話した取引先から、約束どおり見積書のPDFが届きました。開いていいですか？",
     good: "開いていい", bad: "念のため削除させる", hit: { biz: 5 },
@@ -817,6 +843,31 @@ G.ev = (i) => {
 };
 
 /* ============ 準備（買う） ============ */
+/* ============ 昔の常識 → いま（エンディングで表示） ============ */
+const OLDNEW = [
+  ["パスワードは定期的に変える", "漏れていなければ変えなくていい", "pwrotate"],
+  ["記号や大文字を必ず混ぜる", "長さのほうが大事", "complexity"],
+  ["「秘密の質問」で本人確認", "使わない（SNSで調べられる）", "secretq"],
+  ["パスワードは頭で覚える", "管理アプリに任せる", "pwmgr"],
+  ["SMSの二段階認証なら安心", "認証アプリやパスキーがより強い", "sms2fa"],
+  ["パスワード付きZIP＋別メール", "意味が薄い（政府も廃止）", "newhire"],
+  ["鍵マークがあれば安全なサイト", "偽サイトも鍵マーク付き", "survey"],
+  ["詐欺メールは日本語が変", "AIで自然な文面になった", null, "phish2"],
+  ["公衆Wi-Fiは絶対ダメ", "正式なものなら危険は下がった", "wifi"],
+  ["社内ネットワークの中は安全", "中でも毎回確かめる（ゼロトラスト）", null, "vpn2"],
+  ["ウイルス対策ソフトで十分", "ふるまいで見つける監視も要る", null, "mal"],
+  ["バックアップがあればOK", "切り離して、戻せるか試す", "bkdrive"],
+  ["教育すればミスは防げる", "ミスする前提で、報告しやすく", "report"],
+  ["漏えいはこっそり対処", "国への報告と本人通知が義務", "breachrpt"],
+];
+function oldNewRows() {
+  const R = S.callRes || {};
+  return OLDNEW.map(([o, n, cid, atk]) => {
+    const mark = cid && cid in R ? (R[cid] ? `<em class="ok">⭕</em>` : `<em class="ng">❌</em>`) : `<em></em>`;
+    const tap = cid ? `G.infoCall('${cid}')` : `G.infoAtk('${atk}')`;
+    return `<button class="onrow" onclick="${tap}"><span class="o">${o}</span><span class="n">→ ${n}</span>${mark}</button>`;
+  }).join("");
+}
 const NEWS = {
   3: ["📧", "ウイルス付きメールが来はじめた"],
   4: ["🚪", "VPN機器の弱点が狙われている"],
@@ -1027,6 +1078,7 @@ function answerCall(N, good) {
   const c = cur.c, h = c.hit;
   S.calls++; if (good) S.callsOk++;
   N.callLog.push({ id: c.id, ok: good, auto });
+  (S.callRes = S.callRes || {})[c.id] = good;
   if (!good) {
     if (h.hole !== undefined) {
       const l = h.hole, base = ["phish", "pw", "vpn"][l];
@@ -1195,6 +1247,8 @@ G.end = (ok) => {
       <div class="crow"><button onclick="G.infoAtk('supply')">🤝</button><span>→</span><b>🗂️🛡️</b><span class="sep"></span><button onclick="G.infoDef('backup')">💾</button><span style="font-size:12px;color:var(--sub)">やられても戻せる</span></div>
       <p class="long" style="margin-top:12px">どんな対策にも、すり抜ける手口がある。だから入口で止めるだけでなく、社内で広げず、最後はバックアップで立ち直る。これを「多層防御」という。</p>
       <p class="long">現実で、個人がまずやるなら：二段階認証かパスキーを設定する。パスワードを使い回さない。更新はすぐ当てる。お金の話は折り返して確かめる。大事なデータはバックアップする。</p></div>
+    <div class="card"><h2>📚 昔の常識 → いま<small>タップで説明</small></h2>${oldNewRows()}
+      <p class="hint">⭕❌は、今回その問い合わせに答えた結果</p></div>
     <div class="share">
       <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(GAME_URL)}" target="_blank" rel="noopener">𝕏 結果をポスト</a>
       <button onclick="G.start()">もう一度</button>
