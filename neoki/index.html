@@ -4,7 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ねえ、起きてる？ 〜メンヘラ彼女の尋問電話〜</title>
-<meta name="description" content="眠いのに終わらない、彼女からの尋問電話。眠気と不信感の板挟みで耐えきれるか？ 最終ステージ「もう疲れた」は最初からブチギレ。">
+<meta name="description" content="眠いのに終わらない、メンヘラ彼女の尋問電話。眠気と不信感の板挟みで、全問に耐えきれるか？ 眠すぎると「言ってはいけない本音」が出そうになる。">
+<meta property="og:title" content="ねえ、起きてる？">
+<meta property="og:description" content="眠いのに終わらない、メンヘラ彼女の尋問電話。眠気と不信感の板挟みで、全問に耐えきれるか？ 眠すぎると「言ってはいけない本音」が出そうになる。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://red-freegames.github.io/neoki/">
+<meta property="og:site_name" content="RED FREE GAMES">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:image" content="https://red-freegames.github.io/neoki/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://red-freegames.github.io/neoki/og.png">
+<link rel="canonical" href="https://red-freegames.github.io/neoki/">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body {
@@ -105,6 +117,8 @@
   .hzi .hq { display:block; font-size:11px; opacity:.6; }
   .hzi.locked { opacity:.45; }
   #endStats .ttlb { display:inline-block; margin-bottom:6px; padding:4px 14px; border-radius:999px; background:rgba(255,215,106,.14); border:1px solid rgba(255,215,106,.5); color:#ffd76a; font-weight:900; }
+  .sitelink { margin-top:18px; font-size:12px; line-height:1.8; opacity:.75; }
+  .sitelink a { color:#ffd76a; font-weight:800; }
   .foot { padding:10px 16px 14px; text-align:center; font-size:10px; color:rgba(255,255,255,.35); }
   /* 縦が短い端末：操作エリアを詰めて会話ログの高さを確保 */
   @media (max-height:700px){
@@ -123,6 +137,8 @@
     .foot { padding:4px 16px 6px; }
   }
 </style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
+     crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="stage">
@@ -171,6 +187,7 @@
     <div id="stageList"></div>
     <button class="bigbtn" onclick="NK.start()">📞 電話に出る</button>
     <div id="zukanStart" style="width:100%"></div>
+    <div class="sitelink"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a><br>実況・配信・動画投稿・収益化OK</div>
   </div>
 
   <div class="overlay" id="endScr">
@@ -182,6 +199,7 @@
     <button class="ghostbtn" onclick="NK.shareX()">Xでシェア</button>
     <button class="ghostbtn" onclick="location.reload()">もう一度電話に出る</button>
     <div id="zukan" style="width:100%"></div>
+    <div class="sitelink"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></div>
   </div>
 
   <canvas id="shareCanvas" width="1200" height="630" style="display:none"></canvas>
@@ -949,7 +967,7 @@ const NK = {
     else if (kind === 'honne') text = '眠すぎて彼女に言ってしまいました。「' + (S.st.fatalLine || '') + '」…終わりました。（' + stg + '）';
     else text = '彼女の尋問電話（' + stg + '）、' + reachedNo() + '問目で力尽きました（' + E.name + '）。';
     text += ' 称号「' + (S.title || '') + '」 #ねえ起きてる';
-    try { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank'); } catch(e){}
+    try { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent('https://red-freegames.github.io/neoki/'), '_blank'); } catch(e){}
   },
 };
 /* ---- 初期化＆ティック ---- */
