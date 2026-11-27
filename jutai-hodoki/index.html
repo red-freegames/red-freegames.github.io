@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>渋滞ほどき</title>
+<meta name="description" content="めちゃくちゃ混んでる道路を、予算内の工事でほどく交通パズル。道路・橋・跨線橋・立体交差・拡幅を組み合わせて、朝のラッシュを乗り切れ。PC向けブラウザゲーム。">
+<meta property="og:title" content="渋滞ほどき">
+<meta property="og:description" content="大渋滞の街を、予算内の道路工事でほどけ。橋を架け、踏切を跨ぎ、交差点を立体化する交通パズル。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://red-freegames.github.io/jutai-hodoki/">
+<meta property="og:site_name" content="RED FREE GAMES">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:image" content="https://red-freegames.github.io/jutai-hodoki/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://red-freegames.github.io/jutai-hodoki/og.png">
+<link rel="canonical" href="https://red-freegames.github.io/jutai-hodoki/">
+<style>
+:root{color-scheme:light;--bg:#e7ecdf;--panel:#fff;--ink:#1f2a22;--sub:#617063;--line:#d3dbcb;--accent:#e8262b;--ok:#139254;--okbg:#e1f5ea;--warn:#c77800;--warnbg:#fff2d6;--ng:#d7263d;--ngbg:#fde5e8;--dark:#253229;--sel:#ffd54a}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.5;overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none}
+a{color:inherit}
+#app{height:100vh;display:flex;flex-direction:column}
+#top{flex:none;height:48px;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--dark);color:#fff}
+#top .brand{font-size:11px;font-weight:900;letter-spacing:.08em;color:#ff8a8d;text-decoration:none}
+#top h1{font-size:20px;font-weight:900;letter-spacing:.06em}
+#top h1 span{color:var(--sel)}
+#stageLabel{font-size:13px;font-weight:800;color:#c9d6cc;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{font-size:12px;font-weight:800;border:1.5px solid #6d7f72;border-radius:99px;padding:4px 12px;color:#e8efe9}
+.hbtn:hover{background:#34443a}
+#main{flex:1;min-height:0;display:flex;gap:12px;padding:10px 12px 12px;justify-content:center}
+#stageWrap{position:relative;flex:none;align-self:flex-start;width:min(calc(100vw - 360px),calc((100vh - 70px) * 1.5));aspect-ratio:3/2;border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px #2a372d,0 6px 20px rgba(0,0,0,.18);background:#8fcf6e}
+#cv{display:block;width:100%;height:100%;cursor:crosshair;touch-action:none}
+#side{flex:none;width:320px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:100%;padding-right:2px}
+.box{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px}
+.box h3{font-size:11px;font-weight:900;color:var(--sub);letter-spacing:.08em;margin-bottom:4px;display:flex;justify-content:space-between}
+.goal b{font-size:15px}
+.goal .tg{display:inline-block;background:var(--ngbg);color:var(--ng);font-weight:900;border-radius:6px;padding:0 6px;font-size:13px}
+.money .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.2}
+.money .bar{height:8px;background:#e8ece4;border-radius:5px;overflow:hidden;margin-top:4px}
+.money .bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.money small{font-size:11px;color:var(--sub);font-weight:700}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tool{position:relative;text-align:left;border:2px solid var(--line);border-radius:10px;padding:6px 8px 5px;background:#fafcf8}
+.tool:hover{border-color:#9fb3a3}
+.tool.on{border-color:var(--dark);background:var(--sel);box-shadow:0 2px 0 var(--dark)}
+.tool b{display:block;font-size:14px;font-weight:900}
+.tool small{display:block;font-size:10.5px;color:var(--sub);font-weight:700;line-height:1.35}
+.tool.on small{color:#4a3d00}
+.tool kbd{position:absolute;right:6px;top:5px;font-family:inherit;font-size:10px;font-weight:900;border:1.5px solid currentColor;border-radius:4px;padding:0 4px;color:var(--sub)}
+#hoverInfo{font-size:12.5px;min-height:44px;color:var(--sub)}
+#hoverInfo b{color:var(--ink)}
+#hoverInfo .ng{color:var(--ng);font-weight:800}
+.jam{display:flex;align-items:baseline;gap:8px}
+.jam .v{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.jam .lbl{font-size:12px;font-weight:800}
+#spark{width:100%;height:46px;display:block;margin-top:4px}
+.kvs{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:12px;color:var(--sub);margin-top:4px}
+.kvs b{color:var(--ink);font-variant-numeric:tabular-nums;float:right}
+#warn{display:none;margin-top:6px;font-size:12px;font-weight:800;color:var(--ng);background:var(--ngbg);border-radius:8px;padding:4px 8px}
+.big{width:100%;font-size:16px;font-weight:900;background:var(--accent);color:#fff;border-radius:12px;padding:11px;border:2.5px solid var(--dark);box-shadow:0 4px 0 var(--dark)}
+.big:hover{filter:brightness(1.06)}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--dark)}
+.big small{display:block;font-size:11px;font-weight:700;opacity:.9}
+.row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sbtn{flex:1;font-size:12px;font-weight:800;border:1.5px solid var(--line);border-radius:8px;padding:5px 4px;background:#fafcf8;white-space:nowrap}
+.sbtn:hover{border-color:#9fb3a3}
+.sbtn.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+#voice{position:absolute;left:10px;bottom:10px;z-index:3;font-size:12.5px;font-weight:700;display:flex;flex-direction:column-reverse;gap:4px;pointer-events:none;max-width:46%}
+#voice div{display:flex;gap:6px;align-items:flex-end;animation:vin .35s ease-out}
+#voice span{flex:none;font-size:18px;line-height:1.1}
+#voice p{background:rgba(255,255,255,.93);border:1.5px solid #2a372d;border-radius:10px 10px 10px 2px;padding:3px 9px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+#voice div:nth-child(2){opacity:.75}
+#voice div:nth-child(3){opacity:.45}
+@keyframes vin{from{opacity:0;transform:translateY(-6px)}}
+#tipc{position:absolute;pointer-events:none;font-size:12px;font-weight:800;background:rgba(20,28,22,.88);color:#fff;border-radius:6px;padding:2px 7px;white-space:nowrap;display:none;transform:translate(14px,14px);z-index:5}
+#tipc.ng{background:rgba(215,38,61,.92)}
+#toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(20,28,22,.9);color:#fff;font-weight:800;font-size:14px;border-radius:10px;padding:7px 16px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:6}
+#toast.on{opacity:1}
+#testHud{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:none;align-items:center;gap:12px;background:rgba(20,28,22,.86);color:#fff;border-radius:12px;padding:6px 14px;z-index:4;font-weight:900}
+#testHud.on{display:flex}
+#testHud .clk{font-size:22px;font-variant-numeric:tabular-nums}
+#testHud .pb{width:180px;height:8px;background:#3d4a40;border-radius:5px;overflow:hidden}
+#testHud .pb i{display:block;height:100%;background:var(--sel)}
+#testHud small{font-size:11px;color:#c9d6cc;display:block}
+#testHud button{font-size:12px;font-weight:800;border:1.5px solid #7d8f81;border-radius:99px;padding:3px 10px;color:#fff}
+#ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(18,26,20,.55);z-index:10;padding:20px}
+#ov.on{display:flex}
+.card{background:var(--panel);border-radius:18px;border:3px solid var(--dark);box-shadow:0 8px 0 var(--dark);padding:22px 26px;max-width:640px;width:100%;max-height:100%;overflow-y:auto}
+.card h2{font-size:24px;font-weight:900;line-height:1.3}
+.card h2 small{display:block;font-size:12px;color:var(--sub);font-weight:800;letter-spacing:.1em}
+.card p{margin-top:8px}
+.title{text-align:center}
+.title .logo{font-size:64px;font-weight:900;letter-spacing:.08em;line-height:1.1;color:var(--dark);text-shadow:4px 4px 0 var(--sel)}
+.title .logo span{color:var(--accent)}
+.title .catch{font-weight:800;margin-top:10px;color:var(--sub)}
+.title .feat{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.title .feat span{font-size:12px;font-weight:800;background:var(--dark);color:#fff;border-radius:99px;padding:3px 12px}
+.cta{display:inline-block;margin-top:18px;font-size:18px;font-weight:900;background:var(--accent);color:#fff;border-radius:14px;padding:12px 40px;border:3px solid var(--dark);box-shadow:0 5px 0 var(--dark);text-decoration:none}
+.cta:hover{filter:brightness(1.06)}
+.cta:active{transform:translateY(3px);box-shadow:0 2px 0 var(--dark)}
+.cta.sub{background:#fff;color:var(--ink);font-size:15px;padding:9px 22px}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:14px}
+.sc{text-align:left;border:2.5px solid var(--dark);border-radius:12px;padding:10px 12px;background:#fafcf8;box-shadow:0 3px 0 var(--dark)}
+.sc:hover:not(:disabled){background:#fffbe6}
+.sc:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.sc small{font-size:11px;font-weight:900;color:var(--sub)}
+.sc b{display:block;font-size:15px;font-weight:900;line-height:1.3;margin:2px 0}
+.sc .st{color:#e0a400;font-size:16px;letter-spacing:2px}
+.sc .st i{color:#cfd6cb;font-style:normal}
+.boss{display:flex;gap:12px;align-items:flex-start;margin-top:14px}
+.boss .av{flex:none;width:52px;height:52px;border-radius:50%;background:var(--dark);display:grid;place-items:center;font-size:28px}
+.boss .say{background:#f2f5ef;border-radius:4px 14px 14px 14px;padding:10px 14px;font-size:14.5px;line-height:1.8}
+.boss .say b{display:block;font-size:11px;color:var(--sub)}
+.goalbox{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.goalbox div{background:#f2f5ef;border-radius:10px;padding:8px 10px;text-align:center}
+.goalbox small{display:block;font-size:11px;font-weight:800;color:var(--sub)}
+.goalbox b{font-size:18px;font-weight:900}
+.hint{margin-top:12px;font-size:13px;background:var(--warnbg);border-radius:10px;padding:8px 12px;color:#6b4a00}
+.res .verdict{font-size:30px;font-weight:900;text-align:center;line-height:1.3}
+.res .verdict.ok{color:var(--ok)}
+.res .verdict.ng{color:var(--ng)}
+.res .stars{text-align:center;font-size:42px;letter-spacing:8px;color:#f0b400;line-height:1.2;margin-top:4px}
+.res .stars i{color:#d6ddd2;font-style:normal}
+.cmp{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:12px;text-align:center}
+.cmp div{background:#f2f5ef;border-radius:12px;padding:8px}
+.cmp small{display:block;font-size:11px;font-weight:800;color:var(--sub)}
+.cmp b{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
+.cmp .arr{font-size:24px;font-weight:900;color:var(--sub)}
+.crit{margin-top:12px;font-size:13px;display:grid;gap:4px}
+.crit div{display:flex;justify-content:space-between;gap:8px;background:#f7f9f5;border-radius:8px;padding:4px 10px}
+.crit .y{color:var(--ok);font-weight:900}
+.crit .n{color:#9aa69c;font-weight:900}
+.share{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.share a,.share button{font-size:14px;font-weight:900;border:2.5px solid var(--dark);border-radius:12px;padding:9px 16px;text-decoration:none;box-shadow:0 3px 0 var(--dark);background:#fff}
+.share .pri{background:var(--accent);color:#fff}
+.share .x{background:#111;color:#fff}
+.note{font-size:11.5px;color:var(--sub);text-align:center;margin-top:12px}
+.help table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13.5px}
+.help td{border-bottom:1px solid var(--line);padding:5px 4px;vertical-align:top}
+.help td:first-child{white-space:nowrap;font-weight:900;width:1%;padding-right:12px}
+.help kbd{font-family:inherit;font-size:11px;font-weight:900;border:1.5px solid var(--sub);border-radius:4px;padding:0 5px}
+#mnote{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--accent);color:#fff;text-align:center;font-weight:800;font-size:13px;padding:6px;z-index:20}
+@media (max-width:900px){#mnote{display:block}body{overflow:auto}#main{flex-direction:column;align-items:center}#stageWrap{width:calc(100vw - 24px)}#side{width:100%;max-width:640px;max-height:none}}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <a class="brand" href="https://red-freegames.github.io/">RED FREE GAMES</a>
+    <h1>渋滞<span>ほどき</span></h1>
+    <div id="stageLabel"></div>
+    <button class="hbtn" id="bStages">ステージ選択</button>
+    <button class="hbtn" id="bHelp">遊び方</button>
+    <a class="hbtn" href="https://red-freegames.github.io/" style="text-decoration:none">🎮 他のゲーム</a>
+  </header>
+  <div id="main">
+    <div id="stageWrap">
+      <canvas id="cv"></canvas>
+      <div id="tipc"></div>
+      <div id="toast"></div>
+      <div id="testHud"><div><small>ラッシュアワー</small><span class="clk" id="clk">7:00</span></div><div><small id="hudJam">渋滞度 0%</small><div class="pb"><i id="pb"></i></div></div><button id="bSkip">結果へ ⏭</button></div>
+      <div id="voice"></div>
+      <div id="ov"></div>
+    </div>
+    <aside id="side">
+      <div class="box goal"><h3>目標</h3><div id="goalText"></div></div>
+      <div class="box money"><h3>工事予算<small id="usedText"></small></h3><div class="v" id="moneyText">-</div><div class="bar"><i id="moneyBar"></i></div></div>
+      <div class="box"><h3>工事 <small>右ドラッグでも撤去</small></h3>
+        <div class="tools">
+          <button class="tool on" data-tool="road"><kbd>1</kbd><b>🛣️ 道路</b><small>ドラッグで線を引く<br>川は橋・線路は跨線橋に</small></button>
+          <button class="tool" data-tool="widen"><kbd>2</kbd><b>↔️ 拡幅</b><small>2車線に広げる<br>1,500万円/マス</small></button>
+          <button class="tool" data-tool="fly"><kbd>3</kbd><b>🌉 立体化</b><small>交差点→立体交差<br>踏切→跨線橋</small></button>
+          <button class="tool" data-tool="remove"><kbd>4</kbd><b>🚧 撤去</b><small>自分の工事は全額返金<br>元の道は500万円</small></button>
+        </div>
+        <div id="hoverInfo" style="margin-top:8px"></div>
+      </div>
+      <div class="box"><h3>いまの交通<small id="modeText">試運転中</small></h3>
+        <div class="jam"><span class="v" id="jamV">0%</span><span class="lbl" id="jamL">渋滞度</span></div>
+        <canvas id="spark" width="600" height="92"></canvas>
+        <div class="kvs"><span>走行中<b id="kCars">0</b></span><span>止まっている<b id="kStop">0</b></span><span>入れない車<b id="kBack">0</b></span><span>渋滞の長さ<b id="kLen">0km</b></span></div>
+        <div id="warn"></div>
+      </div>
+      <div class="box">
+        <button class="big" id="bTest">▶ 本番テスト<small>ラッシュの2時間で判定（Enter）</small></button>
+        <div class="row">
+          <button class="sbtn" id="bPause">⏸ 一時停止</button>
+          <button class="sbtn" id="bSpeed">速度 ×1</button>
+          <button class="sbtn" id="bHeat">🔥 混雑表示</button>
+        </div>
+        <div class="row">
+          <button class="sbtn" id="bUndo">↶ 元に戻す</button>
+          <button class="sbtn" id="bReset">⟲ 最初の状態へ</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <div id="mnote">このゲームはPC（マウス操作）向けです。大きな画面で遊ぶのがおすすめ！</div>
+</div>
+<script>
+/* ===== 渋滞ほどき：ロジック（DOMに触らない。Node でも動く） ===== */
+const W = 30, H = 20, N = W * H;
+const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];   // 0=北 1=東 2=南 3=西
+const OPP = d => (d + 2) & 3;
+const T_GRASS = 0, T_WATER = 1, T_RAIL = 2, T_BLDG = 3, T_BLOCK = 4;
+
+/* 物理（1マス≒50m、1秒≒ゲーム内30秒の感覚） */
+const VMAX = 3.0, VTURN = 1.6, ACC = 5, DEC = 9, GAP = 0.45, HT = 0.25;
+const STOP = 0.72;          // 交差点・踏切の停止線（進入側の辺上の位置）
+const BOX_OUT = 0.22;       // 交差点を抜けたとみなす位置（退出側の辺上）
+const GIVEUP = 30;          // これだけ止まり続けたら諦めて消える（秒）
+const TEST_LEN = 120, WARMUP = 10;
+
+/* 費用（万円） */
+const COST = {
+  road: 2000, evict: 8000, bridge: 12000, railBridge: 10000,
+  widen: 1500, widenDeck: 4000, fly: 20000, railUp: 8000, removeOrig: 500,
+};
+
+const idx = (x, y) => y * W + x;
+const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+const nb = (i, d) => { const x = i % W + DX[d], y = (i / W | 0) + DY[d]; return inb(x, y) ? idx(x, y) : -1; };
+const pop4 = m => (m & 1) + (m >> 1 & 1) + (m >> 2 & 1) + (m >> 3 & 1);
+const dirTo = (a, b) => { const dx = b % W - a % W, dy = (b / W | 0) - (a / W | 0); return dy < 0 ? 0 : dx > 0 ? 1 : dy > 0 ? 2 : 3; };
+
+function rng32(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------- 交差点内の動線の衝突表（左側通行） ---------- */
+const LANE_OFF = 0.2;
+const leftOf = d => [DY[d], -DX[d]];
+function movePts(din, dout) {
+  const L1 = leftOf(din), L2 = leftOf(dout), o = LANE_OFF;
+  const p0 = [-DX[din] * 0.5 + L1[0] * o, -DY[din] * 0.5 + L1[1] * o];
+  const p2 = [DX[dout] * 0.5 + L2[0] * o, DY[dout] * 0.5 + L2[1] * o];
+  const p1 = din === dout ? [(p0[0] + p2[0]) / 2, (p0[1] + p2[1]) / 2] : [L1[0] * o + L2[0] * o, L1[1] * o + L2[1] * o];
+  const pts = [];
+  for (let i = 0; i <= 12; i++) { const u = i / 12, a = (1 - u) * (1 - u), b = 2 * u * (1 - u), c = u * u; pts.push([a * p0[0] + b * p1[0] + c * p2[0], a * p0[1] + b * p1[1] + c * p2[1]]); }
+  return pts;
+}
+function segX(a, b, c, d) {
+  const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d);
+  return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+}
+const CONF = (() => {
+  const T = new Uint8Array(256), P = {};
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) if (b !== OPP(a)) P[a * 4 + b] = movePts(a, b);
+  for (const m1 in P) for (const m2 in P) {
+    const a1 = m1 >> 2, b1 = m1 & 3, a2 = m2 >> 2, b2 = m2 & 3;
+    let c = 0;
+    if (a1 === a2) c = 0; else if (b1 === b2) c = 1;
+    else { const p = P[m1], q = P[m2]; outer: for (let i = 0; i < 12; i++) for (let j = 0; j < 12; j++) if (segX(p[i], p[i + 1], q[j], q[j + 1])) { c = 1; break outer; } }
+    T[m1 * 16 + +m2] = c;
+  }
+  return T;
+})();
+
+/* ---------- ステージ ---------- */
+// map: 塗りつぶし命令 [文字, x0, y0, x1, y1]  . 草地 ~ 川 = 線路 # 建物 T 林 S 学校 J 神社 H 病院 P 公園 F 工場
+// roads: 折れ線（軸に平行な線分の連なり） wide: 拡幅済みの矩形 ports: 地図の端の出入口
+const STAGES = [
+  {
+    id: 's1', name: '駅前の朝ラッシュ', budget: 40000, target: 25, clock: [7, 0],
+    voices: ['駅まであと200mなのに、もう15分動いてない', '電車、1本見送りかな…'],
+    brief: [
+      '新人さん、ようこそ道路課へ。さっそくだけど、駅前が毎朝ひどいことになってる。',
+      '住宅街の車も、団地の車も、ぜんぶ同じ交差点から駅に入ろうとするの。そりゃ詰まるよね。',
+      '駅は東の端に長く広がってる。入口がひとつしかないのが問題かも。',
+    ],
+    tip: '左ドラッグで道路を引き、離すと着工。駅の黄色い帯のどこにつないでも駅の入口になります。',
+    map: [
+      ['#', 2, 6, 13, 8], ['#', 17, 6, 27, 8], ['#', 2, 12, 12, 13], ['#', 17, 11, 27, 12],
+      ['J', 7, 2, 8, 3], ['T', 3, 1, 5, 2], ['T', 22, 1, 25, 3], ['P', 20, 15, 24, 17], ['T', 25, 17, 27, 18],
+      ['#', 3, 15, 8, 16], ['S', 10, 15, 12, 17],
+    ],
+    roads: [[[0, 10], [29, 10]], [[15, 19], [15, 10]]],
+    ports: [
+      { id: 'home', name: '住宅街', icon: '🏠', color: '#2f7de1', edge: 3, from: 7, to: 13 },
+      { id: 'sta', name: '駅', icon: '🚉', color: '#e8262b', edge: 1, from: 4, to: 15 },
+      { id: 'dan', name: '団地', icon: '🏢', color: '#18a058', edge: 2, from: 13, to: 17 },
+    ],
+    flows: [['home', 'sta', 80], ['dan', 'sta', 66], ['sta', 'home', 14], ['sta', 'dan', 14], ['home', 'dan', 8]],
+    rails: [],
+  },
+  {
+    id: 's2', name: '川向こうのニュータウン', budget: 70000, target: 25, clock: [7, 0],
+    voices: ['橋の上で朝日を眺める時間が長すぎる', '川、泳いだほうが早くない？'],
+    brief: [
+      '川の西にニュータウンができてから、橋がずっと渋滞してるの。',
+      '向こう岸のオフィス街にも駅にも、渡れる橋はたったひとつ。',
+      '橋は高いけど、川の上は道路ドラッグでそのまま架けられるよ。',
+    ],
+    tip: '川の上に道路を引くと橋になります（1マス1億2,000万円）。橋の上では曲がれません。',
+    map: [
+      ['~', 12, 0, 14, 19],
+      ['#', 16, 1, 20, 3], ['#', 16, 6, 20, 8], ['#', 24, 1, 28, 3], ['#', 24, 6, 28, 8],
+      ['#', 16, 12, 21, 16], ['#', 24, 12, 28, 15], ['T', 23, 17, 28, 18],
+      ['#', 1, 0, 3, 2], ['T', 7, 1, 10, 3], ['#', 7, 7, 10, 8], ['P', 1, 11, 3, 14], ['F', 7, 15, 10, 17], ['#', 7, 11, 10, 12],
+    ],
+    roads: [[[0, 5], [5, 5], [5, 19]], [[5, 10], [29, 10]], [[22, 0], [22, 10]]],
+    ports: [
+      { id: 'nt', name: 'ニュータウン', icon: '🏘️', color: '#2f7de1', edge: 3, from: 2, to: 8 },
+      { id: 'ind', name: '工業団地', icon: '🏭', color: '#8a5cd6', edge: 2, from: 1, to: 9 },
+      { id: 'off', name: 'オフィス街', icon: '🏙️', color: '#18a058', edge: 1, from: 7, to: 16 },
+      { id: 'sta', name: '駅', icon: '🚉', color: '#e8262b', edge: 0, from: 18, to: 27 },
+    ],
+    flows: [['nt', 'off', 45], ['nt', 'sta', 40], ['ind', 'off', 35], ['ind', 'sta', 25], ['off', 'nt', 15], ['sta', 'ind', 10]],
+    rails: [],
+  },
+  {
+    id: 's3', name: '開かずの踏切', budget: 30000, target: 25, clock: [7, 30],
+    voices: ['カンカンカンカン（10分経過）', '踏切の前で、電車の本数を数えるのが日課です', 'また閉まった……'],
+    brief: [
+      '町のまんなかを線路が横切ってて、踏切が一日じゅう開かないって苦情が山ほど。',
+      '電車は止められないから、道路のほうをなんとかするしかないね。',
+      '踏切は「立体化」で跨線橋にできるけど、予算は2か所ぶんもないんだ。',
+    ],
+    tip: '【立体化】を踏切に使うと跨線橋になり、電車を待たずに渡れます。道を減らす「撤去」も、立派な工事です。',
+    map: [
+      ['=', 0, 9, 29, 10],
+      ['#', 10, 1, 20, 2], ['#', 10, 6, 20, 7], ['#', 10, 12, 20, 13], ['#', 10, 17, 20, 18],
+      ['#', 1, 1, 6, 2], ['T', 1, 5, 6, 7], ['#', 24, 1, 28, 2], ['#', 24, 6, 28, 7], ['S', 1, 12, 6, 13], ['#', 1, 17, 6, 18], ['H', 24, 12, 28, 13], ['#', 24, 17, 28, 18],
+    ],
+    roads: [[[8, 0], [8, 19]], [[22, 0], [22, 19]], [[8, 4], [22, 4]], [[8, 15], [22, 15]]],
+    ports: [
+      { id: 'home', name: '住宅街', icon: '🏠', color: '#2f7de1', edge: 0, from: 3, to: 12 },
+      { id: 'dan', name: '団地', icon: '🏢', color: '#8a5cd6', edge: 0, from: 17, to: 26 },
+      { id: 'off', name: 'オフィス街', icon: '🏙️', color: '#18a058', edge: 2, from: 3, to: 12 },
+      { id: 'mall', name: 'モール', icon: '🛍️', color: '#e8262b', edge: 2, from: 17, to: 26 },
+    ],
+    flows: [['home', 'off', 34], ['home', 'mall', 18], ['dan', 'off', 18], ['dan', 'mall', 34], ['off', 'home', 10], ['mall', 'dan', 10]],
+    rails: [{ axis: 'h', at: [9], period: 16, closed: 6, offset: 0 }, { axis: 'h', at: [10], period: 20, closed: 6, offset: 8 }],
+  },
+  {
+    id: 's4', name: '都心の大交差点', budget: 40000, target: 25, clock: [8, 0],
+    voices: ['青になっても1台しか進まない', '交差点のまんなかで、たぶん3回目の青'],
+    brief: [
+      '都心のど真ん中、東西と南北の大通りが交わる交差点。ここが毎朝、地獄。',
+      'まわりはビルだらけで、新しい道を通すには立ち退きが要る。高くつくよ。',
+      '交差点そのものを立体交差にしたら？ ただし立体交差では曲がれないからね。',
+    ],
+    tip: '【立体化】を交差点に使うと立体交差になり、縦と横が互いを待たずに通れます。その代わり右左折はできません。',
+    map: [
+      ['#', 0, 0, 29, 19], ['J', 1, 1, 3, 2], ['P', 7, 6, 13, 8], ['H', 26, 1, 28, 2], ['S', 17, 17, 22, 18], ['P', 17, 11, 22, 13],
+    ],
+    roads: [[[0, 10], [29, 10]], [[15, 0], [15, 19]], [[5, 4], [24, 4], [24, 15], [5, 15], [5, 4]], [[5, 10], [5, 10]], [[24, 10], [24, 10]]],
+    ports: [
+      { id: 'home', name: '住宅街', icon: '🏠', color: '#2f7de1', edge: 3, from: 7, to: 13 },
+      { id: 'port', name: '港', icon: '⚓', color: '#18a058', edge: 1, from: 7, to: 13 },
+      { id: 'sta', name: '駅', icon: '🚉', color: '#e8262b', edge: 0, from: 12, to: 18 },
+      { id: 'dome', name: 'ドーム', icon: '🏟️', color: '#8a5cd6', edge: 2, from: 12, to: 18 },
+    ],
+    flows: [['home', 'port', 95], ['port', 'home', 60], ['sta', 'dome', 90], ['dome', 'sta', 60], ['home', 'sta', 20], ['port', 'dome', 15]],
+    rails: [],
+  },
+  {
+    id: 's5', name: '花火大会の帰り道', budget: 120000, target: 25, clock: [20, 30],
+    voices: ['花火はきれいだった。帰れないけど', '屋台の焼きそば、冷めちゃった', '浴衣で2時間はつらい'],
+    brief: [
+      '今夜は花火大会。終わった瞬間、10万人がいっせいに帰りはじめるの。',
+      '会場から出る道は、川を渡る橋が1本だけ。その先には踏切もある。',
+      '予算はたっぷり。橋も跨線橋も立体交差も、ぜんぶ使って捌ききって！',
+    ],
+    tip: '会場から住宅街・駅・高速ICの3方向へ帰ります。行き先ごとに道を分けると、交差点で待つ車が減ります。',
+    map: [
+      ['~', 0, 5, 29, 6], ['=', 21, 0, 21, 19],
+      ['T', 0, 0, 9, 3], ['T', 23, 0, 29, 3], ['P', 13, 1, 16, 2],
+      ['#', 1, 8, 8, 10], ['#', 14, 8, 19, 10], ['#', 23, 8, 28, 10],
+      ['#', 1, 14, 7, 17], ['#', 13, 14, 19, 17], ['#', 23, 14, 28, 17], ['S', 15, 18, 19, 19],
+    ],
+    roads: [[[12, 0], [12, 12]], [[17, 0], [17, 3], [12, 3]], [[0, 12], [29, 12]], [[10, 19], [10, 12]]],
+    ports: [
+      { id: 'fes', name: '花火会場', icon: '🎆', color: '#d6336c', edge: 0, from: 10, to: 19 },
+      { id: 'home', name: '住宅街', icon: '🏠', color: '#2f7de1', edge: 3, from: 9, to: 15 },
+      { id: 'sta', name: '駅', icon: '🚉', color: '#e8262b', edge: 2, from: 3, to: 13 },
+      { id: 'ic', name: '高速IC', icon: '🛣️', color: '#18a058', edge: 1, from: 10, to: 16 },
+    ],
+    flows: [['fes', 'home', 55], ['fes', 'sta', 60], ['fes', 'ic', 50], ['home', 'ic', 15], ['ic', 'home', 15], ['sta', 'ic', 10]],
+    rails: [{ axis: 'v', at: [21], period: 20, closed: 7, offset: 4 }],
+  },
+];
+
+function buildTerrain(st) {
+  const t = new Uint8Array(N), deco = new Array(N).fill('');
+  const code = { '.': T_GRASS, '~': T_WATER, '=': T_RAIL, '#': T_BLDG };
+  for (const [c, x0, y0, x1, y1] of st.map) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const i = idx(x, y);
+    if (c in code) { t[i] = code[c]; deco[i] = ''; } else { t[i] = T_BLOCK; deco[i] = c; }
+  }
+  return { t, deco };
+}
+function portTiles(p) {
+  const out = [];
+  for (let k = p.from; k <= p.to; k++) {
+    const x = p.edge === 1 ? W - 1 : p.edge === 3 ? 0 : k, y = p.edge === 0 ? 0 : p.edge === 2 ? H - 1 : k;
+    out.push(idx(x, y));
+  }
+  return out;
+}
+
+/* ---------- 道路網 ---------- */
+function makeNet(st) {
+  const { t, deco } = buildTerrain(st);
+  const net = {
+    terr: t, deco, road: new Uint8Array(N), link: new Uint8Array(N), wide: new Uint8Array(N), elev: new Uint8Array(N),
+    orig: new Uint8Array(N), spent: new Int32Array(N), port: new Int8Array(N).fill(-1), ver: 0,
+  };
+  st.ports.forEach((p, pi) => portTiles(p).forEach(i => { net.port[i] = pi; if (net.terr[i] !== T_GRASS) net.terr[i] = T_GRASS; }));
+  const put = i => { net.road[i] = 1; net.orig[i] = 1; if (net.terr[i] === T_BLDG || net.terr[i] === T_BLOCK) net.terr[i] = T_GRASS; };
+  for (const pl of st.roads) {
+    for (let s = 0; s + 1 < pl.length; s++) {
+      let [x, y] = pl[s]; const [x1, y1] = pl[s + 1];
+      put(idx(x, y));
+      while (x !== x1 || y !== y1) {
+        const d = y1 < y ? 0 : x1 > x ? 1 : y1 > y ? 2 : 3;
+        const a = idx(x, y); x += DX[d]; y += DY[d]; const b = idx(x, y);
+        put(b); net.link[a] |= 1 << d; net.link[b] |= 1 << OPP(d);
+      }
+    }
+  }
+  for (const [x0, y0, x1, y1] of (st.wide || [])) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (net.road[idx(x, y)]) net.wide[idx(x, y)] = 1;
+  for (const [x, y] of (st.elev || [])) net.elev[idx(x, y)] = 1;
+  return net;
+}
+const cloneNet = n => ({ terr: n.terr.slice(), deco: n.deco.slice(), road: n.road.slice(), link: n.link.slice(), wide: n.wide.slice(), elev: n.elev.slice(), orig: n.orig.slice(), spent: n.spent.slice(), port: n.port, ver: n.ver });
+const isDeck = (net, i) => net.terr[i] === T_WATER || net.terr[i] === T_RAIL;   // 直線しか置けないマス
+const isInter = (net, i) => net.road[i] && !net.elev[i] && net.terr[i] !== T_RAIL && pop4(net.link[i]) >= 3;
+const isCross = (net, i) => net.road[i] && net.terr[i] === T_RAIL && !net.elev[i];
+const isFly = (net, i) => net.road[i] && net.elev[i] && net.terr[i] !== T_RAIL;
+
+/* 道路1マスの新設費。置けないなら -1 */
+function roadCost(net, i) {
+  if (net.road[i]) return 0;
+  switch (net.terr[i]) {
+    case T_GRASS: return COST.road;
+    case T_BLDG: return COST.road + COST.evict;
+    case T_WATER: return COST.bridge;
+    case T_RAIL: return COST.railBridge;
+    default: return -1;
+  }
+}
+/* a から方向 d へつなげられるか（橋・線路の上は直線だけ） */
+function canLink(net, a, d) {
+  const b = nb(a, d);
+  if (b < 0) return false;
+  if (roadCost(net, a) < 0 || roadCost(net, b) < 0) return false;
+  for (const [i, dd] of [[a, d], [b, OPP(d)]]) {
+    if (isDeck(net, i)) { const m = net.link[i] & ~(1 << dd); if (m & ~(1 << OPP(dd))) return false; }
+  }
+  return true;
+}
+/* 道路の線を計画：tiles は隣り合うマスの列。どこまで引けるかと費用を返す */
+function planPath(net, tiles) {
+  let cost = 0, ok = 0; const seen = new Set(); const tmp = cloneNet(net);
+  for (let k = 0; k < tiles.length; k++) {
+    const i = tiles[k];
+    const c = roadCost(tmp, i);
+    if (c < 0) break;
+    if (k > 0) {
+      const a = tiles[k - 1], d = dirTo(a, i);
+      if (nb(a, d) !== i || !canLink(tmp, a, d)) break;
+      tmp.link[a] |= 1 << d; tmp.link[i] |= 1 << OPP(d);
+    }
+    if (!seen.has(i)) { cost += c; seen.add(i); }
+    tmp.road[i] = 1;
+    ok = k + 1;
+  }
+  return { ok, cost };
+}
+function commitPath(net, tiles) {
+  const { ok, cost } = planPath(net, tiles);
+  for (let k = 0; k < ok; k++) {
+    const i = tiles[k];
+    if (!net.road[i]) { net.spent[i] += roadCost(net, i); net.road[i] = 1; if (net.terr[i] === T_RAIL) net.elev[i] = 1; if (net.terr[i] === T_BLDG) net.terr[i] = T_GRASS; }
+    if (k > 0) { const a = tiles[k - 1], d = dirTo(a, i); net.link[a] |= 1 << d; net.link[i] |= 1 << OPP(d); }
+  }
+  net.ver++;
+  return { ok, cost };
+}
+function widenCost(net, i) { return net.road[i] && !net.wide[i] ? (isDeck(net, i) ? COST.widenDeck : COST.widen) : -1; }
+function flyCost(net, i) {
+  if (!net.road[i] || net.elev[i]) return -1;
+  if (net.terr[i] === T_RAIL) return COST.railUp;
+  return pop4(net.link[i]) >= 3 ? COST.fly : -1;
+}
+function removeCost(net, i) {
+  if (!net.road[i] || net.port[i] >= 0) return null;
+  return net.orig[i] ? COST.removeOrig - net.spent[i] : -net.spent[i];   // 負なら返金
+}
+function applyTool(net, tool, i) {
+  let c;
+  if (tool === 'widen') { c = widenCost(net, i); if (c < 0) return null; net.wide[i] = 1; net.spent[i] += c; }
+  else if (tool === 'fly') { c = flyCost(net, i); if (c < 0) return null; net.elev[i] = 1; net.spent[i] += c; }
+  else if (tool === 'remove') {
+    c = removeCost(net, i); if (c === null) return null;
+    for (let d = 0; d < 4; d++) if (net.link[i] >> d & 1) { const b = nb(i, d); net.link[b] &= ~(1 << OPP(d)); }
+    net.link[i] = 0; net.road[i] = 0; net.wide[i] = 0; net.elev[i] = 0; net.spent[i] = 0; net.orig[i] = 0;
+  } else return null;
+  net.ver++;
+  return c;
+}
+function spentTotal(net) { let s = 0; for (let i = 0; i < N; i++) s += net.spent[i]; return s; }
+
+/* ---------- 交通シミュレーション ---------- */
+function createSim(st, net, opt = {}) {
+  const S = {
+    st, net, t: 0, cars: [], seed: opt.seed || 12345, rnd: rng32(opt.seed || 12345), mode: opt.mode || 'preview',
+    acc: st.flows.map(() => 0), backlog: st.flows.map(() => 0), unreach: st.flows.map(() => false),
+    edges: new Map(), costs: null, costT: -99, nextId: 1, step: 0,
+    m: { arrived: 0, travel: 0, giveup: 0, num: 0, den: 0, spawned: 0 },
+    pIdx: {}, portT: st.ports.map(p => portTiles(p)),
+  };
+  st.ports.forEach((p, i) => S.pIdx[p.id] = i);
+  S.flowP = st.flows.map(([a, b, r]) => [S.pIdx[a], S.pIdx[b], r]);
+  S.railOf = new Int8Array(N).fill(-1);
+  (st.rails || []).forEach((r, ri) => { for (const a of r.at) for (let k = 0; k < (r.axis === 'h' ? W : H); k++) { const i = r.axis === 'h' ? idx(k, a) : idx(a, k); if (net.terr[i] === T_RAIL) S.railOf[i] = ri; } });
+  rebuild(S);
+  return S;
+}
+function demandMul(S) { return S.mode === 'test' ? 0.75 + 0.45 * Math.sin(Math.PI * Math.min(1, S.t / TEST_LEN)) : 1.15; }   // 試運転はピーク近くの交通量
+function gate(S, ri, t = S.t) {
+  const r = S.st.rails[ri], ph = ((t + r.offset) % r.period + r.period) % r.period;
+  return { closed: ph < r.closed, soon: ph > r.period - 1.6, ph };
+}
+function edgeOf(S, a, b) { return S.edges.get(a * 4 + dirTo(a, b)); }
+
+/* 道路網が変わったら辺を作り直し、車を載せ替える */
+function rebuild(S) {
+  const net = S.net, E = new Map();
+  for (let a = 0; a < N; a++) if (net.road[a]) for (let d = 0; d < 4; d++) if (net.link[a] >> d & 1) {
+    const b = nb(a, d); const nl = net.wide[a] && net.wide[b] ? 2 : 1;
+    E.set(a * 4 + d, { a, b, d, nl, lanes: nl === 2 ? [[], []] : [[]] });
+  }
+  S.edges = E;
+  const keep = [];
+  for (const c of S.cars) {
+    const e = E.get(c.path[c.k] * 4 + dirTo(c.path[c.k], c.path[c.k + 1]));
+    if (!e) continue;
+    c.lane = Math.min(c.lane, e.nl - 1); e.lanes[c.lane].push(c); keep.push(c);
+  }
+  for (const e of E.values()) for (const l of e.lanes) l.sort((p, q) => q.s - p.s);
+  S.cars = keep;
+  S.netVer = net.ver;
+  computeCosts(S);
+  for (const c of S.cars) reroute(S, c, true);
+}
+
+/* 区間を通る見込み時間（混雑込み） */
+function transCost(S, t, din, d) {
+  const net = S.net, b = nb(t, d);
+  const e = S.edges.get(t * 4 + d);
+  let c = 1 / VMAX;
+  if (e) {
+    let n = 0, stp = 0;
+    for (const l of e.lanes) for (const car of l) { n++; if (car.v < 0.3) stp++; }
+    c += (0.12 * n + 0.9 * stp) / e.nl;
+  }
+  if (din !== d) c += 0.18;
+  if (isInter(net, b)) c += 0.35 + 0.25 * (S.waitAt ? (S.waitAt.get(b) || 0) : 0);
+  if (isCross(net, b) && !isCross(net, t)) {
+    c += 0.9;
+    const ri = S.railOf[b]; if (ri >= 0) { const g = gate(S, ri); if (g.closed) c += (S.st.rails[ri].closed - g.ph) + 1; }
+    c += 1.2 * (S.waitAt ? (S.waitAt.get(b) || 0) : 0);
+  }
+  return c;
+}
+function turnOk(net, t, din, d) {
+  if (d === OPP(din)) return false;
+  if (isFly(net, t) && d !== din) return false;
+  return true;
+}
+/* 行き先ごとの「残り所要時間」表（状態 = マス×進入方向） */
+function computeCosts(S) {
+  const net = S.net, P = S.st.ports.length;
+  S.costs = [];
+  for (let g = 0; g < P; g++) {
+    const dist = new Float64Array(N * 4).fill(Infinity);
+    const heap = [];
+    const push = (v, s) => { heap.push([v, s]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break;[heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+    const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (; ;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break;[heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+    for (const i of S.portT[g]) if (net.road[i]) for (let d = 0; d < 4; d++) { dist[i * 4 + d] = 0; push(0, i * 4 + d); }
+    while (heap.length) {
+      const [v, s] = pop(); if (v > dist[s]) continue;
+      const t2 = s >> 2, d = s & 3;     // 状態 (t2 に方向 d で入った)
+      const t = nb(t2, OPP(d)); if (t < 0 || !net.road[t] || !(net.link[t] >> d & 1)) continue;
+      if (net.port[t] === g) continue;
+      for (let din = 0; din < 4; din++) {
+        if (!turnOk(net, t, din, d)) continue;
+        const pv = nb(t, OPP(din));
+        const isStart = net.port[t] >= 0 && pv < 0;
+        if (!isStart && (pv < 0 || !(net.link[t] >> OPP(din) & 1))) continue;
+        const nv = v + transCost(S, t, din, d);
+        if (nv < dist[t * 4 + din]) { dist[t * 4 + din] = nv; push(nv, t * 4 + din); }
+      }
+    }
+    S.costs.push(dist);
+  }
+  S.costT = S.t;
+}
+function inDirOfPort(i) { const x = i % W, y = i / W | 0; return x === 0 ? 1 : x === W - 1 ? 3 : y === 0 ? 2 : 0; }
+function routeFrom(S, t, din, g) {
+  const net = S.net, dist = S.costs[g], path = [t];
+  let guard = 0;
+  while (guard++ < 400) {
+    if (path.length > 1 && net.port[t] === g) return path;
+    let best = -1, bv = Infinity;
+    for (let d = 0; d < 4; d++) {
+      if (!(net.link[t] >> d & 1) || !turnOk(net, t, din, d)) continue;
+      const b = nb(t, d); const v = transCost(S, t, din, d) + dist[b * 4 + d];
+      if (v < bv) { bv = v; best = d; }
+    }
+    if (best < 0 || bv === Infinity) return null;
+    t = nb(t, best); din = best; path.push(t);
+  }
+  return null;
+}
+/* 経路を引き直す（いま走っている区間はそのまま） */
+function reroute(S, c, force) {
+  if (c.lock && c.lock.k0 === c.k + 1 && !force) return;
+  if (c.k + 1 >= c.path.length - 1) return;
+  const a = c.path[c.k], b = c.path[c.k + 1];
+  if (S.net.port[b] === c.g) { c.path = c.path.slice(0, c.k + 2); return; }
+  const r = routeFrom(S, b, dirTo(a, b), c.g);
+  if (r) { c.path = c.path.slice(0, c.k + 1).concat(r); if (c.lock && c.lock.k0 !== c.k + 1) {} }
+  else if (force) c.dead = true;
+  if (c.lock && c.lock.k0 === c.k + 1) c.lock = null;
+}
+
+function laneRoom(e) {   // 一番空いている車線と、その最後尾の位置
+  let best = 0, room = -1;
+  for (let l = 0; l < e.nl; l++) { const ln = e.lanes[l]; const r = ln.length ? ln[ln.length - 1].s : 2; if (r > room) { room = r; best = l; } }
+  return [best, room];
+}
+const isGate = (net, i) => isInter(net, i) || isCross(net, i);
+function turnAt(c, k) { return k > 0 && k < c.path.length - 1 && dirTo(c.path[k - 1], c.path[k]) !== dirTo(c.path[k], c.path[k + 1]); }
+
+function spawn(S) {
+  const net = S.net;
+  const used = new Set();
+  S.flowP.forEach(([pa, pb], fi) => {
+    if (S.backlog[fi] <= 0) return;
+    let best = -1, bv = Infinity, reach = false;
+    for (const i of S.portT[pa]) {
+      if (!net.road[i] || used.has(i)) { if (net.road[i]) reach = reach || isFinite(S.costs[pb][i * 4 + inDirOfPort(i)]); continue; }
+      const v = S.costs[pb][i * 4 + inDirOfPort(i)]; if (!isFinite(v)) continue;
+      reach = true;
+      // 最初の区間が空いているか
+      let ok = false;
+      for (let d = 0; d < 4; d++) if (net.link[i] >> d & 1) { const e = S.edges.get(i * 4 + d); if (e && laneRoom(e)[1] > GAP + 0.05) ok = true; }
+      if (!ok) continue;
+      const vv = v + S.rnd() * 0.3;
+      if (vv < bv) { bv = vv; best = i; }
+    }
+    S.unreach[fi] = !reach;
+    if (best < 0) return;
+    const path = routeFrom(S, best, inDirOfPort(best), pb);
+    if (!path || path.length < 2) return;
+    const e = edgeOf(S, path[0], path[1]); const [ln, room] = laneRoom(e);
+    if (room < GAP + 0.05) return;
+    used.add(best);
+    const c = { id: S.nextId++, f: fi, g: pb, path, k: 0, s: 0, v: VMAX * 0.6, lane: ln, lock: null, req: null, stopT: 0, haltT: 0, born: S.t, tick: -1, hue: S.rnd(), rr: S.rnd() * 3 };
+    e.lanes[ln].push(c); S.cars.push(c);
+    S.backlog[fi]--; S.m.spawned++;
+  });
+}
+
+function step(S, dt) {
+  const net = S.net;
+  if (S.netVer !== net.ver) rebuild(S);
+  S.t += dt; S.step++;
+  if (S.t - S.costT >= 1) computeCosts(S);
+  // 発生
+  const mul = demandMul(S);
+  S.flowP.forEach(([, , r], fi) => {
+    if (S.mode === 'test' && S.t > TEST_LEN) return;
+    S.acc[fi] += r / 60 * mul * dt * (0.6 + S.rnd() * 0.8);
+    while (S.acc[fi] >= 1) { S.acc[fi] -= 1; S.backlog[fi]++; }
+    if (S.mode !== 'test' && S.backlog[fi] > 25) S.backlog[fi] = 25;
+  });
+  spawn(S);
+
+  // 交差点・踏切の占有状況
+  const box = new Map();     // tile -> [move...]
+  for (const c of S.cars) if (c.lock) for (const t of c.lock.tiles) { if (!box.has(t)) box.set(t, []); box.get(t).push(c.lock.mv); }
+  const reqs = new Map();
+
+  // 走行
+  const sid = S.step, gone = [];
+  for (const e of S.edges.values()) {
+    for (let l = 0; l < e.nl; l++) {
+      const lane = e.lanes[l];
+      const snap = lane.slice();
+      for (const c of snap) {
+        if (c.tick === sid) continue; c.tick = sid;
+        const ln = S.edges.get(c.path[c.k] * 4 + dirTo(c.path[c.k], c.path[c.k + 1])).lanes[c.lane];
+        const ix = ln.indexOf(c);
+        let limit;
+        const last = c.k + 1 === c.path.length - 1;
+        if (ix > 0) limit = ln[ix - 1].s - GAP;
+        else if (last) limit = 9;
+        else {
+          const X = c.path[c.k + 1];
+          const need = isGate(net, X) && !(c.lock && c.lock.tiles.includes(X));
+          if (need) {
+            limit = STOP;
+            if (c.s > 0.3) { if (!reqs.has(X)) reqs.set(X, []); reqs.get(X).push(c); if (!c.req) c.req = S.t; }
+          } else {
+            const e2 = S.edges.get(X * 4 + dirTo(X, c.path[c.k + 2]));
+            if (!e2) { c.dead = true; continue; }
+            limit = 1 + laneRoom(e2)[1] - GAP;
+          }
+          if (e.nl === 2) {   // 車線合流
+            const o = e.lanes[1 - l][0];
+            if (o && o !== c && o.s > c.s && c.s > 0.35) { const X2 = c.path[c.k + 2]; const e2 = X2 != null && S.edges.get(X * 4 + dirTo(X, X2)); if (e2 && e2.nl === 1 && o.path[o.k + 1] === X && o.path[o.k + 2] === X2) limit = Math.min(limit, o.s - GAP * 0.6); }
+          }
+        }
+        let vmax = VMAX;
+        if ((c.s > 0.55 && turnAt(c, c.k + 1)) || (c.s < 0.35 && turnAt(c, c.k))) vmax = VTURN;
+        const d = limit - c.s;
+        const vdes = d <= 0 ? 0 : Math.min(vmax, Math.sqrt(2 * DEC * d), d / HT + 0.05);
+        c.v = Math.min(vdes, c.v + ACC * dt);
+        if (c.v < 0) c.v = 0;
+        const ns = Math.min(c.s + c.v * dt, Math.max(limit, c.s));
+        c.v = (ns - c.s) / dt; c.s = ns;
+        if (c.v < 0.05) { c.stopT += dt; if (c.s > STOP - 0.1) c.haltT += dt; } else { c.stopT = 0; c.haltT = 0; }
+        // 区間をまたぐ
+        if (c.s >= 1) {
+          ln.splice(ln.indexOf(c), 1);
+          if (last) { gone.push(c); S.m.arrived++; S.m.travel += S.t - c.born; continue; }
+          c.k++; c.s -= 1;
+          const e2 = S.edges.get(c.path[c.k] * 4 + dirTo(c.path[c.k], c.path[c.k + 1]));
+          if (!e2) { c.dead = true; continue; }
+          const [l2] = laneRoom(e2); c.lane = l2; e2.lanes[l2].push(c);
+          c.req = null;
+        }
+        if (c.lock && c.k === c.lock.kRel && c.s >= BOX_OUT) c.lock = null;
+        if (c.stopT > GIVEUP) { c.dead = true; c.gaveUp = true; }
+      }
+    }
+  }
+  // 許可を出す
+  S.waitAt = new Map();
+  for (const [X, list] of reqs) {
+    S.waitAt.set(X, list.length);
+    list.sort((p, q) => p.req - q.req);
+    const held = box.get(X) || [];
+    const blocked = [];
+    if (isInter(net, X)) {
+      const cap = net.wide[X] ? 6 : 4;
+      for (const c of list) {
+        const k0 = c.k + 1, din = dirTo(c.path[c.k], X), dout = dirTo(X, c.path[k0 + 1]);
+        const mv = din * 4 + dout;
+        const e2 = S.edges.get(X * 4 + dout);
+        const room = e2 ? laneRoom(e2)[1] : 0;
+        const ok = held.length < cap && !held.some(h => CONF[h * 16 + mv]) && !blocked.some(b => CONF[b * 16 + mv]) && room >= BOX_OUT + GAP + 0.02;
+        if (ok) { c.lock = { tiles: [X], mv, k0, kRel: k0 }; held.push(mv); }
+        else if (S.t - c.req > 1.0) blocked.push(mv);
+      }
+    } else {
+      for (const c of list) {
+        // 連続する踏切マスをまとめて渡る
+        const tiles = []; let k = c.k + 1;
+        while (k < c.path.length - 1 && isCross(net, c.path[k])) { tiles.push(c.path[k]); k++; }
+        if (!tiles.length) continue;
+        let ok = c.haltT >= 0.45;
+        for (const t of tiles) { const ri = S.railOf[t]; if (ri >= 0) { const g = gate(S, ri); if (g.closed || g.soon) ok = false; } }
+        if (ok) for (let j = c.k + 1; j < k; j++) { const e2 = edgeOf(S, c.path[j], c.path[j + 1]); if (!e2) { ok = false; break; } const r = laneRoom(e2)[1]; if (r < (j === k - 1 ? BOX_OUT + GAP + 0.02 : 1.2)) ok = false; }
+        if (ok) c.lock = { tiles, mv: 0, k0: c.k + 1, kRel: k - 1 };
+      }
+    }
+  }
+  // 消える車
+  for (const c of S.cars) if (c.dead) {
+    const e = S.edges.get(c.path[c.k] * 4 + dirTo(c.path[c.k], c.path[c.k + 1]));
+    if (e) for (const l of e.lanes) { const j = l.indexOf(c); if (j >= 0) l.splice(j, 1); }
+    if (c.gaveUp) S.m.giveup++;
+  }
+  if (gone.length || S.cars.some(c => c.dead)) { const g = new Set(gone); S.cars = S.cars.filter(c => !c.dead && !g.has(c)); S.lastGone = gone; }
+  // 詰まった車は別の道を探す
+  for (const c of S.cars) if (c.stopT > 3 && (S.t + c.rr) % 3 < dt) reroute(S, c, false);
+
+  // 計測
+  let stp = 0; for (const c of S.cars) if (c.v < 0.3) stp++;
+  const bl = S.backlog.reduce((a, b) => a + b, 0);
+  S.now = { cars: S.cars.length, stopped: stp, backlog: bl, jam: (stp + bl) / Math.max(1, S.cars.length + bl) };
+  if (S.mode === 'test' && S.t >= WARMUP) { S.m.num += (stp + bl) * dt; S.m.den += (S.cars.length + bl) * dt; }
+}
+function starsOf(st, sc, used) { if (sc.jam > st.target) return 0; let s = 1; if (sc.jam <= Math.floor(st.target / 2)) s++; if (used <= st.budget * 0.7) s++; return s; }
+function testDone(S) { return S.mode === 'test' && S.t >= TEST_LEN; }
+function testScore(S) {
+  const jam = S.m.den > 0 ? S.m.num / S.m.den : 0;
+  return { jam: Math.round(jam * 100), arrived: S.m.arrived, giveup: S.m.giveup, avgT: S.m.arrived ? S.m.travel / S.m.arrived : 0, left: S.cars.length + S.backlog.reduce((a, b) => a + b, 0) };
+}
+/* 本番テストを最後まで一気に回す（工事前の比較やテスト用） */
+function runTest(st, net, seed) {
+  const S = createSim(st, cloneNet(net), { mode: 'test', seed: seed || 777 });
+  const dt = 1 / 30;
+  while (!testDone(S)) step(S, dt);
+  return testScore(S);
+}
+
+globalThis.__JH__ = { W, H, N, DX, DY, OPP, idx, nb, dirTo, pop4, STAGES, COST, CONF, makeNet, cloneNet, planPath, commitPath, applyTool, roadCost, widenCost, flyCost, removeCost, spentTotal, createSim, step, runTest, testDone, starsOf, rebuild, laneRoom, routeFrom, testScore, isInter, isCross, isFly, isDeck, portTiles, gate, movePts, T_GRASS, T_WATER, T_RAIL, T_BLDG, T_BLOCK, TEST_LEN, WARMUP, VMAX, LANE_OFF, STOP, demandMul };
+</script>
+<script>
+/* ===== 渋滞ほどき：画面と操作 ===== */
+const J = globalThis.__JH__;
+const $ = id => document.getElementById(id);
+const TS = 32, SC = 2;                       // 1マス32px、内部解像度2倍
+const GAME_URL = 'https://red-freegames.github.io/jutai-hodoki/';
+const cv = $('cv'), ctx = cv.getContext('2d');
+cv.width = W * TS * SC; cv.height = H * TS * SC;
+const mkCanvas = () => { const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height; return c; };
+const ground = mkCanvas(), deck = mkCanvas();
+const gx = ground.getContext('2d'), dx = deck.getContext('2d');
+const DT = 1 / 30;
+const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const FONT = '"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif';
+
+const ui = {
+  phase: 'title', si: 0, st: null, net: null, sim: null, used: 0, tool: 'road', undo: [], speed: 1, paused: false, heat: false,
+  drag: null, hover: -1, mouse: null, base: {}, hist: [], histT: 0, fx: [], voiceT: 0, acc: 0, cacheVer: -1, result: null, lastJam: 0,
+};
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem('jh_v1')) || { stars: {} }; } catch (e) { return { stars: {} }; } },
+  set(v) { try { localStorage.setItem('jh_v1', JSON.stringify(v)); } catch (e) { } },
+};
+
+/* ---------- 表示用の小物 ---------- */
+function yen(man) {
+  const neg = man < 0; man = Math.abs(Math.round(man));
+  const oku = Math.floor(man / 10000), rest = man % 10000;
+  const s = oku ? `${oku}億${rest ? rest.toLocaleString() + '万' : ''}円` : `${rest.toLocaleString()}万円`;
+  return (neg ? '-' : '') + s;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 1800); }
+function hash(i, k = 0) { let h = (i * 374761393 + k * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+const remaining = () => ui.st.budget - ui.used;
+const jamColor = j => j < 0.2 ? '#139254' : j < 0.45 ? '#c77800' : '#d7263d';
+const clockStr = (st, t) => { const m = st.clock[0] * 60 + st.clock[1] + Math.floor(t); return `${Math.floor(m / 60) % 24}:${String(m % 60).padStart(2, '0')}`; };
+
+/* ---------- 地形と道路の下絵（道路網が変わったときだけ描き直す） ---------- */
+const ROOF = ['#c7764d', '#6d8fb3', '#b9ae9c', '#8e6fa8', '#d6b25e', '#7fa37a', '#a8624f', '#5f7f99'];
+const DECO = {
+  T: { bg: '#6fb553', icon: '' }, P: { bg: '#86c96a', icon: '🌳' }, S: { bg: '#e8d8ad', icon: '🏫' }, J: { bg: '#a9cf8c', icon: '⛩️' },
+  H: { bg: '#e3ebf2', icon: '🏥' }, F: { bg: '#c9c2b6', icon: '🏭' },
+};
+function railAxis(i) { const x = i % W, y = i / W | 0; const r = nb(i, 1), l = nb(i, 3); return (r >= 0 && ui.net.terr[r] === J.T_RAIL) || (l >= 0 && ui.net.terr[l] === J.T_RAIL) ? 'h' : 'v'; }
+function drawTerrain(g) {
+  const net = ui.net;
+  g.setTransform(SC, 0, 0, SC, 0, 0);
+  g.clearRect(0, 0, W * TS, H * TS);
+  for (let i = 0; i < N; i++) {
+    const x = (i % W) * TS, y = (i / W | 0) * TS, t = net.terr[i];
+    if (t === J.T_WATER) {
+      g.fillStyle = '#4aa3df'; g.fillRect(x, y, TS, TS);
+      for (let d = 0; d < 4; d++) { const b = nb(i, d); if (b >= 0 && net.terr[b] !== J.T_WATER && net.terr[b] !== J.T_RAIL) { g.fillStyle = '#d9c98f'; if (d === 0) g.fillRect(x, y, TS, 4); if (d === 2) g.fillRect(x, y + TS - 4, TS, 4); if (d === 1) g.fillRect(x + TS - 4, y, 4, TS); if (d === 3) g.fillRect(x, y, 4, TS); } }
+      continue;
+    }
+    g.fillStyle = hash(i) < 0.5 ? '#8fcf6e' : '#93d272'; g.fillRect(x, y, TS, TS);
+    if (t === J.T_GRASS && hash(i, 1) < 0.35) { g.fillStyle = '#7dbf5c'; g.fillRect(x + hash(i, 2) * 24 + 2, y + hash(i, 3) * 24 + 2, 3, 3); }
+    if (t === J.T_RAIL) {
+      const h = railAxis(i) === 'h';
+      const wet = [nb(i, h ? 0 : 1), nb(i, h ? 2 : 3)].some(b => b >= 0 && net.terr[b] === J.T_WATER);
+      if (wet) { g.fillStyle = '#4aa3df'; g.fillRect(x, y, TS, TS); g.fillStyle = '#56606a'; h ? (g.fillRect(x, y + 4, TS, 3), g.fillRect(x, y + TS - 7, TS, 3)) : (g.fillRect(x + 4, y, 3, TS), g.fillRect(x + TS - 7, y, 3, TS)); }
+      g.fillStyle = '#b8ad98'; h ? g.fillRect(x, y + 6, TS, TS - 12) : g.fillRect(x + 6, y, TS - 12, TS);
+      g.fillStyle = '#7a5a3c';
+      for (let k = 2; k < TS; k += 8) h ? g.fillRect(x + k, y + 8, 4, TS - 16) : g.fillRect(x + 8, y + k, TS - 16, 4);
+      g.fillStyle = '#6b6f76';
+      h ? (g.fillRect(x, y + 11, TS, 2), g.fillRect(x, y + TS - 13, TS, 2)) : (g.fillRect(x + 11, y, 2, TS), g.fillRect(x + TS - 13, y, 2, TS));
+      if (net.road[i] === 0 && [nb(i, 0), nb(i, 2), nb(i, 1), nb(i, 3)].some(b => b >= 0 && net.terr[b] === J.T_WATER)) { /* 鉄橋 */ }
+    }
+    if (t === J.T_BLDG) {
+      g.fillStyle = '#d8d3c6'; g.fillRect(x, y, TS, TS);
+      const c = ROOF[Math.floor(hash(i, 4) * ROOF.length)], ins = 3 + Math.floor(hash(i, 5) * 3);
+      g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x + ins + 2, y + ins + 3, TS - ins * 2, TS - ins * 2);
+      g.fillStyle = c; g.fillRect(x + ins, y + ins, TS - ins * 2, TS - ins * 2);
+      g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(x + ins, y + ins, TS - ins * 2, 3);
+      if (hash(i, 6) < 0.5) { g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(x + TS / 2 - 1, y + ins, 2, TS - ins * 2); }
+    }
+    if (t === J.T_BLOCK) {
+      const d = DECO[net.deco[i]] || DECO.T;
+      g.fillStyle = d.bg; g.fillRect(x, y, TS, TS);
+      if (net.deco[i] === 'T' || (net.deco[i] === 'J' && hash(i, 7) < 0.6) || (net.deco[i] === 'P' && hash(i, 7) < 0.4)) {
+        for (let k = 0; k < 3; k++) { const px = x + 6 + hash(i, 10 + k) * 20, py = y + 6 + hash(i, 20 + k) * 20; g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.arc(px + 2, py + 3, 7, 0, 7); g.fill(); g.fillStyle = k % 2 ? '#3f8f3a' : '#4fa043'; g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); }
+      }
+    }
+  }
+  // 大きな施設のアイコン（塗りつぶし命令の矩形ごと）
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const [c, x0, y0, x1, y1] of ui.st.map) {
+    const d = DECO[c]; if (!d || !d.icon) continue;
+    const s = Math.min(x1 - x0 + 1, y1 - y0 + 1);
+    g.font = `${Math.min(40, 14 + s * 8)}px ${EMOJI}`;
+    g.fillText(d.icon, (x0 + x1 + 1) / 2 * TS, (y0 + y1 + 1) / 2 * TS + 2);
+  }
+  // 出入口の帯
+  ui.st.ports.forEach((p, pi) => {
+    for (const i of J.portTiles(p)) {
+      const x = (i % W) * TS, y = (i / W | 0) * TS;
+      g.fillStyle = p.color + '55';
+      if (p.edge === 3) g.fillRect(x, y, 10, TS); if (p.edge === 1) g.fillRect(x + TS - 10, y, 10, TS);
+      if (p.edge === 0) g.fillRect(x, y, TS, 10); if (p.edge === 2) g.fillRect(x, y + TS - 10, TS, 10);
+    }
+  });
+}
+function roadW(net, i) { return net.wide[i] ? 26 : 19; }
+function armW(net, i, d) { const b = nb(i, d); return net.wide[i] && b >= 0 && net.wide[b] ? 26 : 19; }
+/* 1マスぶんの道路。dirs: 描く腕の方向。kind: ground/bridge/deck */
+function drawRoadTile(g, i, dirs, kind) {
+  const net = ui.net, x = (i % W) * TS, y = (i / W | 0) * TS, cx = x + TS / 2, cy = y + TS / 2;
+  const rw = roadW(net, i), inter = J.isInter(net, i);
+  const shapes = [];
+  shapes.push([cx - rw / 2, cy - rw / 2, rw, rw]);
+  for (const d of dirs) {
+    const w = armW(net, i, d);
+    if (d === 0) shapes.push([cx - w / 2, y, w, TS / 2]); if (d === 2) shapes.push([cx - w / 2, cy, w, TS / 2]);
+    if (d === 1) shapes.push([cx, cy - w / 2, TS / 2, w]); if (d === 3) shapes.push([x, cy - w / 2, TS / 2, w]);
+  }
+  const elevated = kind !== 'ground';
+  if (elevated) { g.fillStyle = 'rgba(0,0,0,.32)'; for (const s of shapes) g.fillRect(s[0] + 4, s[1] + 5, s[2], s[3]); }
+  g.fillStyle = elevated ? '#b9bdc2' : '#a9aeb3';    // 歩道の縁
+  for (const s of shapes) g.fillRect(s[0] - 1.5, s[1] - 1.5, s[2] + 3, s[3] + 3);
+  g.fillStyle = elevated ? '#767d86' : '#5a6068';
+  for (const s of shapes) g.fillRect(s[0], s[1], s[2], s[3]);
+  // 区画線
+  for (const d of dirs) {
+    const wide = armW(net, i, d) > 20;
+    g.strokeStyle = wide ? '#f2c94c' : 'rgba(255,255,255,.85)'; g.lineWidth = wide ? 1.6 : 1.2;
+    g.setLineDash(wide ? [] : [4, 4]);
+    const from = inter ? rw / 2 : 0;
+    g.beginPath(); g.moveTo(cx + DX[d] * from, cy + DY[d] * from); g.lineTo(cx + DX[d] * TS / 2, cy + DY[d] * TS / 2); g.stroke();
+    if (inter) {   // 停止線：進入してくる車（進行方向は逆向き）の左側車線に引く
+      g.setLineDash([]); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1.6;
+      const w = armW(net, i, d) / 2 - 1, r = rw / 2 + 1.5, lx = -DY[d], ly = DX[d];
+      const px = cx + DX[d] * r, py = cy + DY[d] * r;
+      g.beginPath(); g.moveTo(px, py); g.lineTo(px + lx * w, py + ly * w); g.stroke();
+    }
+  }
+  g.setLineDash([]);
+  if (elevated) {   // 欄干
+    g.strokeStyle = '#eef1f4'; g.lineWidth = 1.5;
+    for (const d of dirs) {
+      const w = armW(net, i, d) / 2 + 1;
+      g.beginPath();
+      if (d % 2 === 0) { const y0 = d === 0 ? y : cy, y1 = d === 0 ? cy : y + TS; g.moveTo(cx - w, y0); g.lineTo(cx - w, y1); g.moveTo(cx + w, y0); g.lineTo(cx + w, y1); }
+      else { const x0 = d === 3 ? x : cx, x1 = d === 3 ? cx : x + TS; g.moveTo(x0, cy - w); g.lineTo(x1, cy - w); g.moveTo(x0, cy + w); g.lineTo(x1, cy + w); }
+      g.stroke();
+    }
+  }
+  if (J.isCross(net, i)) {   // 踏切：路面の上にレール
+    const h = railAxis(i) === 'h';
+    g.fillStyle = '#3c4046';
+    h ? (g.fillRect(x, y + 11, TS, 2), g.fillRect(x, y + TS - 13, TS, 2)) : (g.fillRect(x + 11, y, 2, TS), g.fillRect(x + TS - 13, y, 2, TS));
+  }
+}
+function drawNet() {
+  const net = ui.net;
+  drawTerrain(gx);
+  dx.setTransform(SC, 0, 0, SC, 0, 0); dx.clearRect(0, 0, W * TS, H * TS);
+  for (let i = 0; i < N; i++) {
+    if (!net.road[i]) continue;
+    const dirs = [0, 1, 2, 3].filter(d => net.link[i] >> d & 1);
+    if (J.isFly(net, i)) {
+      drawRoadTile(gx, i, dirs.filter(d => d % 2 === 1), 'ground');
+      drawRoadTile(dx, i, dirs.filter(d => d % 2 === 0), 'deck');
+    } else if (net.terr[i] === J.T_RAIL && net.elev[i]) drawRoadTile(dx, i, dirs, 'deck');
+    else drawRoadTile(gx, i, dirs, net.terr[i] === J.T_WATER ? 'bridge' : 'ground');
+  }
+  // 踏切の黄黒（静的）
+  for (let i = 0; i < N; i++) if (J.isCross(net, i)) {
+    const x = (i % W) * TS, y = (i / W | 0) * TS, h = railAxis(i) === 'h';
+    for (const side of [0, 1]) {
+      const n2 = nb(i, h ? (side ? 2 : 0) : (side ? 1 : 3));
+      if (n2 >= 0 && J.isCross(net, n2)) continue;
+      gx.fillStyle = '#ffd400';
+      if (h) gx.fillRect(x + 2, side ? y + TS - 3 : y, TS - 4, 3); else gx.fillRect(side ? x + TS - 3 : x, y + 2, 3, TS - 4);
+    }
+  }
+  ui.cacheVer = net.ver;
+}
+
+/* ---------- 車の位置（区画の境目をベジェで滑らかに） ---------- */
+const dirV = d => [DX[d], DY[d]];
+function carPose(c) {
+  const p = c.path, n = p.length;
+  let T, din, dout, u;
+  if (c.s >= 0.5) { T = p[c.k + 1]; din = J.dirTo(p[c.k], T); dout = c.k + 2 < n ? J.dirTo(T, p[c.k + 2]) : din; u = c.s - 0.5; }
+  else { T = p[c.k]; dout = J.dirTo(T, p[c.k + 1]); din = c.k > 0 ? J.dirTo(p[c.k - 1], T) : dout; u = c.s + 0.5; }
+  const e = ui.sim.edges.get(p[c.k] * 4 + J.dirTo(p[c.k], p[c.k + 1]));
+  const o = e && e.nl === 2 ? (c.lane ? 0.33 : 0.13) : 0.2;
+  const L1 = [DY[din], -DX[din]], L2 = [DY[dout], -DX[dout]];
+  const p0 = [-DX[din] * 0.5 + L1[0] * o, -DY[din] * 0.5 + L1[1] * o];
+  const p2 = [DX[dout] * 0.5 + L2[0] * o, DY[dout] * 0.5 + L2[1] * o];
+  const p1 = din === dout ? [(p0[0] + p2[0]) / 2, (p0[1] + p2[1]) / 2] : [L1[0] * o + L2[0] * o, L1[1] * o + L2[1] * o];
+  const a = (1 - u) * (1 - u), b = 2 * u * (1 - u), cc = u * u;
+  const x = a * p0[0] + b * p1[0] + cc * p2[0], y = a * p0[1] + b * p1[1] + cc * p2[1];
+  const tx = 2 * (1 - u) * (p1[0] - p0[0]) + 2 * u * (p2[0] - p1[0]), ty = 2 * (1 - u) * (p1[1] - p0[1]) + 2 * u * (p2[1] - p1[1]);
+  return { x: (T % W + 0.5 + x) * TS, y: ((T / W | 0) + 0.5 + y) * TS, ang: Math.atan2(ty, tx), tile: T, vert: Math.abs(ty) > Math.abs(tx) };
+}
+function drawCar(c, pose) {
+  const col = ui.st.ports[c.g].color;
+  ctx.save(); ctx.translate(pose.x, pose.y); ctx.rotate(pose.ang);
+  const L = 11, Wd = 6.4;
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-L / 2 + 1, -Wd / 2 + 1.5, L, Wd);
+  if (ui.heat) { const s = c.v / J.VMAX; ctx.fillStyle = s > 0.6 ? '#21b66b' : s > 0.15 ? '#f0a500' : '#e0283c'; }
+  else ctx.fillStyle = col;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-L / 2, -Wd / 2, L, Wd, 2) : ctx.rect(-L / 2, -Wd / 2, L, Wd); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(-1, -Wd / 2 + 1, 3.5, Wd - 2);
+  if (c.v < 0.05 && c.stopT > 0.6) { ctx.fillStyle = '#ff2d2d'; ctx.fillRect(-L / 2 - 0.5, -Wd / 2 + 0.5, 1.6, 1.6); ctx.fillRect(-L / 2 - 0.5, Wd / 2 - 2.1, 1.6, 1.6); }
+  ctx.restore();
+  if (c.stopT > 10 && ((c.id * 7 + Math.floor(ui.sim.t * 2)) % 9 === 0)) { ctx.font = `11px ${EMOJI}`; ctx.textAlign = 'center'; ctx.fillText('💢', pose.x + 4, pose.y - 8); }
+}
+function drawTrains() {
+  const S = ui.sim, st = ui.st;
+  (st.rails || []).forEach((r, ri) => {
+    const g = J.gate(S, ri);
+    if (!g.closed) return;
+    const p = g.ph / r.closed, len = 9, span = (r.axis === 'h' ? W : H) + len + 2;
+    let head = -len - 1 + p * span; if (ri % 2) head = (r.axis === 'h' ? W : H) + 1 - p * span;
+    for (const a of r.at) for (let k = 0; k < 3; k++) {
+      const s0 = (ri % 2 ? head + k * 3 : head + (2 - k) * 3), car = 2.8;
+      ctx.save();
+      if (r.axis === 'h') ctx.translate(s0 * TS, (a + 0.5) * TS); else { ctx.translate((a + 0.5) * TS, s0 * TS); ctx.rotate(Math.PI / 2); }
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(2, -9, car * TS, 20);
+      ctx.fillStyle = '#eef2f4'; ctx.fillRect(0, -10, car * TS, 20);
+      ctx.fillStyle = ri % 2 ? '#e0742b' : '#2e9e5b'; ctx.fillRect(0, -3, car * TS, 6);
+      ctx.fillStyle = '#9fb0bb'; for (let w = 6; w < car * TS - 6; w += 10) ctx.fillRect(w, -8, 6, 3);
+      ctx.restore();
+    }
+  });
+}
+function drawGates() {
+  const S = ui.sim, net = ui.net, t = performance.now() / 1000;
+  for (let i = 0; i < N; i++) {
+    if (!J.isCross(net, i)) continue;
+    const ri = S.railOf[i]; if (ri < 0) continue;
+    const g = J.gate(S, ri);
+    if (!g.closed && !g.soon) continue;
+    const x = (i % W) * TS, y = (i / W | 0) * TS, h = railAxis(i) === 'h';
+    for (const side of [0, 1]) {
+      const n2 = nb(i, h ? (side ? 2 : 0) : (side ? 1 : 3));
+      if (n2 >= 0 && J.isCross(net, n2)) continue;
+      if (g.closed) {
+        for (let k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#fff' : '#e0283c'; if (h) ctx.fillRect(x + 3 + k * 4.5, side ? y + TS + 1 : y - 3, 4.5, 2.5); else ctx.fillRect(side ? x + TS + 1 : x - 3, y + 3 + k * 4.5, 2.5, 4.5); }
+      }
+      const on = Math.floor(t * 3) % 2 === side;
+      ctx.fillStyle = on ? '#ff3030' : '#5a1a1a';
+      ctx.beginPath(); if (h) ctx.arc(x + (side ? TS + 2 : -2), side ? y + TS + 2 : y - 2, 2.5, 0, 7); else ctx.arc(side ? x + TS + 2 : x - 2, y + (side ? TS + 2 : -2), 2.5, 0, 7); ctx.fill();
+    }
+  }
+}
+function drawPortLabels() {
+  const S = ui.sim;
+  ui.st.ports.forEach((p, pi) => {
+    const tiles = J.portTiles(p), mid = tiles[tiles.length >> 1];
+    let x = (mid % W + 0.5) * TS, y = ((mid / W | 0) + 0.5) * TS;
+    let back = 0; S.flowP.forEach(([a], fi) => { if (a === pi) back += S.backlog[fi]; });
+    const txt = `${p.icon} ${p.name}`;
+    ctx.font = `bold 12px ${FONT}`;
+    const tw = ctx.measureText(txt).width + 14, th = 20;
+    if (p.edge === 3) x = 4 + tw / 2; if (p.edge === 1) x = W * TS - 4 - tw / 2;
+    if (p.edge === 0) y = 4 + th / 2; if (p.edge === 2) y = H * TS - 4 - th / 2;
+    // 道路と重ならないよう、帯の真ん中から少しずらす
+    if (p.edge % 2 === 1) y -= TS * 0.9; else x += tw / 2 + TS * 0.6;
+    ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.strokeStyle = p.color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - tw / 2, y - th / 2, tw, th, 6) : ctx.rect(x - tw / 2, y - th / 2, tw, th); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1f2a22'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `bold 12px ${FONT}`; ctx.fillText(txt, x, y + 1);
+    if (back > 0) {
+      const bt = `入れない ${back}台`; ctx.font = `bold 10px ${FONT}`; const bw = ctx.measureText(bt).width + 10;
+      ctx.fillStyle = '#d7263d'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - bw / 2, y + th / 2 + 1, bw, 15, 5) : ctx.rect(x - bw / 2, y + th / 2 + 1, bw, 15); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(bt, x, y + th / 2 + 9);
+    }
+  });
+}
+function tileRect(i, color, lw = 2) { ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.strokeRect((i % W) * TS + 1, (i / W | 0) * TS + 1, TS - 2, TS - 2); }
+
+function render() {
+  if (!ui.net) return;
+  if (ui.cacheVer !== ui.net.ver) drawNet();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(ground, 0, 0);
+  ctx.setTransform(SC, 0, 0, SC, 0, 0);
+  const S = ui.sim, net = ui.net, now = performance.now() / 1000;
+  // 水面のきらめき
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
+  for (let i = 0; i < N; i++) if (net.terr[i] === J.T_WATER && !net.road[i] && hash(i, 9) < 0.5) {
+    const x = (i % W) * TS, y = (i / W | 0) * TS, ph = (now * 0.6 + hash(i, 8) * 3) % 3;
+    if (ph < 1.6) { ctx.globalAlpha = Math.sin(ph / 1.6 * Math.PI) * 0.9; ctx.beginPath(); ctx.moveTo(x + 6 + hash(i, 1) * 10, y + 8 + hash(i, 2) * 14); ctx.lineTo(x + 14 + hash(i, 1) * 10, y + 8 + hash(i, 2) * 14); ctx.stroke(); }
+  }
+  ctx.globalAlpha = 1;
+  // 混雑表示（マスごと）
+  if (ui.heat && S) {
+    const cnt = new Float32Array(N), stp = new Float32Array(N);
+    for (const c of S.cars) { const t = c.s >= 0.5 ? c.path[c.k + 1] : c.path[c.k]; cnt[t]++; if (c.v < 0.3) stp[t]++; }
+    for (let i = 0; i < N; i++) if (net.road[i]) {
+      const r = cnt[i] ? stp[i] / cnt[i] : 0;
+      ctx.fillStyle = cnt[i] === 0 ? 'rgba(33,182,107,.18)' : r > 0.5 ? 'rgba(224,40,60,.55)' : r > 0.15 ? 'rgba(240,165,0,.45)' : 'rgba(33,182,107,.35)';
+      ctx.fillRect((i % W) * TS + 3, (i / W | 0) * TS + 3, TS - 6, TS - 6);
+    }
+  }
+  const up = [];
+  if (S) {
+    for (const c of S.cars) {
+      const ps = carPose(c);
+      const tt = ps.tile;
+      if (net.elev[tt] && (net.terr[tt] === J.T_RAIL || ps.vert)) up.push([c, ps]); else drawCar(c, ps);
+    }
+    drawTrains();
+    drawGates();
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(deck, 0, 0); ctx.setTransform(SC, 0, 0, SC, 0, 0);
+  for (const [c, ps] of up) drawCar(c, ps);
+  if (S) drawPortLabels();
+  // 工事の演出
+  ui.fx = ui.fx.filter(f => now - f.t0 < 0.6);
+  for (const f of ui.fx) {
+    const k = (now - f.t0) / 0.6; if (k < 0) continue;
+    const x = (f.i % W + 0.5) * TS, y = ((f.i / W | 0) + 0.5) * TS;
+    ctx.strokeStyle = f.c || '#ffd54a'; ctx.globalAlpha = 1 - k; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, 6 + k * 18, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  // ドラッグ中の計画線
+  if (ui.drag && ui.drag.tool === 'road') {
+    const path = ui.drag.path, plan = J.planPath(net, path);
+    for (let k = 0; k < path.length; k++) {
+      const i = path[k], x = (i % W) * TS, y = (i / W | 0) * TS, ok = k < plan.ok;
+      ctx.fillStyle = ok ? (plan.cost > remaining() ? 'rgba(224,40,60,.45)' : 'rgba(255,213,74,.55)') : 'rgba(224,40,60,.35)';
+      ctx.fillRect(x + 6, y + 6, TS - 12, TS - 12);
+      if (k > 0 && ok) { const a = path[k - 1]; ctx.strokeStyle = 'rgba(40,40,40,.7)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo((a % W + 0.5) * TS, ((a / W | 0) + 0.5) * TS); ctx.lineTo(x + TS / 2, y + TS / 2); ctx.stroke(); }
+      if (!ok) { ctx.strokeStyle = '#d7263d'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x + 9, y + 9); ctx.lineTo(x + TS - 9, y + TS - 9); ctx.moveTo(x + TS - 9, y + 9); ctx.lineTo(x + 9, y + TS - 9); ctx.stroke(); }
+    }
+  }
+  if (ui.hover >= 0 && ui.phase === 'build') {
+    const c = toolCost(ui.tool, ui.hover);
+    tileRect(ui.hover, c.ok ? '#fff' : '#ff6b6b', 2);
+  }
+}
+
+/* ---------- 工具 ---------- */
+const TILE_NAME = i => {
+  const net = ui.net, t = net.terr[i];
+  if (net.port[i] >= 0) return `${ui.st.ports[net.port[i]].icon} ${ui.st.ports[net.port[i]].name}の出入口`;
+  if (net.road[i]) {
+    if (J.isFly(net, i)) return '立体交差（縦が上・右左折不可）';
+    if (t === J.T_RAIL) return net.elev[i] ? '跨線橋' : '踏切';
+    if (t === J.T_WATER) return net.wide[i] ? '橋（2車線）' : '橋';
+    if (J.isInter(net, i)) return net.wide[i] ? '交差点（広い）' : '交差点';
+    return net.wide[i] ? '道路（拡幅済み）' : '道路';
+  }
+  return ({ [J.T_GRASS]: '空き地', [J.T_WATER]: '川', [J.T_RAIL]: '線路', [J.T_BLDG]: '建物（立ち退きが必要）' })[t] || ({ T: '林（工事できない）', P: '公園（工事できない）', S: '学校（工事できない）', J: '神社（工事できない）', H: '病院（工事できない）', F: '工場（工事できない）' })[net.deco[i]] || '工事できない';
+};
+function toolCost(tool, i) {
+  const net = ui.net;
+  if (tool === 'road') {
+    const c = J.roadCost(net, i);
+    if (c < 0) return { ok: false, msg: 'ここには道路を作れません' };
+    if (c === 0) return { ok: true, cost: 0, msg: 'ここからドラッグして道をつなげる' };
+    const kind = { [J.T_GRASS]: '道路', [J.T_BLDG]: '立ち退き＋道路', [J.T_WATER]: '橋', [J.T_RAIL]: '跨線橋' }[net.terr[i]];
+    return { ok: true, cost: c, msg: `${kind} ${yen(c)}` };
+  }
+  if (tool === 'widen') {
+    const c = J.widenCost(net, i);
+    if (c < 0) return { ok: false, msg: net.wide[i] ? 'もう拡幅済み' : '道路に使います' };
+    return { ok: true, cost: c, msg: `拡幅 ${yen(c)}（隣も広げると2車線）` };
+  }
+  if (tool === 'fly') {
+    const c = J.flyCost(net, i);
+    if (c < 0) return { ok: false, msg: net.elev[i] ? 'もう立体化済み' : '交差点か踏切に使います' };
+    return { ok: true, cost: c, msg: net.terr[i] === J.T_RAIL ? `踏切を跨線橋に ${yen(c)}` : `立体交差 ${yen(c)}（縦が上を通る・右左折不可）` };
+  }
+  if (tool === 'remove') {
+    if (net.port[i] >= 0 && net.road[i]) return { ok: false, msg: '出入口は撤去できません' };
+    const c = J.removeCost(net, i);
+    if (c === null) return { ok: false, msg: '撤去するものがありません' };
+    return { ok: true, cost: c, msg: c < 0 ? `撤去（${yen(-c)} 返金）` : `撤去 ${yen(c)}` };
+  }
+  return { ok: false, msg: '' };
+}
+function setTool(t) {
+  ui.tool = t;
+  document.querySelectorAll('.tool').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  updateHover();
+}
+function pushUndo() { ui.undo.push({ net: J.cloneNet(ui.net), used: ui.used }); if (ui.undo.length > 60) ui.undo.shift(); }
+function restoreNet(src) {
+  const net = ui.net;
+  for (const k of ['terr', 'road', 'link', 'wide', 'elev', 'orig', 'spent']) net[k].set(src[k]);
+  net.ver++;
+}
+function undo() {
+  if (ui.phase !== 'build') return;
+  const u = ui.undo.pop(); if (!u) { toast('これ以上戻せません'); return; }
+  restoreNet(u.net); ui.used = u.used; refreshSide(); toast('ひとつ前に戻しました');
+}
+function resetNet() {
+  if (ui.phase !== 'build') return;
+  pushUndo(); restoreNet(J.makeNet(ui.st)); ui.used = 0; refreshSide(); toast('最初の状態に戻しました（元に戻すで取り消せます）');
+}
+
+/* ---------- マウス ---------- */
+function tileAt(e) {
+  const r = cv.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width * W), y = Math.floor((e.clientY - r.top) / r.height * H);
+  return x >= 0 && y >= 0 && x < W && y < H ? idx(x, y) : -1;
+}
+function extendPath(path, to) {
+  let guard = 0;
+  while (path[path.length - 1] !== to && guard++ < 80) {
+    const a = path[path.length - 1], ax = a % W, ay = a / W | 0, bx = to % W, by = to / W | 0;
+    let nx = ax, ny = ay;
+    const prev = path.length > 1 ? J.dirTo(path[path.length - 2], a) : -1;
+    const ddx = bx - ax, ddy = by - ay;
+    const horiz = Math.abs(ddx) > Math.abs(ddy) || (Math.abs(ddx) === Math.abs(ddy) && (prev === 1 || prev === 3));
+    if (horiz) nx += Math.sign(ddx); else ny += Math.sign(ddy);
+    const n = idx(nx, ny), j = path.indexOf(n);
+    if (j >= 0) path.length = j + 1; else path.push(n);
+  }
+}
+function applyAt(i) {
+  const d = ui.drag; if (!d || d.done.has(i)) return;
+  d.done.add(i);
+  const tc = toolCost(d.tool, i);
+  if (!tc.ok) return;
+  if (tc.cost > remaining()) { toast('予算が足りません'); return; }
+  const c = J.applyTool(ui.net, d.tool, i);
+  if (c == null) return;
+  ui.used += c; d.changed = true;
+  ui.fx.push({ i, t0: performance.now() / 1000, c: d.tool === 'remove' ? '#ff6b6b' : '#ffd54a' });
+  refreshSide();
+}
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  if (ui.phase !== 'build') return;
+  const i = tileAt(e); if (i < 0) return;
+  cv.setPointerCapture(e.pointerId);
+  const tool = e.button === 2 ? 'remove' : ui.tool;
+  if (e.button === 2 && ui.drag) { ui.drag = null; return; }
+  if (tool === 'road') ui.drag = { tool, path: [i] };
+  else { pushUndo(); ui.drag = { tool, done: new Set(), changed: false }; applyAt(i); }
+});
+cv.addEventListener('pointermove', e => {
+  const i = tileAt(e);
+  const r = $('stageWrap').getBoundingClientRect();
+  ui.mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+  if (i !== ui.hover) { ui.hover = i; updateHover(); }
+  placeTip();
+  if (!ui.drag || i < 0) return;
+  if (ui.drag.tool === 'road') { extendPath(ui.drag.path, i); updateHover(); }
+  else applyAt(i);
+});
+cv.addEventListener('pointerleave', () => { ui.hover = -1; ui.mouse = null; updateHover(); });
+function endDrag() {
+  const d = ui.drag; ui.drag = null;
+  if (!d) return;
+  if (d.tool !== 'road') { if (!d.changed) ui.undo.pop(); return; }
+  const plan = J.planPath(ui.net, d.path);
+  if (plan.ok === 0) { toast('ここには道路を作れません'); return; }
+  const newTiles = d.path.slice(0, plan.ok);
+  const before = ui.net.link.slice();
+  const anyNew = newTiles.some(i => !ui.net.road[i]) || (() => { for (let k = 1; k < newTiles.length; k++) { const a = newTiles[k - 1]; if (!(ui.net.link[a] >> J.dirTo(a, newTiles[k]) & 1)) return true; } return false; })();
+  if (!anyNew) return;
+  if (plan.cost > remaining()) { toast(`予算が足りません（あと ${yen(plan.cost - remaining())}）`); return; }
+  pushUndo();
+  J.commitPath(ui.net, newTiles);
+  ui.used += plan.cost;
+  void before;
+  const t0 = performance.now() / 1000;
+  newTiles.forEach((i, k) => ui.fx.push({ i, t0: t0 + k * 0.02 }));
+  if (plan.ok < d.path.length) toast('途中から先は作れませんでした（橋・線路の上は直線のみ）');
+  if (plan.cost > 0) voice(pick(VOICE.build));
+  refreshSide();
+}
+window.addEventListener('pointerup', endDrag);
+function placeTip() {
+  const t = $('tipc');
+  if (!ui.mouse || ui.phase !== 'build' || ui.hover < 0) { t.style.display = 'none'; return; }
+  let msg, ng = false;
+  if (ui.drag && ui.drag.tool === 'road') {
+    const plan = J.planPath(ui.net, ui.drag.path);
+    msg = `${yen(plan.cost)}`; ng = plan.cost > remaining();
+    if (plan.ok < ui.drag.path.length) { msg += '（×は作れない）'; }
+  } else { const c = toolCost(ui.tool, ui.hover); msg = c.ok ? (c.cost ? (c.cost < 0 ? '+' + yen(-c.cost) : yen(c.cost)) : c.msg) : c.msg; ng = !c.ok || c.cost > remaining(); }
+  t.textContent = msg; t.classList.toggle('ng', ng);
+  t.style.display = 'block';
+  const wr = $('stageWrap').getBoundingClientRect(), tw = t.offsetWidth + 20, th = t.offsetHeight + 20;
+  t.style.left = Math.min(ui.mouse.x, wr.width - tw) + 'px'; t.style.top = Math.min(ui.mouse.y, wr.height - th) + 'px';
+}
+function updateHover() {
+  const el = $('hoverInfo');
+  if (!ui.net) return;
+  if (ui.hover < 0) { el.innerHTML = ui.phase === 'build' ? '左ドラッグで工事、右ドラッグで撤去。<br>マスにカーソルを合わせると費用が出ます。' : 'テスト中は工事できません。'; return; }
+  const c = toolCost(ui.tool, ui.hover);
+  el.innerHTML = `<b>${esc(TILE_NAME(ui.hover))}</b><br>${c.ok ? esc(c.msg) : `<span class="ng">${esc(c.msg)}</span>`}`;
+}
+window.addEventListener('keydown', e => {
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (ui.phase === 'title' || $('ov').classList.contains('on')) { if (e.key === 'Escape' && ui.ovClose) ui.ovClose(); return; }
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); undo(); return; }
+  if (k === '1') setTool('road'); else if (k === '2') setTool('widen'); else if (k === '3') setTool('fly'); else if (k === '4') setTool('remove');
+  else if (k === ' ') { e.preventDefault(); togglePause(); }
+  else if (k === 'h') toggleHeat();
+  else if (k === 'f') cycleSpeed();
+  else if (k === 'enter') { if (ui.phase === 'build') startTest(); }
+  else if (k === 'escape') ui.drag = null;
+});
+
+/* ---------- サイドパネル ---------- */
+function refreshSide() {
+  const st = ui.st; if (!st) return;
+  const rem = remaining();
+  $('moneyText').textContent = yen(rem);
+  $('moneyText').style.color = rem < st.budget * 0.15 ? 'var(--ng)' : '';
+  $('moneyBar').style.width = Math.max(0, rem / st.budget * 100) + '%';
+  $('usedText').textContent = `使用 ${yen(ui.used)} / ${yen(st.budget)}`;
+  $('bUndo').disabled = !ui.undo.length;
+  updateHover();
+}
+function refreshStats() {
+  const S = ui.sim; if (!S || !S.now) return;
+  const j = S.now.jam;
+  ui.lastJam = j;
+  $('jamV').textContent = Math.round(j * 100) + '%';
+  $('jamV').style.color = jamColor(j);
+  $('jamL').textContent = j < 0.2 ? '渋滞度：スイスイ' : j < 0.45 ? '渋滞度：混雑' : j < 0.75 ? '渋滞度：大渋滞' : '渋滞度：地獄';
+  $('kCars').textContent = S.now.cars + '台';
+  $('kStop').textContent = S.now.stopped + '台';
+  $('kBack').textContent = S.now.backlog + '台';
+  $('kLen').textContent = ((S.now.stopped + S.now.backlog) * 0.007).toFixed(1) + 'km';
+  const un = S.unreach.map((u, fi) => u ? fi : -1).filter(x => x >= 0);
+  const w = $('warn');
+  if (un.length) { const names = un.slice(0, 2).map(fi => `${ui.st.ports[S.flowP[fi][0]].name}→${ui.st.ports[S.flowP[fi][1]].name}`); w.style.display = 'block'; w.textContent = `⚠ ${names.join('、')} の道がつながっていません`; }
+  else w.style.display = 'none';
+  drawSpark();
+}
+function drawSpark() {
+  const c = $('spark'), g = c.getContext('2d'), w = c.width, h = c.height;
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = '#f2f5ef'; g.fillRect(0, 0, w, h);
+  const ty = h - ui.st.target / 100 * h;
+  g.strokeStyle = '#d7263d'; g.setLineDash([8, 6]); g.lineWidth = 2; g.beginPath(); g.moveTo(0, ty); g.lineTo(w, ty); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#d7263d'; g.font = 'bold 18px sans-serif'; g.fillText(`目標 ${ui.st.target}%`, 6, ty - 5);
+  const H2 = ui.hist; if (H2.length < 2) return;
+  const n = 120;
+  g.beginPath();
+  H2.slice(-n).forEach((v, k, a) => { const x = (k + n - a.length) / (n - 1) * w, y = h - v * h; k ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.strokeStyle = '#253229'; g.lineWidth = 3; g.stroke();
+}
+
+/* ---------- 市民の声 ---------- */
+const AV = ['🧑‍💼', '👩', '🧓', '👨‍🔧', '👩‍🎓', '🧑‍🍳', '👵', '🧔', '👩‍💻', '👨‍🦰'];
+const VOICE = {
+  high: ['もう歩いたほうが早い', '遅刻確定。上司になんて言おう', 'カーナビが「到着予定：未定」って言ってる', 'エンジン切って寝ようかな', '前の車、さっきから1ミリも動いてない', 'ラジオの渋滞情報、うちの道しか言ってない', 'この渋滞、道路課は見てるの？', 'コーヒー2杯目に突入しました', '後ろの車も、そのまた後ろも、みんな諦めた顔してる'],
+  mid: ['ちょっと混んでるな…', 'のろのろ運転。', 'いつもよりはマシ…かな？', 'あと少しで抜けられそう', '交差点、2回待ちかな'],
+  low: ['え、もう着いた？', 'スイスイ走れる！', '道路課、いい仕事してる', '新しい道、快適すぎる', '朝ごはん食べる時間できた', 'この道できてから人生変わった', '渋滞って、ほどけるんだ……'],
+  build: ['お、工事してる', 'あれ、新しい道？', 'ここに道ができるのか', '工事の音で目が覚めた'],
+  giveup: ['もういい、引き返す！', '今日は休みます（会社に電話）'],
+  noroute: ['道がつながってないんだけど？', '行き止まりなんだけど！？'],
+};
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function voice(text) {
+  const el = $('voice');
+  const d = document.createElement('div');
+  d.innerHTML = `<span>${pick(AV)}</span><p>${esc(text)}</p>`;
+  el.insertBefore(d, el.firstChild);
+  while (el.children.length > 3) el.removeChild(el.lastChild);
+}
+function tickVoice(realDt) {
+  if (!ui.sim || !ui.sim.now) return;
+  ui.voiceT -= realDt;
+  if (ui.voiceT > 0) return;
+  ui.voiceT = 4.5 + Math.random() * 3;
+  const S = ui.sim, j = S.now.jam;
+  let pool;
+  if (S.unreach.some(Boolean) && Math.random() < 0.5) pool = VOICE.noroute;
+  else if (j >= 0.45) pool = Math.random() < 0.35 ? ui.st.voices : VOICE.high;
+  else if (j >= 0.2) pool = VOICE.mid;
+  else pool = VOICE.low;
+  voice(pick(pool));
+}
+
+/* ---------- 進行 ---------- */
+function newPreview() {
+  ui.sim = J.createSim(ui.st, ui.net, { mode: 'preview', seed: 1 + Math.floor(Math.random() * 1e6) });
+  ui.hist = []; ui.histT = 0; ui.gv = 0;
+}
+function loadStage(si) {
+  ui.si = si; ui.st = J.STAGES[si];
+  ui.net = J.makeNet(ui.st); ui.used = 0; ui.undo = [];
+  ui.phase = 'build'; ui.cacheVer = -1; ui.drag = null; ui.result = null;
+  ui.speed = 1; $('bSpeed').textContent = '速度 ×1';
+  newPreview();
+  $('stageLabel').textContent = `STAGE ${si + 1}　${ui.st.name}`;
+  $('goalText').innerHTML = `本番テストで <span class="tg">渋滞度 ${ui.st.target}% 以下</span><br><small style="color:var(--sub);font-size:11.5px">${esc(ui.st.tip)}</small>`;
+  $('voice').innerHTML = '';
+  $('modeText').textContent = '試運転中';
+  refreshSide();
+  if (!ui.base[ui.st.id]) setTimeout(() => { ui.base[ui.st.id] = J.runTest(ui.st, J.makeNet(ui.st)); if (ui.ovKind === 'brief') showBrief(); }, 60);
+  showBrief();
+}
+function startTest() {
+  if (ui.phase !== 'build') return;
+  ui.drag = null;
+  ui.phase = 'test';
+  ui.sim = J.createSim(ui.st, J.cloneNet(ui.net), { mode: 'test', seed: 777 });
+  ui.sim.net.ver = ui.net.ver;      // 描画キャッシュをそのまま使う
+  ui.hist = []; ui.histT = 0; ui.gv = 0;
+  ui.speed = 2; $('bSpeed').textContent = '速度 ×2'; ui.paused = false; $('bPause').classList.remove('on'); $('bPause').textContent = '⏸ 一時停止';
+  $('testHud').classList.add('on');
+  $('modeText').textContent = '本番テスト中';
+  $('bTest').disabled = true; $('bTest').style.opacity = .5;
+  updateHover(); placeTip();
+  voice(`${clockStr(ui.st, 0)}、ラッシュが始まった`);
+}
+function finishTest(skip) {
+  const S = ui.sim;
+  if (skip) { while (!J.testDone(S)) J.step(S, DT); }
+  const sc = J.testScore(S);
+  const stars = J.starsOf(ui.st, sc, ui.used);
+  ui.result = { sc, stars, used: ui.used };
+  const pr = store.get();
+  const prev = pr.stars[ui.st.id] || 0;
+  if (stars > prev) { pr.stars[ui.st.id] = stars; store.set(pr); }
+  ui.result.best = stars > prev;
+  ui.phase = 'result';
+  $('testHud').classList.remove('on');
+  $('bTest').disabled = false; $('bTest').style.opacity = 1;
+  showResult();
+}
+function backToBuild() {
+  closeOv();
+  ui.phase = 'build';
+  ui.speed = 1; $('bSpeed').textContent = '速度 ×1';
+  $('modeText').textContent = '試運転中';
+  newPreview(); refreshSide();
+}
+function togglePause() { ui.paused = !ui.paused; $('bPause').classList.toggle('on', ui.paused); $('bPause').textContent = ui.paused ? '▶ 再開' : '⏸ 一時停止'; }
+function cycleSpeed() { ui.speed = ui.speed === 1 ? 2 : ui.speed === 2 ? 4 : 1; $('bSpeed').textContent = `速度 ×${ui.speed}`; }
+function toggleHeat() { ui.heat = !ui.heat; $('bHeat').classList.toggle('on', ui.heat); }
+
+let lastT = performance.now();
+function frame(now) {
+  const rdt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
+  if (ui.sim && !ui.paused && (ui.phase === 'build' || ui.phase === 'test' || ui.phase === 'title')) {
+    ui.acc += rdt * ui.speed;
+    let n = 0;
+    while (ui.acc >= DT && n < 16) {
+      J.step(ui.sim, DT); ui.acc -= DT; n++;
+      ui.histT += DT; if (ui.histT >= 0.5) { ui.histT = 0; ui.hist.push(ui.sim.now ? ui.sim.now.jam : 0); if (ui.hist.length > 400) ui.hist.shift(); }
+      if (ui.phase === 'test' && J.testDone(ui.sim)) { finishTest(false); break; }
+    }
+    if (n === 16) ui.acc = 0;
+    if (ui.sim.lastGone && ui.sim.m.giveup > (ui.gv || 0)) { ui.gv = ui.sim.m.giveup; if (Math.random() < 0.5) voice(pick(VOICE.giveup)); }
+  }
+  if (ui.phase === 'test' && ui.sim) {
+    $('clk').textContent = clockStr(ui.st, ui.sim.t);
+    $('pb').style.width = Math.min(100, ui.sim.t / J.TEST_LEN * 100) + '%';
+    $('hudJam').textContent = `渋滞度 ${Math.round((ui.sim.now ? ui.sim.now.jam : 0) * 100)}%`;
+  }
+  if (ui.phase !== 'title') tickVoice(rdt);
+  render();
+  if (Math.floor(now / 250) !== frame.q) { frame.q = Math.floor(now / 250); refreshStats(); }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- オーバーレイ ---------- */
+function openOv(html, kind, onClose) { const o = $('ov'); o.innerHTML = html; o.classList.add('on'); ui.ovKind = kind; ui.ovClose = onClose || null; }
+function closeOv() { $('ov').classList.remove('on'); $('ov').innerHTML = ''; ui.ovKind = null; ui.ovClose = null; }
+function starStr(n) { return '★'.repeat(n) + `<i>${'★'.repeat(3 - n)}</i>`; }
+function showTitle() {
+  ui.phase = 'title';
+  if (!ui.st) { ui.st = J.STAGES[4]; ui.net = J.makeNet(ui.st); ui.cacheVer = -1; ui.sim = J.createSim(ui.st, ui.net, { mode: 'preview', seed: 3 }); ui.speed = 1; for (let k = 0; k < 900; k++) J.step(ui.sim, DT); }
+  openOv(`<div class="card title">
+    <div class="logo">渋滞<span>ほどき</span></div>
+    <p class="catch">めちゃくちゃ混んでる道路を、予算内の工事でほどく交通パズル</p>
+    <div class="feat"><span>全5ステージ</span><span>道路・橋・跨線橋・立体交差</span><span>PC向け・マウス操作</span></div>
+    <div class="btns"><button class="cta" id="goStages">はじめる</button><button class="cta sub" id="goHelp">遊び方</button></div>
+    <p class="note">実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">RED FREE GAMES</a> の他のゲームで遊ぶ</p>
+  </div>`, 'title');
+  $('goStages').onclick = showStages; $('goHelp').onclick = () => showHelp(showTitle);
+}
+function showStages() {
+  const pr = store.get();
+  const cards = J.STAGES.map((st, i) => {
+    const s = pr.stars[st.id] || 0, open = i === 0 || (pr.stars[J.STAGES[i - 1].id] || 0) > 0;
+    return `<button class="sc" data-si="${i}" ${open ? '' : 'disabled'}><small>STAGE ${i + 1}</small><b>${open ? esc(st.name) : '🔒 ？？？'}</b><span class="st">${starStr(s)}</span><br><small>予算 ${yen(st.budget)}</small></button>`;
+  }).join('');
+  const total = J.STAGES.reduce((a, st) => a + (pr.stars[st.id] || 0), 0);
+  openOv(`<div class="card"><h2><small>道路課 案件一覧</small>どこの渋滞をほどく？</h2>
+    <p style="font-size:13px;color:var(--sub)">クリアすると次の案件が開きます。集めた★ ${total} / ${J.STAGES.length * 3}</p>
+    <div class="sgrid">${cards}</div>
+    <div class="btns" style="margin-top:14px"><button class="cta sub" id="goHelp2">遊び方</button>${ui.phase === 'build' || ui.phase === 'result' ? '<button class="cta sub" id="goBack">閉じる</button>' : ''}</div></div>`, 'stages', ui.phase === 'build' ? closeOv : null);
+  document.querySelectorAll('.sc').forEach(b => b.onclick = () => { closeOv(); loadStage(+b.dataset.si); });
+  $('goHelp2').onclick = () => showHelp(showStages);
+  if ($('goBack')) $('goBack').onclick = () => { if (ui.phase === 'result') showResult(); else closeOv(); };
+}
+function showBrief() {
+  const st = ui.st, b = ui.base[st.id];
+  openOv(`<div class="card"><h2><small>STAGE ${ui.si + 1}</small>${esc(st.name)}</h2>
+    <div class="boss"><div class="av">👩‍💼</div><div class="say"><b>道路課 課長</b>${st.brief.map(esc).join('<br>')}</div></div>
+    <div class="goalbox">
+      <div><small>工事前の渋滞度</small><b style="color:var(--ng)">${b ? b.jam + '%' : '計測中…'}</b></div>
+      <div><small>目標</small><b>${st.target}% 以下</b></div>
+      <div><small>工事予算</small><b>${yen(st.budget)}</b></div>
+    </div>
+    <p class="hint">💡 ${esc(st.tip)}</p>
+    <p style="font-size:12.5px;color:var(--sub);margin-top:10px">車の色は行き先の色。試運転を見ながら工事して、準備ができたら <b>▶ 本番テスト</b>（ラッシュの2時間）で判定します。</p>
+    <div class="btns"><button class="cta" id="goBuild">工事を始める</button></div></div>`, 'brief', closeOv);
+  $('goBuild').onclick = closeOv;
+}
+function showHelp(back) {
+  openOv(`<div class="card help"><h2><small>HOW TO PLAY</small>遊び方</h2>
+    <p>渋滞している街の道路を、<b>予算の範囲内</b>で工事して、本番テストの<b>渋滞度を目標以下</b>にするゲームです。車はそれぞれ行き先（車の色）に向かって、空いている道を自分で探して走ります。</p>
+    <table>
+      <tr><td>左ドラッグ</td><td>選んだ工事をする。道路はドラッグで線を引き、離すと着工</td></tr>
+      <tr><td>右ドラッグ</td><td>撤去（自分で作ったものは全額返金）</td></tr>
+      <tr><td><kbd>1</kbd>〜<kbd>4</kbd></td><td>道路／拡幅／立体化／撤去 を選ぶ</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>元に戻す</td></tr>
+      <tr><td><kbd>Space</kbd> <kbd>F</kbd> <kbd>H</kbd></td><td>一時停止／速度切替／混雑表示</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>本番テスト開始</td></tr>
+    </table>
+    <table>
+      <tr><td>🛣️ 道路</td><td>空き地 2,000万円／建物は立ち退き込み 1億円／川の上は橋 1億2,000万円／線路の上は跨線橋 1億円。橋と線路の上は直線のみ</td></tr>
+      <tr><td>↔️ 拡幅</td><td>隣り合う拡幅マスの間が2車線になる。広い交差点は一度に多く通せる</td></tr>
+      <tr><td>🌉 立体化</td><td>交差点→立体交差（2億円。縦の道が上を通り、互いに待たない。右左折はできない）／踏切→跨線橋（8,000万円）</td></tr>
+      <tr><td>🚧 撤去</td><td>道を減らすと流れが良くなることも</td></tr>
+    </table>
+    <p style="font-size:13px">交差点では、ぶつかる向きの車が交互に通ります。踏切では一時停止し、電車が来ると長く待たされます。<br>★は「クリア」「渋滞度を目標の半分以下」「予算を3割以上残す」の3つ。</p>
+    <div class="btns"><button class="cta" id="helpOk">わかった</button></div></div>`, 'help', () => back ? back() : closeOv());
+  $('helpOk').onclick = () => back ? back() : closeOv();
+}
+function showResult() {
+  const st = ui.st, r = ui.result, sc = r.sc, b = ui.base[st.id] || { jam: '?', avgT: 0 };
+  const ok = r.stars > 0;
+  const next = ui.si + 1 < J.STAGES.length;
+  const lines = !ok ? ['うーん、まだ詰まってるね。', '混雑表示（H）で、どこで止まってるか見てみて。交差点？ 踏切？ 橋？']
+    : r.stars === 3 ? ['完璧！ 予算も残ってるし、言うことなし。', '市民から感謝の電話が鳴りやまないよ。'] : r.stars === 2 ? ['いいね、渋滞がほどけた！', 'もうひと工夫で★3も狙えるかも。'] : ['ギリギリだけど、なんとか通った！', '市民の声は「まあマシになった」くらいかな。'];
+  const text = `『渋滞ほどき』STAGE${ui.si + 1}「${st.name}」\n渋滞度 ${b.jam}% → ${sc.jam}%　${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}\n予算 ${yen(st.budget - r.used)} 残し\n#渋滞ほどき #REDFREEGAMES`;
+  openOv(`<div class="card res">
+    <div class="verdict ${ok ? 'ok' : 'ng'}">${ok ? '渋滞、ほどけた！' : 'まだ渋滞してる…'}</div>
+    <div class="stars">${starStr(r.stars)}</div>${r.best ? '<p style="text-align:center;font-weight:900;color:var(--warn)">ベスト更新！</p>' : ''}
+    <div class="cmp"><div><small>工事前の渋滞度</small><b style="color:var(--ng)">${b.jam}%</b></div><div class="arr">→</div><div><small>工事後（目標 ${st.target}%以下）</small><b style="color:${ok ? 'var(--ok)' : 'var(--ng)'}">${sc.jam}%</b></div></div>
+    <div class="cmp"><div><small>平均の所要時間</small><b>${Math.round(b.avgT)}分</b></div><div class="arr">→</div><div><small>工事後</small><b>${Math.round(sc.avgT)}分</b></div></div>
+    <div class="crit">
+      <div><span>渋滞度 ${st.target}% 以下（クリア）</span><span class="${ok ? 'y' : 'n'}">${ok ? '★ 達成' : '未達成'}</span></div>
+      <div><span>渋滞度 ${Math.floor(st.target / 2)}% 以下</span><span class="${ok && sc.jam <= Math.floor(st.target / 2) ? 'y' : 'n'}">${ok && sc.jam <= Math.floor(st.target / 2) ? '★ 達成' : '未達成'}</span></div>
+      <div><span>予算を3割以上残す（使用 ${yen(r.used)}）</span><span class="${ok && r.used <= st.budget * 0.7 ? 'y' : 'n'}">${ok && r.used <= st.budget * 0.7 ? '★ 達成' : '未達成'}</span></div>
+      <div><span>到着した車 ／ 諦めて引き返した車</span><span>${sc.arrived}台 ／ ${sc.giveup}台</span></div>
+    </div>
+    <div class="boss"><div class="av">👩‍💼</div><div class="say"><b>道路課 課長</b>${lines.map(esc).join('<br>')}</div></div>
+    <div class="share">
+      <button id="rBack">🛠 設計を続ける</button>
+      ${ok && next ? '<button class="pri" id="rNext">次の案件へ ▶</button>' : ''}
+      ${ok && !next ? '<button class="pri" id="rAll">案件一覧へ</button>' : ''}
+      <a class="x" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(GAME_URL)}" target="_blank" rel="noopener">𝕏 結果をポスト</a>
+    </div>
+    ${ok && !next ? '<p class="note" style="font-size:13px;font-weight:800;color:var(--ink)">全案件クリア、おつかれさま！ ★3を集めて、最小予算の設計を探してみて。</p>' : ''}
+    <p class="note">このゲームはフィクションです。交通の動きはゲーム用に単純化しています。<br>実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">RED FREE GAMES</a> の他のゲームで遊ぶ</p>
+  </div>`, 'result', backToBuild);
+  $('rBack').onclick = backToBuild;
+  if ($('rNext')) $('rNext').onclick = () => { closeOv(); loadStage(ui.si + 1); };
+  if ($('rAll')) $('rAll').onclick = showStages;
+}
+
+/* ---------- ボタン ---------- */
+document.querySelectorAll('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+$('bTest').onclick = startTest;
+$('bPause').onclick = togglePause;
+$('bSpeed').onclick = cycleSpeed;
+$('bHeat').onclick = toggleHeat;
+$('bUndo').onclick = undo;
+$('bReset').onclick = resetNet;
+$('bSkip').onclick = () => { if (ui.phase === 'test') finishTest(true); };
+$('bStages').onclick = () => { if (ui.phase === 'test') return toast('本番テスト中です'); showStages(); };
+$('bHelp').onclick = () => showHelp(ui.phase === 'title' ? showTitle : null);
+
+showTitle();
+refreshSide();
+requestAnimationFrame(frame);
+globalThis.__JH_UI__ = { ui, closeOv, loadStage, startTest, finishTest, backToBuild, setTool, endDrag, extendPath, render, showStages };
+</script>
+</body>
+</html>
