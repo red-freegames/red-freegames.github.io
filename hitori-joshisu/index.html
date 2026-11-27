@@ -89,8 +89,8 @@ canvas{display:block;width:100%;border-radius:16px;touch-action:manipulation}
 body.night .boardbar .info{color:#93a1c2}
 .pill{border-radius:99px;padding:6px 14px;font-weight:900;font-size:13px;background:#dfe5ef;color:var(--ink)}
 .pill.on{background:var(--accent);color:#fff}
-.inbox{margin-top:10px;min-height:150px}
-.inbox .empty{display:grid;place-items:center;min-height:150px;border:2px dashed var(--line);border-radius:14px;color:var(--sub);font-size:13px;font-weight:800}
+.inbox{position:sticky;bottom:0;z-index:20;margin-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 14px)}
+.inbox .empty{display:grid;place-items:center;min-height:96px;border:2px dashed var(--line);border-radius:14px;color:var(--sub);font-size:13px;font-weight:800}
 .call{background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:12px 14px;animation:callIn .25s ease-out}
 .call.ok{border-color:var(--ok);background:var(--okbg)}
 .call.ng{border-color:var(--ng);background:var(--ngbg)}
@@ -1050,17 +1050,20 @@ function boardTapPrep(ev) {
 const CV = { w: 360, h: 480, ctx: null };
 function setupCanvas(work) {
   const c = $("cv");
-  const w = c.clientWidth || 360, h = Math.min(work ? 440 : 600, Math.round(w * (work ? 1.05 : 1.3)));
+  const w = c.clientWidth || 360, h = Math.min(work ? 340 : 600, Math.round(w * (work ? .72 : 1.3)));   // 業務中は盤面を低くして、問い合わせ欄を見やすく
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.height = h + "px";
   const ctx = c.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   Object.assign(CV, { w, h, ctx });
 }
+// 見出しの帯の高さ（盤面が低いときも文字が潰れないように、ピクセルで下限を持つ）
+const bandH = () => Math.max(.072 * CV.h, 28);
+const topY = () => Math.max(TOP, (bandH() + 14) / CV.h);
 function rr(ctx, x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
 function gate(ctx, k, lane, y, col, N) {
   const { w, h } = CV;
-  const x = LANES[lane].x * w, gw = w / 3 - 16, gh = h * .085;
+  const x = LANES[lane].x * w, gw = w / 3 - 16, gh = Math.max(h * .085, 30);
   const on = S.own[k], act = active(k);
   rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10);
   if (on) { ctx.fillStyle = act ? col.gate : col.gateOff; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = act ? col.ok : "#d7263d"; ctx.stroke(); }
@@ -1090,12 +1093,12 @@ function drawBoard(N) {
   ctx.fillStyle = col.bg; rr(ctx, 0, 0, w, h, 16); ctx.fill();
   ctx.fillStyle = col.zoneIn; ctx.fillRect(0, BOUND * h, w, (GOAL - BOUND) * h);
   ctx.fillStyle = col.goal; ctx.fillRect(0, GOAL * h, w, h - GOAL * h);
-  LANES.forEach((l, i) => { if (i % 2 === 0) { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w / 6, .072 * h, w / 3, (GOAL - .072) * h); } });
-  ctx.fillStyle = col.line; ctx.globalAlpha = .35; ctx.fillRect(10, .072 * h, w - 20, 1); ctx.globalAlpha = 1;
+  LANES.forEach((l, i) => { if (i % 2 === 0) { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w / 6, bandH(), w / 3, GOAL * h - bandH()); } });
+  ctx.fillStyle = col.line; ctx.globalAlpha = .35; ctx.fillRect(10, bandH(), w - 20, 1); ctx.globalAlpha = 1;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   LANES.forEach(l => {
     // アイコンと名前を横に並べ、見出しの帯に収める
-    const fs = Math.round(w * .036), ty = .036 * h;
+    const fs = Math.round(w * .036), ty = bandH() / 2;
     ctx.font = `800 ${fs}px sans-serif`;
     const tw = ctx.measureText(l.n).width;
     ctx.font = `${fs}px sans-serif`;
@@ -1116,7 +1119,7 @@ function drawBoard(N) {
   TKEYS.forEach(k => lanesOf(k).forEach(l => gate(ctx, k, l, TW[k].layer === "entry" ? ENTRY_Y : INSIDE_Y, col, N)));
   if (!N) return;
   N.en.forEach(e => {
-    const x = e.x * w, y = e.y * h, r = w * .045;
+    const x = e.x * w, y = e.y * h, r = Math.min(w * .045, h * .055);
     ctx.fillStyle = e.inside ? "rgba(215,38,61,.92)" : EN[e.t].bypass ? "rgba(255,214,102,.95)" : "rgba(255,255,255,.95)";
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
     ctx.lineWidth = e.sur ? 3 : 1.5; ctx.strokeStyle = e.sur ? "#c27c00" : e.inside ? "#a0162a" : "rgba(20,33,61,.35)"; ctx.stroke();
@@ -1210,7 +1213,7 @@ function answerCall(N, good) {
     } else if (h.hole !== undefined) {
       const l = h.hole, base = ["phish", "pw", "vpn"][l];
       N.hole[l] = HOLE_T; S.st.holes++;
-      N.en.push({ t: base, from: base, lane: l, x: LANES[l].x - .08, y: TOP, inside: false, call: true });   // 攻撃者がすかさず穴を突く
+      N.en.push({ t: base, from: base, lane: l, x: LANES[l].x - .08, y: topY(), inside: false, call: true });   // 攻撃者がすかさず穴を突く
       pop(N, LANES[l].x, ENTRY_Y + .07, "📞ミスで穴が開いた", "ng");
     }
     if (h.spawn) { spawnInside(N, h.spawn, "call"); pop(N, .5, BOUND + .06, "📞ミス：社内に直接", "warn"); }
@@ -1259,8 +1262,8 @@ function nightStep(N, dt) {
     const s = N.spawns.shift();
     const lane = s.k === "supply" ? pick([0, 1, 2]) : s.k === "acct" ? 1 : s.inside ? pick([0, 2]) : EN[s.k].lane;
     const t = s.inside ? (lane === 1 ? "acct" : "mal") : s.k;
-    N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: !!s.inside, boss: s.k === "pw" && Math.random() < .3, sur: !!s.surprise });
-    if (s.surprise && !N.surAnn) { N.surAnn = true; S.seen[s.k] = true; N.pops.push({ x: LANES[lane].x, y: TOP + .1, t: `⚠️ 予報にない攻撃！ ${EN[s.k].ic}×${N.surprise.n}`, bg: "#c27c00", fg: "#fff", life: 3 }); }
+    N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : topY(), inside: !!s.inside, boss: s.k === "pw" && Math.random() < .3, sur: !!s.surprise });
+    if (s.surprise && !N.surAnn) { N.surAnn = true; S.seen[s.k] = true; N.pops.push({ x: LANES[lane].x, y: topY() + .1, t: `⚠️ 予報にない攻撃！ ${EN[s.k].ic}×${N.surprise.n}`, bg: "#c27c00", fg: "#fff", life: 3 }); }
   }
   for (const k in N.flash) N.flash[k] -= dt;
   N.hole = N.hole.map(v => Math.max(0, v - dt));
