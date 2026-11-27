@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ひとり情シス防衛戦</title>
+<meta name="description" content="朝、社長に予算を削られながら対策を買う。昼、攻撃と社員からの問い合わせが同時にやってくる。二段階認証はパスワード泥棒に、監視ソフトはマルウェアに。入口をすり抜ける新型には社内で備える。7日間会社を守り抜くサイバー防衛ゲーム。">
+<meta property="og:title" content="ひとり情シス防衛戦">
+<meta property="og:description" content="朝は社長に詰められ、昼は攻撃と問い合わせが同時に来る。対策と攻撃の相性を覚えて、7日間会社を守り抜け。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://red-freegames.github.io/hitori-joshisu/">
+<meta property="og:site_name" content="RED FREE GAMES">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:image" content="https://red-freegames.github.io/hitori-joshisu/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://red-freegames.github.io/hitori-joshisu/og.png">
+<link rel="canonical" href="https://red-freegames.github.io/hitori-joshisu/">
+<style>
+/* オフィスの淡いグレー。状態は信号色で示す */
+:root{color-scheme:light;--bg:#e9edf3;--panel:#fff;--ink:#14213d;--sub:#5b6680;--line:#d3d9e4;--accent:#0a64d8;--acbg:#e3eefc;--ok:#14935a;--okbg:#e2f6ec;--ng:#d7263d;--ngbg:#fde6e9;--warn:#c27c00;--warnbg:#fff3d6;--boss:#2b2f3a;--night:#0d1424}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.6;overflow-x:hidden;transition:background .6s}
+body.night{background:var(--night);color:#e6ecf8}
+button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none}
+a{color:inherit}
+#wrap{max-width:560px;margin:0 auto;padding:10px 12px calc(170px + env(safe-area-inset-bottom,0px))}
+.topnav{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}
+.topnav button,.topnav a{color:var(--sub);border:1.5px solid currentColor;border-radius:99px;padding:3px 12px;text-decoration:none;font-size:12px;font-weight:800}
+body.night .topnav button,body.night .topnav a{color:#7d8aa8}
+
+#hud{position:sticky;top:0;z-index:30;padding:6px 0 8px;display:none}
+#hud.on{display:block}
+.hgrid{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px 12px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:7px 12px}
+body.night .hgrid{background:#16203a;border-color:#26324f}
+.day{grid-row:span 2;text-align:center;padding-right:10px;border-right:1.5px solid var(--line)}
+.day b{display:block;font-size:22px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.day small{font-size:10px;color:var(--sub);font-weight:800}
+.gauge{font-size:10.5px;font-weight:800;color:var(--sub)}
+.gauge .bar{height:7px;background:#e5e9f0;border-radius:6px;overflow:hidden;margin-top:2px}
+body.night .gauge .bar{background:#26324f}
+.gauge .bar i{display:block;height:100%;transition:width .5s}
+.gauge span{float:right;color:var(--ink);font-variant-numeric:tabular-nums}
+body.night .gauge span,body.night .money b{color:#e6ecf8}
+.money{font-size:10.5px;font-weight:800;color:var(--sub)}
+.money b{display:block;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.2}
+
+.scene{font-size:11px;font-weight:900;letter-spacing:.2em;color:var(--accent);margin-top:6px}
+.card{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:10px}
+.card h2{font-size:14px;font-weight:900;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card h2 small{font-size:11px;color:var(--sub);font-weight:700}
+.boss{display:flex;gap:10px;align-items:flex-start;margin-top:10px}
+.boss .av{flex:none;width:44px;height:44px;border-radius:50%;background:var(--boss);color:#fff;display:grid;place-items:center;font-size:22px}
+.boss.angry .av{background:var(--ng)}
+.boss .say{background:var(--panel);border:1.5px solid var(--line);border-radius:4px 14px 14px 14px;padding:9px 13px;font-size:14.5px;line-height:1.75}
+.boss.angry .say{border-color:var(--ng)}
+.boss .say b{display:block;font-size:10.5px;color:var(--sub)}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border:0}
+.kv b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.leak{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line);font-size:13px}
+.leak:first-of-type{border:0}
+.leak .ic{font-size:18px;flex:none;white-space:nowrap}
+.leak small{display:block;color:var(--sub);font-size:12px;line-height:1.6;margin-top:2px}
+.leak .d{margin-left:auto;font-weight:900;color:var(--ng);white-space:nowrap}
+.learn{margin-top:8px;background:var(--acbg);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.75}
+.learn b{color:var(--accent)}
+
+/* 予報・図鑑 */
+.fc{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.fc button{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:10px;padding:5px 9px;font-size:12.5px;font-weight:800;background:var(--panel)}
+.fc button .n{font-size:11px;color:var(--ng);font-weight:900}
+.fc button.new{border-color:var(--ng);background:var(--ngbg)}
+.event{margin-top:8px;background:var(--ngbg);color:var(--ng);border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:800}
+.dex{margin-top:8px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:#fafbfd}
+.dex h3{font-size:14px;font-weight:900}
+.dex p{font-size:12.5px;color:var(--sub);margin-top:2px}
+.dex .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:12px;align-items:center}
+.dex .row span{font-weight:900;font-size:11px;color:var(--sub);min-width:52px}
+.dex .row i{font-style:normal;font-weight:800;border-radius:6px;padding:1px 7px;background:var(--okbg);color:var(--ok)}
+.dex .row i.in{background:var(--acbg);color:var(--accent)}
+
+/* 盤面 */
+.boardwrap{position:relative;margin-top:10px}
+canvas{display:block;width:100%;border-radius:16px;touch-action:manipulation}
+.boardbar{display:flex;gap:8px;align-items:center;margin-top:8px}
+.boardbar .info{flex:1;font-size:12px;font-weight:800;color:var(--sub)}
+body.night .boardbar .info{color:#93a1c2}
+.pill{border-radius:99px;padding:6px 14px;font-weight:900;font-size:13px;background:#dfe5ef;color:var(--ink)}
+.pill.on{background:var(--accent);color:#fff}
+.inbox{margin-top:10px;min-height:150px}
+.inbox .empty{display:grid;place-items:center;min-height:150px;border:2px dashed var(--line);border-radius:14px;color:var(--sub);font-size:13px;font-weight:800}
+.call{background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:12px 14px;animation:callIn .25s ease-out}
+.call.ok{border-color:var(--ok);background:var(--okbg)}
+.call.ng{border-color:var(--ng);background:var(--ngbg)}
+@keyframes callIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.call .who{display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:var(--accent)}
+.call .who span{color:var(--sub)}
+.call .q{margin-top:4px;font-size:14.5px;font-weight:700;line-height:1.7}
+.call .tb{height:4px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden}
+.call .tb i{display:block;height:100%;background:var(--accent)}
+.call .ans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.call .ans button{border:2px solid var(--line);border-radius:12px;padding:11px 8px;font-weight:900;font-size:14px;background:var(--panel);line-height:1.4}
+.call .r{font-size:13.5px;line-height:1.75;margin-top:6px}
+.call .r b{font-size:15px}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(13,20,36,.78);border-radius:16px;color:#e6ecf8;padding:20px}
+.overlay h2{font-size:22px;font-weight:900}
+.overlay p{font-size:13.5px;margin-top:8px;line-height:1.8;color:#b8c4de}
+
+/* ショップ */
+.dlist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.def{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px}
+.def.on{border-color:var(--ok);background:#f6fcf9}
+.def.alert{border-color:var(--ng);background:#fff7f8}
+.def .ic{flex:none;font-size:22px;width:30px;text-align:center}
+.def .tx{flex:1;min-width:0}
+.def .tx b{font-size:13.5px;display:block;line-height:1.35}
+.def .tx small{display:block;font-size:11px;color:var(--sub);line-height:1.45}
+.tags{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:10.5px;font-weight:800;color:var(--sub)}
+.tags i{font-style:normal;font-size:10.5px;font-weight:800;border-radius:5px;padding:0 5px;background:#eef0f4;color:var(--sub)}
+.tags i.hit{background:var(--okbg);color:var(--ok)}
+.tags i.z{background:var(--ink);color:#fff}
+.tags i.z.in{background:var(--accent)}
+.tags i.f{background:var(--warnbg);color:var(--warn)}
+.def .act{flex:none;min-width:66px;border-radius:10px;padding:7px 8px;font-weight:900;font-size:12.5px;background:var(--accent);color:#fff;line-height:1.25}
+.def .act small{display:block;font-size:10px;font-weight:700;opacity:.9}
+.def .act.off{background:#eef0f4;color:var(--sub)}
+.uprow{flex-basis:100%;display:flex;gap:10px;align-items:center;margin-top:6px;padding:8px 10px;border-radius:10px;background:#fff8e1;border:1.5px dashed #e8c15a}
+.uprow>div{flex:1;min-width:0}
+.uprow b{font-size:12.5px;display:block}
+.uprow small{display:block;font-size:11px;color:var(--sub);line-height:1.45}
+.uprow.done{background:var(--okbg);border:0;color:var(--ok);font-size:12px;font-weight:900}
+.uprow.lock{background:#f4f6fa;border:0;color:var(--sub);font-size:11px;font-weight:800}
+.def .act:disabled{opacity:.35;pointer-events:none}
+.go{display:block;width:100%;margin-top:14px;background:var(--ink);color:#fff;font-weight:900;font-size:16px;border-radius:14px;padding:13px;box-shadow:0 4px 0 #000}
+.go:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.go.blue{background:var(--accent);box-shadow:0 4px 0 #06408c}
+.go:disabled{opacity:.4;pointer-events:none}
+.placing{position:sticky;bottom:10px;z-index:25;margin-top:10px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;display:flex;gap:8px;align-items:center}
+.placing span{flex:1}
+.placing button{background:#fff;color:var(--ink);border-radius:8px;padding:5px 10px;font-weight:900;font-size:12px}
+.sel{margin-top:8px;border:1.5px solid var(--accent);border-radius:12px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;background:var(--acbg)}
+.sel span{flex:1}
+.sel button{border:1.5px solid var(--line);background:var(--panel);border-radius:8px;padding:4px 10px;font-weight:800;font-size:12px}
+
+/* イベント */
+.ev{margin-top:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:16px}
+.ev .kick{font-size:11px;font-weight:900;letter-spacing:.2em;color:var(--accent)}
+.ev h2{font-size:19px;font-weight:900;margin-top:2px}
+.ev .q{margin-top:10px;font-size:14.5px;line-height:1.85}
+.ev .opts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.ev .opts button{text-align:left;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:900;font-size:14px;background:var(--panel)}
+.ev .res{margin-top:12px;background:#f4f6fa;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.8}
+
+/* タイトル・エンディング */
+.title{min-height:78vh;display:flex;flex-direction:column;justify-content:center}
+.title .kick{font-size:11px;font-weight:900;letter-spacing:.25em;color:var(--accent)}
+.title h1{font-size:clamp(36px,11vw,52px);font-weight:900;line-height:1.15;margin-top:6px;text-wrap:balance}
+.title .lead{margin-top:14px;font-size:14.5px;font-weight:700;line-height:1.9}
+.rules{margin-top:16px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.85}
+.rules b{color:var(--accent)}
+.note{margin-top:14px;font-size:11px;color:var(--sub);line-height:1.7}
+.end h1{font-size:26px;font-weight:900;line-height:1.35;margin-top:10px}
+.end .rank{display:inline-block;margin-top:8px;border:3px solid var(--accent);color:var(--accent);font-weight:900;font-size:18px;border-radius:10px;padding:3px 14px}
+.end .rank.bad{border-color:var(--ng);color:var(--ng)}
+.end .lead{margin-top:12px;font-size:14.5px;line-height:1.95}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-top:12px}
+.trio div{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 4px}
+.trio b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.trio small{font-size:10.5px;color:var(--sub);font-weight:800}
+.share{display:flex;gap:8px;margin-top:14px}
+.share a,.share button{flex:1;text-align:center;text-decoration:none;font-weight:900;font-size:14px;border-radius:12px;padding:12px;background:#111;color:#fff}
+.share button{background:var(--panel);color:var(--ink);border:1.5px solid var(--line)}
+.fadein{animation:fi .3s ease-out}
+@keyframes fi{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* 簡素なメインUI */
+.fcl{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fcl .atk{display:flex;align-items:center;gap:4px;border:1.5px solid var(--line);border-radius:12px;padding:6px 10px;background:var(--panel)}
+.fcl .atk .i{font-size:22px;line-height:1}
+.fcl .atk .c{font-size:13px;font-weight:900;color:var(--sub)}
+.fcl .atk.new{border-color:var(--ng);background:var(--ngbg)}
+.fcl .atk.aim{border-color:var(--warn);background:var(--warnbg)}
+.fcl .atk.less{opacity:.55}
+.fcl .atk .m{font-size:11px;font-weight:900;color:var(--warn)}
+.alert{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;margin-top:8px;background:var(--ngbg);color:var(--ng);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:800}
+.alert span{opacity:.7}
+.slist{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.sgrp{font-size:11px;font-weight:900;color:var(--sub);margin-top:6px;letter-spacing:.05em}
+.srow{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer}
+.srow.on{border-color:var(--ok);background:#f6fcf9}
+.srow.alert{border-color:var(--ng);background:#fff7f8;color:inherit;margin:0;font-weight:inherit}
+.srow .ic{font-size:24px;width:30px;text-align:center;flex:none}
+.srow .nm{flex:1;min-width:0;font-weight:900;font-size:14.5px;line-height:1.3}
+.srow .nm small{display:block;font-size:12px;color:var(--sub);font-weight:800}
+.srow .i{color:var(--sub);font-size:14px}
+.srow .act{flex:none;min-width:64px;border-radius:10px;padding:6px 8px;font-weight:900;font-size:13px;background:var(--accent);color:#fff;line-height:1.2}
+.srow .act small{display:block;font-size:10.5px;font-weight:700;opacity:.9}
+.srow .act.up{background:#e8a100}
+.srow .act.warn{background:var(--ng)}
+.srow .act:disabled{opacity:.35;pointer-events:none}
+.srow .done{flex:none;min-width:64px;text-align:center;font-size:12px;font-weight:900;color:var(--ok)}
+.rline{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 0;border-top:1px dashed var(--line);font-size:13.5px}
+.rline:first-of-type{border:0}
+.rline .g{flex:1;font-weight:800}
+.rline b{color:var(--ng)}
+.rline .fix{font-size:16px;min-width:46px;text-align:right}
+.onrow{display:grid;grid-template-columns:1fr auto;gap:0 8px;width:100%;text-align:left;padding:7px 0;border-top:1px dashed var(--line)}
+.onrow:first-of-type{border:0}
+.onrow .o{font-size:12.5px;color:var(--sub);text-decoration:line-through;grid-column:1}
+.onrow .n{font-size:14px;font-weight:900;grid-column:1}
+.onrow em{grid-column:2;grid-row:1/3;align-self:center;font-style:normal;font-size:16px;min-width:22px;text-align:center}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bdg{position:relative;border:1.5px dashed var(--line);border-radius:12px;padding:8px 10px;color:var(--sub)}
+.bdg .bi{font-size:22px;display:block;line-height:1.2}
+.bdg b{display:block;font-size:13px;font-weight:900;line-height:1.35}
+.bdg small{display:block;font-size:10.5px;line-height:1.45;margin-top:2px}
+.bdg.on{border-style:solid;border-color:var(--accent);background:var(--acbg);color:var(--ink)}
+.bdg.new{animation:pop .5s ease-out}
+.bdg i{position:absolute;top:6px;right:8px;font-style:normal;font-size:10px;font-weight:900;color:#fff;background:var(--ng);border-radius:6px;padding:0 5px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:none;opacity:1}}
+.end .rank{animation:stamp .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes stamp{from{transform:scale(2.4) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+.shake{animation:shake .5s 2}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-6px,2px)}40%{transform:translate(6px,-2px)}60%{transform:translate(-4px,-1px)}80%{transform:translate(4px,1px)}}
+body.crash{animation:redflash 1s}
+@keyframes redflash{0%{background:#d7263d}100%{background:var(--bg)}}
+.ransom{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:#07090f;color:#ff4d61;border-radius:16px;padding:18px;animation:fi .4s}
+.ransom .rk{font-size:46px}
+.ransom .big{font-size:21px;font-weight:900;line-height:1.5;color:#fff;margin-top:4px}
+.ransom p{font-size:13.5px;line-height:1.8;margin-top:8px}
+.ransom .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.08em;color:#ff4d61;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.gogai{display:flex;margin-top:10px;background:#f6f1e3;color:#1a1a1a;border:2px solid #1a1a1a;border-radius:4px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;animation:fi .5s}
+.gogai .gk{writing-mode:vertical-rl;background:#c3121f;color:#fff;font-weight:900;font-size:22px;padding:10px 8px;letter-spacing:.2em}
+.gogai .gb{padding:10px 14px}
+.gogai small{font-size:11px;color:#555}
+.gogai h2{font-size:26px;font-weight:900;line-height:1.3;margin-top:2px}
+.gogai p{font-size:14px;font-weight:700;margin-top:4px;border-top:1px solid #1a1a1a;padding-top:4px}
+.breach{margin-top:8px;background:var(--warnbg);border-radius:10px;padding:8px 12px}
+.breach div{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.breach b{font-size:14px;color:var(--ink)}
+.breach span{font-size:13px;font-weight:900;color:var(--ng)}
+.breach small{display:block;font-size:11.5px;color:var(--sub);line-height:1.6;margin-top:2px}
+.rline .sv{display:block;font-style:normal;font-size:11.5px;color:var(--ok);font-weight:900}
+.call .saved{color:var(--ok);font-weight:800}
+.calm{font-size:13px;color:var(--sub);margin-top:6px}
+.hint{font-size:11px;color:var(--sub);margin-top:6px}
+.crow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px dashed var(--line);font-size:18px}
+.crow:first-of-type{border:0}
+.crow button{font-size:20px;border:1.5px solid var(--line);border-radius:10px;width:38px;height:38px}
+.crow span{color:var(--sub);font-size:12px}
+.crow .sep{flex:1}
+/* 説明パネル */
+#sheet{position:fixed;inset:0;z-index:100}
+.shbg{position:absolute;inset:0;background:rgba(10,15,30,.5)}
+.shbox{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;max-height:84vh;overflow:auto;background:var(--panel);color:var(--ink);border-radius:18px 18px 0 0;padding:18px max(18px,env(safe-area-inset-left,0px)) calc(18px + env(safe-area-inset-bottom,0px));animation:sheetup .22s ease-out}
+@keyframes sheetup{from{transform:translateY(40px);opacity:.3}to{transform:none;opacity:1}}
+.shk{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--accent)}
+.shbox h2{font-size:22px;font-weight:900;margin-top:2px}
+.shbox h3{font-size:18px;font-weight:900;margin-top:2px}
+.long{font-size:14.5px;line-height:1.95;margin-top:10px;color:var(--ink)}
+.flow{margin-top:12px;background:#f4f6fa;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.flow div{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.flow span{font-size:11px;font-weight:900;color:var(--sub);min-width:86px}
+.flow i{font-style:normal;font-weight:800;font-size:12.5px;border-radius:6px;padding:1px 8px;background:var(--okbg);color:var(--ok)}
+.flow i.in{background:var(--acbg);color:var(--accent)}
+.flow i.ng{background:var(--ngbg);color:var(--ng)}
+.shbuy{margin-top:12px}
+.shbuy .act{width:100%;border-radius:12px;padding:11px;font-weight:900;font-size:15px;background:var(--accent);color:#fff}
+.shbuy .act.off{background:#eef0f4;color:var(--sub)}
+.shbuy .act:disabled:not(.off){opacity:.4}
+.shup{margin-top:18px;padding-top:14px;border-top:2px dashed var(--line)}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="wrap">
+  <nav class="topnav"><button onclick="G.title()">🏠 HOME</button><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></nav>
+  <div id="hud">
+    <div class="hgrid">
+      <div class="day"><small>DAY</small><b id="hD">1</b><small>/ 7</small></div>
+      <div class="gauge">🏢 会社の体力 <span id="hHpN"></span><div class="bar"><i id="hHp"></i></div></div>
+      <div class="money">💴 使えるお金<b id="hMo"></b></div>
+      <div class="money">💥 通した攻撃<b id="hLk"></b></div>
+      <div class="money">🛡 撃退した攻撃<b id="hKo"></b></div>
+    </div>
+  </div>
+  <main id="view"></main>
+</div>
+
+<script>
+"use strict";
+const GAME_URL = "https://red-freegames.github.io/hitori-joshisu/";
+const DAYS = 7;
+const $ = id => document.getElementById(id);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ============ 盤面の形（0〜1の座標） ============ */
+const LANES = [
+  { x: 1 / 6, ic: "📧", n: "メール" },
+  { x: .5,    ic: "🔐", n: "ログイン" },
+  { x: 5 / 6, ic: "🚪", n: "VPN・機器" },
+];
+const TOP = .11, ENTRY_Y = .3, BOUND = .5, INSIDE_Y = .74, GOAL = .95;
+
+/* ============ 攻撃 ============
+   n: 画面に出す短い名前 / long: タップで読む説明
+   入口の攻撃は、社内との境界を越えると「社内の姿」に変わる。bypass は入口の対策（Lv1）をすり抜ける */
+const EN = {
+  pw: { ic: "🔑", n: "パスワード泥棒", lane: 1, spd: .055, to: "acct",
+    long: "ネットの被害でいちばん多い入口が、パスワードの盗難です。手口は大きく2つあります。ひとつは、宅配業者や銀行を名乗るSMS・メールで偽のログイン画面に誘い、本人に入力させるもの。もうひとつは、別のサービスから漏れたIDとパスワードの組み合わせを、ほかのサービスで自動的に試すもの（パスワードの使い回しを狙う）。どちらも攻撃者は「本人として」正面からログインしてくるので、普通のログインと見分けがつきにくいのが厄介です。" },
+  pw2: { ic: "🎣", n: "コード横取り", lane: 1, spd: .055, to: "acct", bypass: true, base: "pw",
+    long: "二段階認証を入れても安心しきれない理由がこれです。偽のログイン画面が、利用者の入力したパスワードと確認コードを、その場で本物のサイトへ中継してログインを横取りします。コードの有効期限が短くても、リアルタイムで中継されると間に合ってしまいます。偽サイトでは使えない仕組みの「パスキー」に切り替えると防げます。" },
+  phish: { ic: "📧", n: "ウイルス付きメール", lane: 0, spd: .05, to: "mal",
+    long: "取引先や宅配業者を装い、請求書や配送伝票に見せかけた添付ファイルやリンクを送ってくる手口です（フィッシングメール）。開くとPCがマルウェアに感染し、そこを足がかりに社内へ広がっていきます。企業の被害の入口として、昔から常に上位にあります。" },
+  phish2: { ic: "🤖", n: "AI製の詐欺メール", lane: 0, spd: .05, to: "mal", bypass: true, base: "phish",
+    long: "以前の詐欺メールは日本語の不自然さで見抜けましたが、生成AIの普及で、自然な日本語の文面を相手ごとに書き分けられるようになりました。決まった文面や単語で判定する古いフィルタでは止めにくくなっています。送り主が本物かどうかや、添付ファイルを開いたときのふるまいで判定する仕組みが必要です。" },
+  vpn: { ic: "🚪", n: "機器の弱点", lane: 2, spd: .045, to: "mal",
+    long: "在宅勤務などで社外から社内につなぐためのVPN機器は、ネットに常に公開されているため、攻撃者が真っ先に探す場所です。メーカーが弱点を直す更新を出しても、当てていなければ、その弱点を突かれて正面から入られます。国内企業のランサムウェア被害でも、侵入口として特に多いと報告されています。" },
+  vpn2: { ic: "🕳️", n: "未知の弱点", lane: 2, spd: .045, to: "mal", bypass: true, base: "vpn",
+    long: "メーカーもまだ把握していない、つまり直す更新がまだ存在しない弱点を「ゼロデイ」と呼びます。更新をきちんと当てていても防げません。機器そのものを外に公開しない仕組み（ゼロトラスト型の接続）に切り替えるか、入られたあとに社内で食い止める備えが必要です。" },
+  supply: { ic: "🤝", n: "取引先経由", to: "mal", inside: true,
+    long: "自社がしっかり守っていても、取引先や委託先、使っているソフトの提供元が先に乗っ取られると、そこからの「信頼された通り道」を使って入ってこられます。サプライチェーン攻撃と呼ばれ、セキュリティの甘い取引先を経由して大きな会社が被害を受ける例が相次いでいます。入口を通らないので、社内での検知と封じ込めが頼りです。" },
+  usb: { ic: "🔌", n: "持ち込み", to: "mal",
+    long: "拾ったUSBメモリを挿す、サポートの切れた古いPCを使い続ける、私物のPCを社内につなぐ。こうした「持ち込み」は、入口の対策を通らずに、いきなり社内に感染源を置くことになります。" },
+  acct: { ic: "👤", n: "乗っ取りアカウント", spd: .05, goal: "情報流出", dmg: 8,
+    long: "盗んだIDで入った攻撃者は、本物の社員として社内のファイルやメールを見て回り、顧客情報や機密を持ち出します。正規のアカウントなので、ふるまいの異常に気づかない限り見つけにくいのが特徴です。誰が何を見られるかを絞っておけば、1つ乗っ取られても被害は小さく済みます。" },
+  mal: { ic: "🦠", n: "マルウェア", spd: .045, goal: "ランサムウェア", dmg: 15,
+    long: "社内に入り込んだマルウェアは、ほかのPCやサーバーへと広がり、最後にデータを一斉に暗号化して「戻してほしければ身代金を払え」と要求します（ランサムウェア）。最近は、データを盗んだうえで「払わなければ公開する」と二重に脅す手口が主流です。業務が何週間も止まる被害も珍しくありません。" },
+};
+const OUTER = ["pw", "phish", "vpn"];
+const NEWTYPE = ["pw2", "phish2", "vpn2"];
+
+/* ============ 対策 ============
+   1回導入すれば、そのレーンの決まった攻撃をすべて止める */
+const TW = {
+  mfa: { ic: "📱", n: "二段階認証", lane: 1, layer: "entry", cost: 20, hits: ["pw"],
+    long: "ログインのとき、パスワードに加えて「本人のスマホに届くコード」や「アプリでの承認」を求める仕組みです。パスワードが盗まれたり漏れたりしても、スマホを持っていない攻撃者はログインできません。設定は数分で済み、効果が非常に大きい、まず最初にやるべき対策のひとつです。",
+    up: { n: "パスキー", cost: 30, hits: ["pw2"],
+      long: "パスワードの代わりに、スマホやPCに保存された「鍵」と、指紋や顔などの本人確認でログインする仕組みです。鍵は正しいサイトでしか使えないので、偽サイトに誘導されても鍵は渡らず、コードを中継する手口も効きません。パスワードを覚える必要もなくなります。" } },
+  filter: { ic: "📨", n: "メールフィルタ", lane: 0, layer: "entry", cost: 20, hits: ["phish"],
+    long: "届いたメールを受信箱に入れる前にチェックし、知られている詐欺メールや危険な添付ファイルをはじく仕組みです。社員一人ひとりの注意力に頼らずに、怪しいメールの大半を入口で止められます。",
+    up: { n: "AI判定フィルタ", cost: 30, hits: ["phish2"],
+      long: "文面の特徴だけでなく、送り主のドメインが本物か（なりすましの判定）、添付ファイルを安全な場所で試しに開いてどう動くか、などで判定します。AIで自然に書かれた詐欺メールでも、送り主や中身のふるまいはごまかしにくいため、止めやすくなります。" } },
+  patch: { ic: "🔧", n: "機器の更新", lane: 2, layer: "entry", cost: 25, hits: ["vpn"],
+    long: "機器やソフトのメーカーが配る、弱点をふさぐ更新（パッチ）を当てることです。地味ですが、被害の多くは「直す更新は出ていたのに当てていなかった」弱点から起きています。新しい弱点は次々に見つかるので、一度当てて終わりではなく、出るたびに当て続ける必要があります。",
+    up: { n: "ゼロトラスト", cost: 40, hits: ["vpn2"],
+      long: "「社内ネットワークの内側なら安全」という前提をやめ、接続のたびに、誰が・どの端末から・何にアクセスしようとしているかを確かめる考え方です（ゼロトラスト）。外に公開されたVPN機器をなくせるので、機器の未知の弱点を突く攻撃の的そのものがなくなります。弱点が見つかるたびの当て直しも不要になります。" } },
+  perm: { ic: "🗂️", n: "権限の整理", lane: 1, layer: "inside", cost: 25, hits: ["acct"],
+    long: "社員全員が全部のフォルダを見られる状態をやめ、仕事に必要な人だけが必要なデータを見られるように整理します。退職した人や使われていないアカウントを消すこともここに含まれます。アカウントが1つ乗っ取られても、見られる範囲が狭ければ被害は小さく済みます。" },
+  edr: { ic: "🛡️", n: "監視ソフト", lane: [0, 2], layer: "inside", cost: 30, hits: ["mal"],
+    long: "PCやサーバーの動きを常に見張り、「大量のファイルを一気に書き換える」「普段ありえない場所へ通信する」といった不審なふるまいを見つけて、自動で止めたり切り離したりするソフトです（EDR）。知られていないマルウェアでも、ふるまいで気づけるのが強みです。メールとVPN、どちらから入ったマルウェアにも効きます。" },
+};
+const TKEYS = Object.keys(TW);
+const BACKUP = { ic: "💾", n: "バックアップ", cost: 15,
+  long: "データのコピーを、ネットから切り離した場所に定期的に保管しておくことです。ネットにつながったままのバックアップは、ランサムウェアに一緒に暗号化されてしまうことがあります。攻撃を止める力はありませんが、やられても身代金を払わずに元に戻せる「最後の砦」です。ゲームでは🦠マルウェアの被害を1/4にします。現実では、本当に戻せるかをときどき試しておくことも大切です。" };
+const TRAIN = { ic: "🎓", n: "社員研修", cost: 20,
+  long: "怪しいメールの見分け方、パスワードの扱い、お金の話は折り返して確かめる、おかしいと思ったらすぐ報告する。こうした基本を、社員全員に定期的に教えることです。どんなに機械の対策を積んでも、最後に判断するのは人です。実際の被害も、社員のうっかりから始まるものが少なくありません。ゲームでは、あなたが返事できなかった📞問い合わせで、社員が自分で正しく判断できる確率が50%から80%に上がります。現実では、一度きりではなく、訓練メールなどで繰り返すことが大切です。" };
+const lanesOf = k => [].concat(TW[k].lane);
+const nameOf = k => S.up[k] ? TW[k].up.n : TW[k].n;
+const hitsOf = k => TW[k].hits.concat(S.up[k] ? TW[k].up.hits : []);
+
+/* ============ 日ごとの攻撃 ============ */
+const WAVES = {
+  1: { pw: 5 },
+  2: { pw: 5, phish: 5 },
+  3: { pw: 5, phish: 5, vpn: 4 },
+  4: { pw: 4, pw2: 4, phish: 5, phish2: 3, vpn: 4 },
+  5: { pw: 5, pw2: 4, phish: 5, phish2: 4, vpn: 4, supply: 3 },
+  6: { pw: 5, pw2: 4, phish: 5, phish2: 4, vpn: 4, vpn2: 3, supply: 4 },
+  7: { pw: 6, pw2: 5, phish: 6, phish2: 5, vpn: 5, vpn2: 4, supply: 6 },
+};
+const VULN_DAYS = [5];
+const BREACH_DMG = 1, DAY_SCALE = .1, CALL_PEN = 16;   // CALL_PEN: まずい返事の後始末（強化で防げたときはなし）   // 社内まで入られたときの後始末 / 日ごとの被害の増え方
+// 攻撃者は、入口で止められる攻撃を減らし、通る攻撃を増やしてくる（守りの薄いところを狙う）
+function entryBlocked(k) { return EN[k].lane !== undefined && TKEYS.some(t => TW[t].layer === "entry" && hitsOf(t).includes(k) && active(t)); }
+function waveNow() {
+  const W = Object.assign({}, WAVES[S.day]), moved = {};
+  const open = Object.keys(W).filter(k => EN[k].lane !== undefined && !entryBlocked(k));
+  if (!open.length) return { W, moved };
+  let pool = 0;
+  Object.keys(W).filter(entryBlocked).forEach(k => { const m = Math.floor(W[k] / 3); W[k] -= m; pool += m; });
+  for (let i = 0; pool > 0; i++, pool--) { const k = open[i % open.length]; W[k]++; moved[k] = (moved[k] || 0) + 1; }
+  return { W, moved };
+}
+
+let S;
+function fresh() {
+  S = { day: 1, hp: 100, money: 0, budget: 40, own: {}, up: {}, backup: false, flags: {}, ko: 0, leaks: 0,
+        spent: 0, vuln: false, seen: {}, extra: [], last: null, usedEv: {}, usedCall: {}, off: {}, calls: 0, callsOk: 0, callRes: {},
+        st: { biz: 0, holes: 0, sur: 0, mitig: 0, inKO: 0, quiet: 0, autoOk: 0 } };
+}
+
+/* ============ 共通 ============ */
+const G = {};
+function render(html) {
+  const v = $("view");
+  v.innerHTML = html;
+  v.classList.remove("fadein"); void v.offsetWidth; v.classList.add("fadein");
+}
+function hud() {
+  $("hud").classList.add("on");
+  $("hD").textContent = Math.min(DAYS, S.day);
+  $("hHpN").textContent = Math.max(0, Math.round(S.hp));
+  const hp = $("hHp"); hp.style.width = clamp(S.hp, 0, 100) + "%";
+  hp.style.background = S.hp > 60 ? "var(--ok)" : S.hp > 30 ? "var(--warn)" : "var(--ng)";
+  $("hLk").textContent = S.leaks + "件";
+  $("hMo").textContent = S.money + "万円";
+  $("hKo").textContent = S.ko + "件";
+}
+function active(k) { return S.own[k] && !S.off[k] && !(k === "patch" && S.vuln && !S.up.patch); }
+// その攻撃を止められる対策（アイコン付きの短い名前）
+function stoppers(type) {
+  const r = [];
+  TKEYS.forEach(k => {
+    if (TW[k].hits.includes(type)) r.push(TW[k].ic + TW[k].n);
+    if (TW[k].up && TW[k].up.hits.includes(type)) r.push(TW[k].ic + TW[k].up.n);
+  });
+  return r;
+}
+const chipsOf = (arr, cls = "") => arr.map(c => `<i class="${cls}">${c}</i>`).join("");
+
+/* ---------- 説明パネル（タップで開く） ---------- */
+function sheet(html) {
+  closeSheet();
+  const d = document.createElement("div");
+  d.id = "sheet";
+  d.innerHTML = `<div class="shbg" onclick="G.closeSheet()"></div><div class="shbox">${html}<button class="go" style="margin-top:16px" onclick="G.closeSheet()">閉じる</button></div>`;
+  document.body.appendChild(d);
+}
+function closeSheet() { const d = $("sheet"); if (d) d.remove(); }
+G.closeSheet = closeSheet;
+G.infoAtk = (k) => {
+  const e = EN[k];
+  let flow = "";
+  if (k === "supply" || k === "usb") {
+    flow = `<div class="flow"><div><span>入口</span><b>通らない</b></div><div><span>社内に直接</span><b>${EN.acct.ic}${EN.mal.ic} として現れる</b></div><div><span>止めるには</span>${chipsOf(stoppers("acct").concat(stoppers("mal")), "in")}</div></div>`;
+  } else if (!e.to) {
+    flow = `<div class="flow"><div><span>止めるには</span>${chipsOf(stoppers(k), "in")}</div></div>`;
+  } else {
+    const baseK = e.bypass ? TKEYS.find(t => TW[t].hits.includes(e.base)) : null;
+    flow = `<div class="flow">
+      <div><span>入口で止める</span>${e.bypass ? `<i class="ng">${TW[baseK].ic}${TW[baseK].n}はすり抜ける</i>` : ""}${chipsOf(stoppers(k))}</div>
+      <div><span>抜けると社内で</span><b>${EN[e.to].ic}${EN[e.to].n}</b> に変わる</div>
+      <div><span>社内で止める</span>${chipsOf(stoppers(e.to), "in")}${e.to === "mal" ? `<i class="in">💾で被害を軽く</i>` : ""}</div></div>`;
+  }
+  sheet(`<div class="shk">攻撃</div><h2>${e.ic} ${e.n}</h2><p class="long">${e.long}</p>${flow}`);
+};
+G.infoDef = (k) => {
+  if (k === "train") {
+    sheet(`<div class="shk">対策 ・ 人への投資</div><h2>${TRAIN.ic} ${TRAIN.n}</h2><p class="long">${TRAIN.long}</p>
+      <div class="shbuy">${S.train ? `<button class="act off" disabled>実施済み</button>` : `<button class="act" ${S.money < TRAIN.cost ? "disabled" : ""} onclick="G.train();G.infoDef('train')">実施する　${TRAIN.cost}万円</button>`}</div>`);
+    return;
+  }
+  if (k === "backup") {
+    sheet(`<div class="shk">対策 ・ 最後の砦</div><h2>${BACKUP.ic} ${BACKUP.n}</h2><p class="long">${BACKUP.long}</p>
+      <div class="shbuy">${S.backup ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${S.money < BACKUP.cost ? "disabled" : ""} onclick="G.backup();G.infoDef('backup')">導入する　${BACKUP.cost}万円</button>`}</div>`);
+    return;
+  }
+  const t = TW[k];
+  const where = `${lanesOf(k).map(l => LANES[l].ic + LANES[l].n).join("・")}の${t.layer === "entry" ? "入口" : "社内"}`;
+  let up = "";
+  if (t.up) up = `<div class="shup"><div class="shk">⬆ Lv2に強化</div><h3>${t.ic} ${t.up.n}</h3><p class="long">${t.up.long}</p>
+    <div class="flow"><div><span>追加で止める</span>${t.up.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div>
+      ${LANE_DEF.includes(k) ? `<div><span>さらに</span><i>📞 問い合わせのミスでも、${LANES[LANE_DEF.indexOf(k)].n}の入口に穴が開かない</i></div>` : ""}</div>
+    <div class="shbuy">${S.up[k] ? `<button class="act off" disabled>強化済み</button>` : S.own[k] ? `<button class="act" ${S.money < t.up.cost ? "disabled" : ""} onclick="G.upgrade('${k}');G.infoDef('${k}')">強化する　${t.up.cost}万円</button>` : `<button class="act off" disabled>先に導入が必要</button>`}</div></div>`;
+  sheet(`<div class="shk">対策 ・ ${where}</div><h2>${t.ic} ${t.n}</h2><p class="long">${t.long}</p>
+    <div class="flow"><div><span>止める</span>${t.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div></div>
+    <div class="shbuy">${S.own[k] ? `<button class="act off" disabled>導入済み</button>` : `<button class="act" ${S.money < t.cost ? "disabled" : ""} onclick="G.buy('${k}');G.infoDef('${k}')">導入する　${t.cost}万円</button>`}</div>${up}`);
+};
+
+/* ============ タイトル ============ */
+G.title = () => {
+  stopNight();
+  fresh();
+  document.body.className = "";
+  $("hud").classList.remove("on");
+  render(`<div class="title">
+    <div class="kick">CYBER DEFENSE SIMULATOR</div>
+    <h1>ひとり情シス<br>防衛戦</h1>
+    <p class="lead">社員30人の会社で、IT担当はあなたひとり。<br>朝は社長に詰められ、<br>昼は、攻撃と問い合わせが同時にやってくる。</p>
+    <div class="rules">
+      ☀️ 朝、予算で<b>対策を買う</b>（1回買えば、決まった攻撃をすべて止める）<br>
+      🎯 攻撃者は<b>守りの薄いところ</b>を狙ってくる（⚠️予報外の攻撃も）<br>
+      🚪 <b>入口で止める</b>、🧱 <b>社内で広げない</b><br>
+      📞 業務中は、<b>社員からの問い合わせ</b>にも答える（🎓研修で社員も賢くなる）<br>
+      <span style="color:var(--sub)">攻撃や対策をタップすると、くわしい説明が読めます</span>
+    </div>
+    <button class="go blue" onclick="G.start()">▶ 着任する</button>
+    <button class="go" style="background:var(--panel);color:var(--ink);box-shadow:0 4px 0 var(--line);border:1.5px solid var(--line)" onclick="G.badges()">🏅 称号コレクション ${BADGES.filter(b => loadBadges()[b.id]).length}/${BADGES.length}</button>
+    <p class="note">※このゲームはフィクションです。数値はゲーム用に単純化したもので、実際の製品やサービスの性能を示すものではありません。<br>実況・配信・動画投稿・収益化OK</p>
+  </div>`);
+};
+G.start = () => { stopNight(); fresh(); S.money = S.budget; G.morning(); };
+
+/* ============ 朝 ============ */
+G.morning = () => {
+  stopNight();
+  document.body.className = "";
+  hud();
+  const L = S.last;
+  let boss, angry = false, report = "";
+  if (!L) {
+    boss = "君が新しいIT担当か。全部任せる。今日の予算は40万。……最近、パスワードが盗まれる事件が多いらしいぞ。";
+  } else {
+    if (L.leak.length && L.dmg >= 20) { angry = true; boss = pick(["昨日のアレはなんだ！取引先から電話が鳴りっぱなしだぞ！……予算は出す。二度と起こすな。", "朝から警察と保険会社の対応だよ。……わかった、予算は増やそう。"]); }
+    else if (L.leak.length) { angry = true; boss = pick(["昨日、少しやられたそうじゃないか。……まあいい、予算は少し増やす。", "「ちょっとした被害」で済んでよかったな、とは言わんぞ。予算は増やしておく。"]); }
+    else if (L.breach >= 8) { angry = true; boss = pick([`被害はなかったそうだが、社内まで${L.breach}回も入られたらしいな。そのたびに調査で残業だろう？`, `「社内で止めたから大丈夫」？　${L.breach}回も入られて、何が大丈夫なんだ。`]); }
+    else boss = pick(["昨日も何も起きなかったな。本当に攻撃なんて来てるのか？予算は減らすぞ。", "平和だな。もう対策は足りてるんだろう？予算は減らす。", "何も起きないなら、その予算は営業に回したいんだがね。"]);
+    const lines = L.leak.filter(x => x.from !== "call").map(x => `<button class="rline" onclick="G.infoAtk('${x.from}')"><span>${EN[x.from].ic}→${EN[x.as].ic}</span><span class="g">${x.call ? "📞" : ""}${EN[x.as].goal}${x.mit ? "（💾軽減）" : ""}</span><b>-${x.dmg}</b><span class="fix">${stoppers(x.from).concat(stoppers(x.as)).map(s => s.slice(0, 2)).filter((v, i, a) => a.indexOf(v) === i).join("")}</span></button>`).join("");
+    const bad = (L.calls || []).filter(x => !x.ok);
+    if (bad.length) { angry = true; boss += pick(["　それと、社員の問い合わせにまずい返事をしたそうだな。", "　あと、社員から『情シスに聞いたらいいって言われた』と聞いたぞ。"]); }
+    const clines = bad.map(x => { const c = CALLS.find(y => y.id === x.id); return `<button class="rline" onclick="G.infoCall('${c.id}')"><span>📞</span><span class="g">${c.who}「${c.bad}」${x.auto ? "（自己判断）" : ""}${x.saved ? `<em class="sv">⭐${TW[x.saved].up.n}で被害なし</em>` : ""}</span>${x.pen ? `<b>-${x.pen}</b>` : ""}<span class="fix">ⓘ</span></button>`; }).join("");
+    report = `<div class="card"><h2>📋 昨日の報告<small>止めた ${L.ko} ・ 被害 ${L.leak.length} ・ 📞 ${(L.calls || []).length - bad.length}/${(L.calls || []).length}</small></h2>
+      ${L.surprise ? `<button class="alert" onclick="G.infoAtk('${L.surprise.k}')">⚠️ 予報にない攻撃が来た：${EN[L.surprise.k].ic}${EN[L.surprise.k].n}×${L.surprise.n}<span>ⓘ</span></button>` : ""}
+      ${lines || (clines ? "" : `<p class="calm">すべて止めた。……誰も褒めてくれない。</p>`)}${clines}
+      ${L.breach ? `<div class="breach"><div><b>🚪→🧱 社内まで入られた ${L.breach}件</b><span>調査と対応で 体力 -${Math.round(L.breach * BREACH_DMG)}</span></div><small>社内で止めても、入られた時点で後始末が要る。入口で止めれば0。${S.own.mfa || S.own.filter || S.own.patch ? "すり抜け型は⬆強化で入口で止まる" : ""}</small></div>` : ""}
+      ${lines ? `<p class="hint">右のアイコンは、止められた対策。タップで説明</p>` : ""}</div>`;
+  }
+  render(`<div class="scene">☀️ DAY ${S.day} ・ 朝 ・ 社長室</div>
+    <div class="boss ${angry ? "angry" : ""}"><div class="av">👔</div><div class="say"><b>社長</b>${boss}</div></div>
+    ${report}
+    <div class="card"><div class="kv"><span>今日の予算</span><b>+${S.budget}万円</b></div><div class="kv"><span>使えるお金</span><b>${S.money}万円</b></div></div>
+    <button class="go" onclick="G.afterBoss()">自分の席に戻る ▶</button>`);
+  window.scrollTo(0, 0);
+};
+G.afterBoss = () => G.prep();
+
+/* ============ 社員からの問い合わせ（業務時間中に届く） ============
+   good: 正しい対応 / bad: まずい対応。hit: まずいときに起きること
+   spawn: 社内に敵が湧く（社内の対策で止められる） / hp: 直接の被害 / off: その対策がその日止まる */
+const CALL_T = 10, HOLE_T = 7, SURPRISE_P = .35;
+const LANE_DEF = ["filter", "mfa", "patch"];   // 入口ごとの対策（強化すると問い合わせのミスで穴が開かない）
+const SAVE_TXT = { mfa: "パスキーは偽サイトでは使えないので、盗まれても入れない。", filter: "AI判定フィルタが、なりすましの添付を受信前に止めていた。", patch: "ゼロトラストで、機器を外に公開していなかった。" };
+const CALLS = [
+  /* ---- パスワード・アカウント ---- */
+  { id: "pwchat", who: "営業", q: "パスワードを忘れました！チャットで新しいのを送ってください。急ぎです！",
+    good: "本人確認してリセット", bad: "仮パスワードをチャットで送る", hit: { hole: 1 },
+    ok: "電話で本人と確かめてからリセットした。", ng: "チャットの相手は、乗っ取られた同僚のアカウントだった。",
+    long: "「急ぎで」「パスワードを教えて」は、なりすましの定番です。チャットやメールのアカウント自体が乗っ取られていることもあります。パスワードの再発行は、別の手段（電話や対面など）で本人だと確かめてから行うのが基本です。" },
+  { id: "sms", who: "総務", q: "宅配の不在通知SMSのリンクを開いて、会社のIDとパスワードを入れちゃいました……",
+    good: "すぐパスワードを変えさせる", bad: "ウイルスチェックをかけさせる", hit: { hole: 1 },
+    ok: "すぐに変えたので、盗まれたパスワードは使えなくなった。", ng: "PCは無事だった。でも盗まれたパスワードで、そのままログインされた。",
+    long: "入力してしまったら、とにかく早くパスワードを変えるのが一番の対策です。攻撃者は盗んだ情報をすぐに試します。正直に報告してくれた社員を責めないことも大切です。責めると、次から隠されてしまいます。" },
+  { id: "mfaspam", who: "営業", q: "身に覚えのない「ログインを承認しますか？」がスマホに何度も来ます。押せば止まりますか？",
+    good: "押さずにパスワード変更", bad: "通知をオフにしてもらう", hit: { hole: 1 },
+    ok: "パスワードが漏れていた。変えたので、もう入れない。", ng: "通知を切っただけ。漏れたパスワードはそのままで、別の手口で入られた。",
+    long: "パスワードを盗んだ攻撃者が、承認の通知を何十回も送りつけて、根負けして押させる手口です（MFA疲労攻撃）。身に覚えのない承認は絶対に押さず、パスワードが漏れていると考えてすぐ変えます。数字を入力させる方式や、パスキーなら防ぎやすくなります。" },
+  { id: "quit", who: "人事", q: "先月辞めた人のアカウント、まだ残ってます。消したほうがいいですか？",
+    good: "今日中に消す", bad: "パスワードだけ変えて残す", hit: { hole: 1 },
+    ok: "使われていないアカウントを消した。", ng: "誰も見ていないアカウントは、攻撃者の格好の隠れ家だった。",
+    long: "退職者や使われていないアカウントは、パスワードを変える人も、不審なログインに気づく人もいないため、乗っ取りに使われやすい入口です。辞めた日に止めるのが基本です。" },
+  { id: "reuse", who: "営業", q: "パスワード、全部のサービスで同じにしてもいいですか？覚えられなくて……",
+    good: "管理アプリを使ってもらう", bad: "末尾の数字だけ変えてもらう", hit: { hole: 1 },
+    ok: "パスワード管理アプリで、サービスごとに別のものにした。", ng: "末尾の数字違いは、攻撃者もまっさきに試す。会社のアカウントに入られた。",
+    long: "どこか1つのサービスから漏れたIDとパスワードを、ほかのサービスで片っ端から試す攻撃（リスト型攻撃）がよくあります。使い回していると、1か所の流出で全部が開いてしまいます。覚えられないなら、パスワード管理アプリに任せるのが現実的です。" },
+  { id: "postit", who: "総務", q: "パスワードを付箋に書いて、モニターに貼っておいてもいいですか？",
+    good: "管理アプリに保存してもらう", bad: "机の引き出しの中に貼る", hit: { hole: 1 },
+    ok: "管理アプリに入れて、付箋は捨ててもらった。", ng: "引き出しの中は、まっさきに探される場所だった。",
+    long: "モニターの付箋は、来客、清掃業者、ビデオ会議の背景、SNSに載せたオフィス写真などから簡単に見られます。実際にテレビ取材の映像にパスワードが映り込んだ例もあります。" },
+  { id: "helpdesk", who: "総務", q: "情シスを名乗る人から電話で「パスワードを確認させて」と言われました。あなたですか？",
+    good: "私は聞かない、と伝える", bad: "相手の番号を聞いてかけ直す", hit: { hole: 1 },
+    ok: "「情シスはパスワードを聞かない」と全員に周知した。", ng: "相手が言った番号にかけ直しても、相手につながるだけだった。",
+    long: "IT担当やサポートを名乗って電話でパスワードを聞き出す手口は昔からあります（ソーシャルエンジニアリング）。「情シスがパスワードを聞くことは絶対にない」とあらかじめ決めて、全員に伝えておくのが一番効きます。" },
+  { id: "newhire", who: "人事", q: "明日入社の人に、アカウントとパスワードをメールで送っておきますね。",
+    good: "別の経路で渡し、初回に変えさせる", bad: "パスワード付きZIPでメールする", hit: { hole: 1 },
+    ok: "初日に手渡しし、その場で本人に変えてもらった。", ng: "ZIPのパスワードも、同じアドレスに続けて送っていた。両方盗まれた。",
+    long: "パスワードをメールに書いて送ると、途中の経路や受け手のメールボックスから漏れるおそれがあります。初期パスワードは別の経路で渡し、最初のログインで必ず変えてもらうのが基本です。" },
+  { id: "shareid", who: "営業", q: "派遣さんに、私のIDとパスワードを貸して作業してもらってもいいですか？",
+    good: "その人用のアカウントを作る", bad: "作業後にパスワードを変える", hit: { hole: 1 },
+    ok: "必要な範囲だけ見られる、専用のアカウントを作った。", ng: "作業の間に、派遣さんのPCからIDとパスワードが漏れていた。",
+    long: "アカウントの貸し借りをすると、誰が何をしたのか記録から分からなくなり、パスワードを知る人も増えます。作業する人ごとにアカウントを作り、見られる範囲を絞るのが基本です。" },
+  { id: "qr", who: "総務", q: "駐車場の精算機に貼ってあったQRコードを読んだら、会社のアカウントでログインしてと出ました。",
+    good: "入力しない", bad: "スマホからなら入力していい", hit: { hole: 1 },
+    ok: "精算機のQRコードは、上から貼られた偽物だった。", ng: "上から貼られた偽物のQRコードだった。IDとパスワードが盗まれた。",
+    long: "本物の掲示物の上に偽のQRコードを貼り、偽のログイン画面に誘う手口があります（クイッシング）。QRコードは見た目でリンク先が分からないので、ログインを求められたら疑ってかかるのが安全です。" },
+  { id: "survey", who: "総務", q: "「アンケートに答えると商品券がもらえる」メール、会社のアカウントでログインして答えていいですか？",
+    good: "答えない", bad: "鍵マーク（https）があれば答えていい", hit: { hole: 1 },
+    ok: "差出人を調べると、実在しない会社だった。", ng: "偽サイトにも鍵マークは付く。鍵マークは本物の証明ではなかった。",
+    long: "プレゼントや当選をエサに、会社のIDでログインさせる手口は定番です。「得をする話」と「ログインさせる」がセットになっていたら、まず疑います。" },
+  { id: "deepfake", who: "人事", q: "オンライン面接の相手、映像と声が少しずれてる気がします。でも優秀なので採用したいです。",
+    good: "身元をしっかり確かめる", bad: "もう一度ビデオ面接で確かめる", hit: { hole: 1 },
+    ok: "身分証の確認をお願いしたら、連絡が途絶えた。", ng: "2回目の面接も、AIで顔を差し替えた偽物だった。",
+    long: "AIで顔や声を差し替えた偽の応募者が、採用されて社内のアカウントを手に入れる例が海外で報告されています。リモート採用では、身分証の確認や、入社後しばらくは権限を絞るといった備えが必要です。" },
+  { id: "passkey", who: "社員", q: "ログイン画面で「パスキーを設定しませんか？」と出ました。よく分からないので、やめておいていいですか？",
+    good: "ぜひ設定して", bad: "パスワードを長くして対応", hit: { hole: 1 },
+    ok: "指紋でログインできるようになり、本人もラクになった。", ng: "長いパスワードも、偽サイトに入力すれば盗まれる。",
+    long: "パスキーは、スマホやPCの指紋・顔認証でログインする仕組みです。偽サイトでは使えないので、パスワードを盗まれる心配がほぼなくなります。面倒が減って安全も上がる、数少ない対策です。" },
+  { id: "lostphone", who: "営業", q: "会社のスマホを電車に忘れました……。明日、駅に聞けば大丈夫ですよね？",
+    good: "すぐ遠隔でロック", bad: "画面ロックがあるので駅に問い合わせ", hit: { hole: 1 },
+    ok: "遠隔でロックし、ログイン中のアカウントも切った。", ng: "画面ロック中でも、通知に確認コードが表示されていた。",
+    long: "なくしたスマホやPCには、ログインしたままのメールやチャットが残っています。気づいた時点ですぐ報告し、遠隔ロックやログインの強制解除をするのが大切です。報告が早いほど被害は小さく済みます。" },
+  { id: "ext", who: "企画", q: "仕事が速くなるブラウザの拡張機能を見つけました。入れていいですか？",
+    good: "会社が認めたものだけにする", bad: "評価が★4以上ならいい", hit: { hole: 1 },
+    ok: "調べると、閲覧情報を外に送る拡張機能だった。", ng: "評価の高い拡張機能が売却され、悪意ある更新が配られていた。",
+    long: "ブラウザの拡張機能は、見ているページの中身を読めるものが多く、悪意のあるものはログイン情報を盗みます。最初は普通でも、あとから買収されて悪意のある更新が配られる例もあります。" },
+  { id: "cloudpw", who: "設計", q: "クラウドのファイル置き場、最初に決めたパスワードのまま使ってます。変えなきゃだめですか？",
+    good: "変えて二段階認証も付ける", bad: "もっと長いパスワードに変えるだけ", hit: { hole: 1 },
+    ok: "強いパスワードと二段階認証にした。", ng: "パスワードは別の流出から漏れていた。二段階認証がなく、そのまま入られた。",
+    long: "最初に決めた簡単なパスワードや、機器やサービスの初期パスワードのままだと、総当たりや既知のパスワードの一覧で簡単に破られます。大事なデータを置く場所ほど、二段階認証を付けておきます。" },
+  { id: "sns", who: "広報", q: "新しいオフィスの写真をSNSに載せたいです。後ろにホワイトボードも写ってますが。",
+    good: "写り込みを確認してから", bad: "社員の顔だけぼかして載せる", hit: { hole: 1 },
+    ok: "ホワイトボードに共有アカウントのパスワードが書いてあった。消してから載せた。", ng: "顔は隠したが、ホワイトボードの共有アカウントのパスワードはそのまま写っていた。",
+    long: "社内の写真には、ホワイトボード、付箋、画面、社員証など、思わぬ情報が写り込みます。載せる前に拡大して確かめる習慣をつけましょう。" },
+  /* ---- マルウェア ---- */
+  { id: "zip", who: "経理", q: "取引先から「請求書.zip」が届きました。開いていいですか？",
+    good: "開かずに電話で確認", bad: "メールに返信して確かめる", hit: { hole: 0 },
+    ok: "取引先は送っていなかった。なりすましメールだった。", ng: "返信した相手は、なりすました攻撃者本人。「送りました」と返ってきた。",
+    long: "請求書・見積書・配送伝票を装った添付ファイルは、マルウェア感染の入口の定番です。圧縮ファイルやパスワード付きの添付は、メールのチェックをすり抜けやすい形でもあります。心当たりがなければ、メールに書かれていない連絡先で送り主に確かめます。" },
+  { id: "usb", who: "社員", q: "駐車場でUSBメモリを拾いました。誰のか、中身を見て確かめてもいいですか？",
+    good: "挿さずに捨てる", bad: "ウイルスチェックしてから見る", hit: { spawn: "mal" },
+    ok: "挿さずに捨てた。拾ったUSBは挿さないのが鉄則。", ng: "ウイルスチェックをすり抜ける新種が入っていた。",
+    long: "わざとUSBメモリを落として拾わせる手口は、実際にあります。「給与」「人事」など、つい開きたくなる名前のファイルが入っていることも。拾ったものは挿さずに、落とし物として扱います。" },
+  { id: "remote", who: "社員", q: "大手ソフト会社のサポートから電話。「PCが感染している、遠隔操作ソフトを入れて」と……",
+    good: "電話を切らせる", bad: "社員番号を聞いてから入れる", hit: { spawn: "mal" },
+    ok: "大手のサポートから突然電話が来ることはない。", ng: "社員番号は、もっともらしい嘘だった。",
+    long: "サポートを名乗って遠隔操作ソフトを入れさせる手口（サポート詐欺）です。本物のメーカーが突然電話してきて、ソフトを入れさせることはありません。" },
+  { id: "popup", who: "総務", q: "画面に「ウイルスに感染しました！今すぐこの番号へ」と出て、警告音が鳴りやみません！",
+    good: "電話せずブラウザを閉じる", bad: "画面のスキャンボタンを押す", hit: { spawn: "mal" },
+    ok: "ただの偽の警告画面だった。閉じれば終わり。", ng: "そのスキャンソフトこそが、マルウェアだった。",
+    long: "ウェブ広告などから偽の警告画面を出し、大きな音で焦らせて電話をかけさせる手口です（サポート詐欺）。本物のウイルス対策ソフトが、電話番号を出してかけさせることはありません。閉じられないときは、ブラウザを強制終了するか再起動します。" },
+  { id: "macro", who: "経理", q: "メールのExcelを開いたら「コンテンツの有効化」を押してと出ます。押していいですか？",
+    good: "押さない", bad: "差出人が取引先の名前なら押していい", hit: { hole: 0 },
+    ok: "送り主に確かめたら、送っていないと言われた。", ng: "差出人の名前は、いくらでも偽れる。",
+    long: "Officeファイルに仕込んだプログラム（マクロ）を動かすため、「有効化」を押させる手口です。中身を見るだけなら有効化は不要です。押すよう促す文面があったら、それ自体が怪しいサインです。" },
+  { id: "freesoft", who: "設計", q: "無料のPDF変換ソフトをネットで見つけました。入れていいですか？",
+    good: "会社が認めたソフトを使う", bad: "検索で一番上のサイトから入れる", hit: { spawn: "mal" },
+    ok: "会社で使えるソフトがすでにあった。", ng: "検索の一番上は広告枠。偽の配布サイトだった。",
+    long: "人気ソフトの名前で検索すると、広告枠に偽の配布サイトが出ていることがあります（SEOポイズニング・悪意ある広告）。ソフトは会社が認めたものを、公式の場所から入れるのが基本です。" },
+  { id: "crack", who: "設計", q: "高い設計ソフトの「無料版」を配っているサイトを見つけました。使っていいですか？",
+    good: "正規に買う", bad: "ウイルスチェックで問題なければ使う", hit: { spawn: "mal" },
+    ok: "必要な台数だけ、正規に買うことにした。", ng: "チェックをすり抜けるように作られていた。",
+    long: "有料ソフトを不正に無料化したもの（海賊版）は、マルウェアが仕込まれている定番の入口です。ライセンス違反でもあり、会社として二重に危険です。" },
+  { id: "admin", who: "設計", q: "自分のPCに管理者権限をください。ソフトを入れるたびに頼むのが面倒です。",
+    good: "必要なときだけ付ける", bad: "詳しい人なので渡す", hit: { spawn: "mal" },
+    ok: "必要なときだけ一時的に付ける運用にした。", ng: "詳しい人でも、うっかり開いたマルウェアが管理者権限で動いた。",
+    long: "管理者権限があると、マルウェアもその権限で動けてしまい、PCの守りを止めたり、深く居座ったりできます。普段は一般ユーザーで使い、必要なときだけ権限を付けるのが基本です（最小権限）。" },
+  { id: "osupdate", who: "総務", q: "パソコンに「更新があります」と出ました。不具合が怖いので、1か月くらい様子を見てからでいいですか？",
+    good: "すぐ入れて", bad: "1か月様子を見てから入れる", hit: { spawn: "mal" },
+    ok: "更新を入れた。これで既知の弱点はふさがった。", ng: "その1か月の間に、ふさがるはずの弱点を突かれ、PCが感染した。",
+    long: "OSやソフトの正規の更新は、見つかった弱点をふさぐものです。怖がって入れないほうが危険です。ただし、ウェブページの中に出る「更新してください」は偽物のことがあるので、OSの設定画面から入れるのが確実です。" },
+  { id: "camera", who: "総務", q: "防犯カメラを外から見られるようにしたいです。設定は買ったままでいいですよね？",
+    good: "初期パスワードを変えて更新も", bad: "アドレスを誰にも教えなければいい", hit: { hole: 2 },
+    ok: "初期パスワードを変え、更新も当てた。", ng: "攻撃者は、ネット中の機器を自動で探し回っていた。",
+    long: "カメラやルーターなどネットにつながる機器は、初期パスワードのまま公開すると、自動で探して回る攻撃にすぐ見つかります。乗っ取られた機器は、社内への足がかりや、別の攻撃の踏み台に使われます。" },
+  { id: "vendor", who: "総務", q: "複合機の業者さんが、遠隔保守のために社内につながる機器を置きたいそうです。",
+    good: "契約と設定を確認してから", bad: "大手の業者なので任せる", hit: { hole: 2 },
+    ok: "接続の範囲と管理方法を決めてから置いてもらった。", ng: "保守用の機器の弱点から、社内に入られた。",
+    long: "保守業者のための遠隔接続の機器が、管理されないまま弱点を抱え、侵入口になる例があります。病院のランサムウェア被害でも原因のひとつになりました。誰が、どこまで、どう管理するかを決めておく必要があります。" },
+  { id: "resume", who: "人事", q: "求人に応募してきた人から「履歴書.exe」が届きました。開いていいですか？",
+    good: "開かない", bad: "ウイルスチェックしてから開く", hit: { hole: 0 },
+    ok: "履歴書が「.exe」（プログラム）のはずがない。", ng: "チェックをすり抜ける新種だった。履歴書が「.exe」のはずがない。",
+    long: "「.exe」はプログラムを動かすファイルで、書類であるはずがありません。採用窓口は知らない人からのファイルを開くのが仕事なので、狙われやすい部署です。拡張子を表示する設定にしておくと気づきやすくなります。" },
+  { id: "slow", who: "設計", q: "PCが急に重くて、マウスが勝手に動いた気がします。気のせいですかね？",
+    good: "ネットから切り離して調べる", bad: "再起動して様子を見る", hit: { spawn: "mal" },
+    ok: "調べると、遠隔操作されていた。早めに切り離せた。", ng: "再起動しても止まらず、そのPCから社内に広がった。",
+    long: "いつもと違う動きは、感染のサインのことがあります。「おかしいかも」と思ったら、ネットから切り離して情シスに知らせる。この初動の早さが、被害の大きさを決めます。" },
+  { id: "ransom", who: "経理", q: "PCの画面に「ファイルを暗号化した。戻したければ払え」と出ています！再起動してみますね。",
+    good: "LANケーブルを抜いて報告", bad: "すぐバックアップから戻す", hit: { spawn: "mal" },
+    ok: "すぐ切り離したので、ほかのPCには広がらなかった。", ng: "つながったまま戻したので、戻したデータもまた暗号化された。",
+    long: "ランサムウェアの画面が出たら、まずネットワークから切り離して広がるのを止めます。電源を切ると調査に必要な情報が消えることもあるので、慌てて再起動せず、すぐ報告します。" },
+  { id: "report", who: "社員", q: "怪しいメールのリンクを開いちゃったかも……。報告したら怒られますか？",
+    good: "すぐ報告してくれてありがとう", bad: "念のためウイルスチェックしておいて", hit: { spawn: "mal" },
+    ok: "早く報告してくれたので、感染したPCをすぐ切り離せた。", ng: "チェックでは見つからなかった。報告されないまま、感染源になった。",
+    long: "ミスを責めると、次から隠されます。「早く報告してくれた人を褒める」文化があると、被害は小さく済みます。情シスにとって一番怖いのは、気づかれないまま広がることです。" },
+  { id: "visitor", who: "総務", q: "宅配業者を名乗る人が「サーバー室に直接置く荷物です」と言っています。通していいですか？",
+    good: "受付で預かる", bad: "制服と社員証を確かめて通す", hit: { spawn: "mal" },
+    ok: "荷物は受付で預かった。そんな配達予定はなかった。", ng: "制服も社員証も、それらしく作った偽物だった。",
+    long: "業者や点検員を装って建物に入り、機器を仕掛ける手口もあります。サーバー室のような大事な場所には、予定のない人を通さないのが基本です。" },
+  { id: "tailgate", who: "総務", q: "社員証を持っていない知らない人が、後ろについてオフィスに入ってきました。",
+    good: "声をかけて受付へ案内", bad: "誰かの来客だろうから様子を見る", hit: { spawn: "mal" },
+    ok: "声をかけたら、そそくさと帰っていった。", ng: "空いている席のPCに、USBを挿していた。",
+    long: "人のあとについてドアをすり抜ける手口（共連れ）は、入館の仕組みがあっても防げません。知らない人に声をかけられる雰囲気づくりが、一番の対策です。" },
+  /* ---- お金・情報 ---- */
+  { id: "invoice", who: "経理", q: "取引先から「振込先の口座が変わりました」とメール。今日の支払いから変えておきますね。",
+    good: "元の番号に電話で確認", bad: "メールにある番号に電話で確認", hit: { hp: 8, n: "振込詐欺" },
+    ok: "取引先は口座を変えていなかった。詐欺メールだった。", ng: "電話に出たのは、詐欺グループだった。",
+    long: "取引先になりすまして振込先を変えさせる手口（ビジネスメール詐欺）は、被害額が大きくなりがちです。確認の電話は、メールに書かれた番号ではなく、元から知っている番号にかけるのがコツです。" },
+  { id: "ceo", who: "経理", min: 4, q: "社長から電話で「極秘の買収だ、今日中に500万振り込め」と。声も社長そのものでした！",
+    good: "社長の携帯に折り返す", bad: "社長の誕生日を聞いて本人確認", hit: { hp: 12, n: "なりすまし電話" },
+    ok: "社長は何も知らなかった。AIで声をまねた詐欺だった。", ng: "誕生日はSNSで調べられていた。",
+    long: "数十秒の音声があれば、AIで声をまねられるようになりました。声や話し方では本人かどうか判断できません。お金の話は一度切って、こちらから知っている番号に折り返す。これだけで防げます。" },
+  { id: "gift", who: "経理", q: "社長からメールで「取引先へのお礼に、ギフトカードを10万円分買って番号を送って」と。",
+    good: "社長に直接確認", bad: "メールに返信して本当か確かめる", hit: { hp: 6, n: "ギフトカード詐欺" },
+    ok: "社長はそんなメールを送っていなかった。", ng: "返信先は攻撃者。「本当だ、急げ」と返ってきた。",
+    long: "社長や上司になりすまし、ギフトカードを買わせて番号を送らせる手口です。ギフトカードは足がつきにくく、取り戻せません。「ギフトカードで払って」は、それだけで詐欺のサインです。" },
+  { id: "bank", who: "経理", q: "銀行から電話で「不正利用があったので、ネットバンキングのIDと暗証番号を確認したい」と。",
+    good: "切って銀行にかけ直す", bad: "相手の名前と支店を確かめて答える", hit: { hp: 10, n: "不正送金" },
+    ok: "銀行の代表番号にかけたら、そんな電話はしていないと。", ng: "名前も支店も、実在のものを名乗っていた。",
+    long: "銀行を名乗る電話（ボイスフィッシング）で法人口座のIDや暗証番号を聞き出し、不正送金する被害が増えています。銀行が電話で暗証番号を聞くことはありません。" },
+  { id: "tax", who: "経理", q: "「税金の未納があります。このリンクから今日中に支払いを」とSMSが来ました。",
+    good: "公式サイトから確認", bad: "差出人が「国税庁」なら払う", hit: { hp: 5, n: "偽の請求" },
+    ok: "公式サイトで確認したら、未納はなかった。", ng: "差出人の名前は偽れる。支払いページも偽物だった。",
+    long: "役所、税務署、電力会社などを名乗る偽の請求は、「今日中に」と急がせるのが特徴です。リンクは開かず、自分で調べた公式サイトや窓口で確かめます。" },
+  { id: "domain", who: "総務", q: "「ドメインの更新期限です」と、知らない会社から請求書が届きました。払っておきますね。",
+    good: "契約先か確認する", bad: "安い金額なので払っておく", hit: { hp: 4, n: "偽の請求" },
+    ok: "契約している会社ではなかった。", ng: "契約先とは関係のない会社への支払いだった。",
+    long: "本物そっくりの請求書を送りつけ、契約していない会社に払わせる手口があります。払う前に、本当に契約している相手かを確かめます。" },
+  { id: "ai", who: "企画", q: "顧客リストを無料のAIサービスに貼って、分析させてもいいですか？",
+    good: "個人情報は入れない", bad: "有名なAIサービスなら入れていい", hit: { hp: 6, n: "情報流出" },
+    ok: "名前や連絡先を消してから使うことにした。", ng: "有名なサービスでも、入力が学習に使われる設定だった。",
+    long: "生成AIは便利ですが、入力した内容がサービス側に保存されたり、学習に使われたりすることがあります。顧客の個人情報や社外秘は入れない、会社として使ってよいサービスと設定を決めておく、が基本です。" },
+  { id: "share", who: "設計", q: "取引先にファイルを送りたいので、共有リンクを「誰でも見られる」にしていいですか？",
+    good: "相手だけ見られる設定に", bad: "リンクにパスワードを付けて同じメールで送る", hit: { hp: 5, n: "情報流出" },
+    ok: "相手のアカウントだけに共有した。", ng: "リンクとパスワードを一緒に送ったので、転送された先でも開けた。",
+    long: "「リンクを知っている人なら誰でも見られる」設定は、リンクが転送されたり、検索に拾われたりすると、誰でも見られる状態になります。共有は相手を指定し、期限を付けるのが基本です。" },
+  { id: "homemail", who: "営業", q: "家で作業したいので、顧客リストを個人のメールに送ってもいいですか？",
+    good: "会社の仕組みで作業する", bad: "ファイルにパスワードをかけて送る", hit: { hp: 5, n: "情報流出" },
+    ok: "会社のPCとクラウドで作業してもらった。", ng: "個人のメールは乗っ取られていた。パスワードも同じメールで送っていた。",
+    long: "個人のメールやクラウドに会社のデータを送ると、会社の守りが届かない場所にデータが出ていきます。家で働くなら、会社の管理するPCやサービスを使うのが基本です。" },
+  { id: "wrongto", who: "営業", q: "顧客の個人情報入りのメールを、違う人に送っちゃいました……。黙っていればバレないですよね？",
+    good: "すぐ報告して相手に削除依頼", bad: "相手に削除だけ頼み、報告はしない", hit: { hp: 6, n: "情報流出" },
+    ok: "すぐ相手に連絡して削除してもらい、顧客にも説明した。", ng: "相手は削除していなかった。報告が遅れ、大問題に。",
+    long: "誤送信は、情報漏えいの原因として常に上位です。起きてしまったら、隠すほど被害は大きくなります。すぐ報告し、相手に削除を頼み、必要なら本人に説明します。" },
+  { id: "lostpc", who: "営業", q: "飲み会のあと、ノートPCの入ったカバンが見当たりません……。もう少し探してみます。",
+    good: "すぐ届け出てアカウントを止める", bad: "店に問い合わせて、なければ報告", hit: { hp: 6, n: "情報流出" },
+    ok: "すぐにアカウントを止めた。PCのディスクも暗号化してあった。", ng: "PCの中の顧客データが、誰かに見られていた。",
+    long: "PCの紛失は、すぐ報告すれば被害を抑えられます。アカウントの停止や遠隔での消去ができますし、ディスクを暗号化しておけば、拾った人に中身を読まれずに済みます。" },
+  { id: "print", who: "総務", q: "顧客の名簿を印刷したまま、プリンターに置きっぱなしの人がいます。まあ社内だしいいですよね？",
+    good: "回収して取りに来てもらう", bad: "「置き忘れ注意」と張り紙をする", hit: { hp: 4, n: "情報流出" },
+    ok: "回収して、本人に返した。", ng: "張り紙の下で、名簿は来客に持ち去られていた。",
+    long: "情報漏えいはネットだけでなく、紙からも起きます。印刷物の置き忘れ、シュレッダーにかけずに捨てた書類なども、漏えいの原因として多くあります。" },
+  { id: "mailfwd", who: "営業", q: "会社のメールを全部、自分の個人メールに自動で転送する設定にしていいですか？",
+    good: "転送はやめてもらう", bad: "顧客名のメールだけ転送しない設定に", hit: { hp: 5, n: "情報流出" },
+    ok: "スマホに会社のメールアプリを入れてもらった。", ng: "設定のすき間から、大事なメールも流れ続けた。",
+    long: "外部への自動転送は、本人が気づかないまま情報を流し続けます。攻撃者がアカウントを乗っ取ったあと、こっそり転送設定を仕込む手口もよくあります。" },
+  /* ---- 内部不正 ---- */
+  { id: "bulkdl", who: "システム", min: 3, q: "（自動通知）来月辞める営業さんが、顧客データを夜中に大量にダウンロードしています。",
+    good: "本人と上司に確認する", bad: "退職日まで様子を見る", hit: { hp: 8, n: "内部不正" },
+    ok: "転職先に持っていくつもりだった。止められた。", ng: "顧客データは、転職先の会社に持ち出されていた。",
+    long: "情報漏えいは外からの攻撃だけでなく、社員や元社員による持ち出しからも起きます。退職前に大量のデータを持ち出す例は特に多くあります。ふだんと違う大量のダウンロードに気づける仕組みと、退職時の権限の見直しが大切です。" },
+  { id: "usbcopy", who: "設計", min: 2, q: "今月で辞めるんですが、自分が作った図面を私物のUSBにコピーして持って帰っていいですか？",
+    good: "会社の資料なので断る", bad: "中身を確認してからコピーさせる", hit: { hp: 6, n: "内部不正" },
+    ok: "仕事で作ったものは会社の資料。丁寧に断った。", ng: "確認のあとで、こっそり別のファイルも足されていた。",
+    long: "仕事で作った資料は、本人が作ったものでも会社の資料です。私物のUSBへのコピーを許すと、どこに渡ったか追えなくなります。USBへの書き出しを制限する仕組みや、退職時のルールを決めておきます。" },
+  { id: "solo", who: "経理", min: 4, q: "振込の手続き、ベテランの○○さんが一人で全部やってます。任せておいて大丈夫ですよね？",
+    good: "2人で確認する仕組みに", bad: "年に1回、帳簿をチェックする", hit: { hp: 8, n: "内部不正" },
+    ok: "入力と承認を別の人が行う仕組みにした。", ng: "年1回の確認の合間に、少しずつ抜かれていた。",
+    long: "お金の流れを一人だけが握っていると、不正も間違いも誰にも気づかれません。入力する人と承認する人を分ける（職務の分離）のが基本です。疑うためではなく、本人を守るための仕組みでもあります。" },
+  { id: "adminpw", who: "総務", min: 3, q: "サーバーの管理者パスワード、全員が知ってます。辞めた人も知ってますけど、変えなくていいですか？",
+    good: "変えて、人ごとのIDに", bad: "辞めた人に口外しない誓約をさせる", hit: { hole: 1 },
+    ok: "パスワードを変え、管理者は人ごとのIDにした。", ng: "誓約では、もう広まったパスワードは戻らなかった。",
+    long: "みんなで共有するパスワードは、誰が使ったか分からず、辞めた人も使えたままになります。管理者の作業は人ごとのIDで行い、共有のパスワードは人が抜けるたびに変えます。" },
+  /* ---- 昔の常識が、いまは逆効果 ---- */
+  { id: "complexity", who: "総務", q: "パスワードのルール、「大文字・小文字・数字・記号を全部入れて8文字以上」にしましょうか？",
+    good: "長さを優先し、記号は強制しない", bad: "全部必須にする", hit: { hole: 1 },
+    ok: "「長く、使い回さない」をルールにした。", ng: "みんな「Password1!」のような型どおりのパスワードになり、推測された。",
+    long: "以前は「記号や大文字を必ず混ぜる」が常識でしたが、こうしたルールを強制すると、人は「Password1!」のような型どおりのパスワードを作りがちで、攻撃者もそれを知っています。米国のガイドライン（NIST）の改訂版では、混ぜ方のルールを課すべきではないとし、代わりに長さと、漏れたことのあるパスワードを使わせないことを重視しています。" },
+  { id: "secretq", who: "総務", q: "取引先のサイトで「秘密の質問」の設定が必須でした。「母親の旧姓は？」を選んだんですが、答えはどう入れたらいいですか？",
+    good: "でたらめな文字列にして管理アプリに保存", bad: "忘れないよう本当の旧姓を入れる", hit: { hole: 1 },
+    ok: "推測できない文字列にして、パスワード管理アプリに保存した。", ng: "本当の旧姓は、SNSの親族の投稿から調べられた。そこからパスワードを再設定された。",
+    long: "母親の旧姓、出身校、ペットの名前といった「秘密の質問」の答えは、SNSや公開情報から調べられることが多く、パスワードを再設定される入口になります。いまは本人確認の方法として使わないことが推奨されていますが、設定が必須のサービスもあります。そのときは本当の答えを入れず、パスワードと同じように推測できない文字列にして、パスワード管理アプリに保存しておくのがコツです。" },
+  { id: "sms2fa", who: "営業", q: "二段階認証、SMSでコードが届く方式とスマホのアプリで承認する方式、手軽なSMSでいいですよね？",
+    good: "認証アプリかパスキーにする", bad: "手軽なSMSでいい", hit: { hole: 1 },
+    ok: "認証アプリに切り替えた。", ng: "電話番号を乗っ取られ、SMSのコードが攻撃者に届いた。",
+    long: "SMSのコードは、何もしないよりずっと安全です。ただ、携帯電話の番号を乗っ取る手口（SIMスワップ）や、偽サイトでの中継に弱く、米国のガイドラインでは制限付きの扱いになっています。選べるなら、認証アプリやパスキーのほうが強い方式です。" },
+  { id: "wifi", who: "営業", q: "出張先のカフェで仕事したいです。公衆Wi-Fiって、絶対に使っちゃダメなんですよね？",
+    good: "お店の正式なWi-Fiなら使っていい", bad: "絶対ダメ、使わないで", hit: { biz: 5 },
+    ok: "お店の掲示と同じ名前のWi-Fiにつないで、仕事を進めた。", ng: "スマホの通信量が尽きて、取引先に資料を送れなかった。",
+    long: "以前は「公衆Wi-Fiは危険」が定番でしたが、いまはほとんどのサイトやサービスの通信が暗号化されているため、昔ほどの危険はありません。ただし、お店の名前に似せた偽のアクセスポイントには注意が必要です。お店の掲示と名前を確かめる、会社が用意した安全な接続を使う、が基本です。" },
+  { id: "breachrpt", who: "総務", min: 3, q: "不正アクセスで、顧客300人分の情報が漏れたかもしれません。まだ確定じゃないので、調べ終わってから考えればいいですよね？",
+    good: "「おそれ」の段階で国と本人に報告", bad: "確定するまで待つ", hit: { hp: 6, n: "報告遅れ" },
+    ok: "数日のうちに国へ速報を出し、顧客にも知らせた。", ng: "「おそれ」の段階でも報告が必要だった。報告が遅れ、信用を失った。",
+    long: "2022年4月の個人情報保護法の改正で、不正アクセスなどによる漏えいは、確定していない「おそれ」の段階でも、国（個人情報保護委員会）への報告と本人への通知が義務になりました。まず速やかに速報を出し、調べがついてから詳しい報告をします。隠したり遅らせたりするほど、信用を失います。" },
+  /* ---- 慎重すぎても困る（正しい依頼） ---- */
+  { id: "okpdf", who: "経理", q: "さっき電話で話した取引先から、約束どおり見積書のPDFが届きました。開いていいですか？",
+    good: "開いていい", bad: "念のため削除させる", hit: { biz: 5 },
+    ok: "予定どおりの見積書だった。仕事が進んだ。", ng: "見積書が届かず、取引先から「対応が遅い」と苦情が来た。",
+    long: "なんでも疑って止めると、仕事が回らなくなり、社員は情シスに相談しなくなります。電話で話した相手から、予定どおりのファイルが届いた。こうした確かめられたものは、開いて大丈夫です。守りは「疑う場面」を見極めることでもあります。" },
+  { id: "okremote", who: "営業", q: "出張先のホテルから、いつもの二段階認証で会社のシステムにログインしていいですか？",
+    good: "どうぞ", bad: "戻るまで使わないで", hit: { biz: 5 },
+    ok: "出張先から、そのまま仕事を続けられた。", ng: "見積もりが出せず、商談をひとつ逃した。",
+    long: "二段階認証で守られた会社のシステムに、決められた方法でつなぐのは、まさにそのための仕組みです。禁止すると、社員は私物のメールなど、もっと危ない抜け道を使いはじめます。" },
+  { id: "okshare", who: "企画", q: "会社で契約しているクラウドで、取引先の担当者だけにファイルを共有したいです。いいですか？",
+    good: "いいよ", bad: "USBメモリで手渡しにして", hit: { biz: 5 },
+    ok: "相手を指定して、期限付きで共有した。", ng: "USBを届ける途中で、電車に置き忘れそうになった。仕事も1日遅れた。",
+    long: "会社が契約したクラウドで、相手を指定して共有するのは、正しいやり方です。USBメモリでの手渡しは、紛失や感染の危険もあり、かえって安全とは言えません。" },
+  { id: "okmeet", who: "営業", q: "いつもやり取りしている取引先の担当者から、来週のオンライン会議の招待が来ました。参加していいですか？",
+    good: "参加していい", bad: "電話で確認できるまで断る", hit: { biz: 5 },
+    ok: "前から決まっていた打ち合わせだった。", ng: "前から決まっていた打ち合わせだった。取引先を怒らせてしまった。",
+    long: "いつもの相手から、予定どおりの連絡が来ることは普通です。お金の話、急な話、いつもと違う話。疑うべきなのは、そういうときです。" },
+  { id: "pwrotate", who: "総務", q: "パスワードって、毎月変えないといけないんですか？みんな面倒がってます。",
+    good: "漏れていなければ変えなくていい", bad: "毎月必ず変えてもらう", hit: { hole: 1 },
+    ok: "長くて使い回さないパスワードにして、漏れたときだけ変えることにした。", ng: "面倒で、みんな末尾の数字を1つずつ変えるだけになった。推測されて入られた。",
+    long: "以前は「定期的に変える」が常識でしたが、いまは国のガイドラインでも、漏れた疑いがなければ定期的に変える必要はないとされています。頻繁に変えさせると、覚えやすい弱いパスワードになりがちだからです。長く、使い回さず、二段階認証を付ける、のほうが効きます。" },
+  { id: "pwmgr", who: "設計", q: "パスワード管理アプリに、会社のパスワードを保存してもいいですか？",
+    good: "会社が認めたアプリならいい", bad: "頭で覚えてもらう", hit: { hole: 1 },
+    ok: "会社で決めた管理アプリに保存し、長いパスワードにした。", ng: "覚えられるパスワードは、推測されやすいパスワードだった。",
+    long: "人が覚えられるパスワードには限界があり、短くしたり使い回したりしがちです。信頼できるパスワード管理アプリに任せれば、サービスごとに長くてばらばらのパスワードを使えます。" },
+  { id: "bookmark", who: "経理", q: "ネットバンキングには、ブックマークからログインしてもいいですか？",
+    good: "いい、そのほうが安全", bad: "毎回検索して公式サイトから", hit: { hp: 6, n: "不正送金" },
+    ok: "ブックマークからなら、偽サイトに迷い込まない。", ng: "検索の広告枠に出ていた偽サイトに、IDを入れてしまった。",
+    long: "銀行名で検索すると、広告枠に偽サイトが出ることがあります。一度確かめた正しいページをブックマークしておき、そこからログインするのが安全です。" },
+  /* ---- 対策を止めてしまう ---- */
+  { id: "reboot", who: "設計", min: 3, q: "VPN機器の更新で、数分つながらなくなるそうですね。今週は忙しいので、来週にしてもらえますか？",
+    good: "今夜のうちに更新する", bad: "金曜の夜にまとめてやる", hit: { off: "patch" },
+    ok: "夜のうちに、数分で更新が終わった。", ng: "金曜までの数日のすきに、弱点を突かれた。",
+    long: "更新は「出たらすぐ」が基本です。弱点が公開されると、攻撃者はそれを突く方法をすぐに作り、まだ更新していない会社を探して回ります。忙しさで後回しにした数日のすきが狙われます。" },
+  { id: "mfaoff", who: "営業", min: 2, q: "スマホを機種変したら二段階認証が使えなくなりました。いったん全部外してもらえますか？",
+    good: "新しいスマホに移すのを手伝う", bad: "今日だけ外して、明日設定し直す", hit: { off: "mfa" },
+    ok: "その場で新しいスマホに設定し直した。", ng: "「今日だけ」外した日に、まとめて入られた。",
+    long: "二段階認証を一時的に外すと、その間はパスワードだけで入れる状態に戻ります。機種変更のときは、外すのではなく、新しい端末に移す手順を案内します。" },
+  { id: "filteroff", who: "営業", min: 3, q: "大事な取引先のメールが迷惑メールに入ってしまいます。フィルタを止めてもらえませんか？",
+    good: "その取引先だけ確認して通す", bad: "今日だけフィルタを止める", hit: { off: "filter" },
+    ok: "その取引先のアドレスだけ、確認して通るようにした。", ng: "フィルタを止めた途端、詐欺メールがなだれ込んだ。",
+    long: "誤判定が困るからと全体を止めるのではなく、確認できた相手だけを通す設定にします。守りの仕組みは「全部オフ」にした瞬間に、狙われやすくなります。" },
+  { id: "edroff", who: "設計", min: 4, q: "監視ソフトのせいでPCが重いです。今日だけ止めてもいいですか？",
+    good: "設定を見直して軽くする", bad: "今日だけ止める", hit: { off: "edr" },
+    ok: "重い原因になっていた設定を見直した。", ng: "監視が止まっている間に、マルウェアが広がった。",
+    long: "監視ソフトは、止まっている間は何も見張れません。攻撃者は最初に監視ソフトを止めようとするほどです。重い場合は止めるのではなく、設定や除外の見直しで対応します。" },
+  { id: "permall", who: "企画", min: 3, q: "部署を移ったので、全部のフォルダを見られるようにしてください。そのほうが楽なので。",
+    good: "必要なフォルダだけにする", bad: "前の部署の権限は残したまま足す", hit: { off: "perm" },
+    ok: "新しい部署で使うフォルダだけにした。", ng: "権限を足し続けた結果、全部見られる状態になっていた。",
+    long: "「楽だから全部見られるように」を許していくと、権限の整理はすぐ崩れます。異動のときは、新しい仕事に必要な権限を付け、前の部署の権限は外すのが基本です。" },
+  { id: "bkdrive", who: "総務", min: 4, q: "バックアップ用のハードディスク、毎回つなぐのが面倒なので、つなぎっぱなしでいいですか？",
+    good: "取ったら外す", bad: "クラウドに自動同期するようにする", hit: { off: "backup" },
+    ok: "バックアップを取ったら外して、鍵のかかる棚へ。", ng: "同期先のファイルも、暗号化されたものに上書きされた。",
+    long: "ネットやPCにつながったままのバックアップは、ランサムウェアに一緒に暗号化されてしまいます。取ったら切り離して保管する、または書き換えられない形で保存するのが大切です。" },
+];
+function callsFor(day) {
+  const n = Math.min(6, 2 + Math.ceil(day / 2));
+  const pool = shuffle(CALLS.filter(c => day >= (c.min || 1)));
+  // まだ出していないものを優先
+  pool.sort((a, b) => (S.usedCall[a.id] || 0) - (S.usedCall[b.id] || 0));
+  return pool.slice(0, n).map(c => { S.usedCall[c.id] = (S.usedCall[c.id] || 0) + 1; return c; });
+}
+G.infoCall = (id) => {
+  const c = CALLS.find(x => x.id === id);
+  const h = c.hit;
+  const what = h.biz ? `仕事が止まる（予算 -${h.biz}万円）` : h.hole !== undefined ? `${LANES[h.hole].ic}${LANES[h.hole].n}の入口に穴が開き、そこを突いて攻撃が入ってくる` : h.spawn ? `社内に${EN[h.spawn].ic}${EN[h.spawn].n}が現れる` : h.hp ? `${h.n}（体力 -${h.hp}）` : `${h.off === "backup" ? "💾バックアップ" : TW[h.off].ic + TW[h.off].n}がその日使えない（入れていなければ社内に敵が現れる）`;
+  sheet(`<div class="shk">問い合わせ ・ ${c.who}</div><h2>📞 ${c.q}</h2><p class="long">${c.long}</p>
+    <div class="flow"><div><span>正しい対応</span><i>${c.good}</i></div><div><span>まずい対応</span><i class="ng">${c.bad}</i></div><div><span>まずいと</span><b>${what}</b></div>
+    ${h.hole !== undefined ? `<div><span>穴を防ぐ</span><i>${TW[LANE_DEF[h.hole]].ic}⭐${TW[LANE_DEF[h.hole]].up.n}に強化</i></div>` : ""}
+    ${h.hole !== undefined ? `<div><span>社内で止める</span>${chipsOf(stoppers(EN[["phish", "pw", "vpn"][h.hole]].to), "in")}</div>` : ""}
+    ${h.spawn ? `<div><span>社内で止める</span>${chipsOf(stoppers(h.spawn), "in")}</div>` : ""}</div>`);
+};
+
+/* ============ 日の終わりのイベント（20種からランダム） ============ */
+const xtra = (k, n) => { for (let i = 0; i < n; i++) S.extra.push(k); };
+const pay = (c) => { S.money = Math.max(0, S.money - c); S.spent += c; };
+const EV = [
+  { id: "boss2fa", min: 1, cond: () => S.own.mfa && !S.flags.no2fa, kick: "社長", title: "社長からの頼み",
+    q: "「二段階認証、毎回スマホを出すのが面倒なんだ。俺のアカウントだけ外してくれないか？」",
+    o: [["外してあげる", () => { S.flags.no2fa = true; S.money += 10; return "社長は上機嫌で、予算を10万円上乗せしてくれた。……ただ、一番狙われるアカウントの守りに穴が空いた。攻撃者は、権限の大きい人ほど狙う。（これから🔑の一部が📱をすり抜ける）"; }],
+        ["丁寧に断る", () => { pay(5); return "「融通がきかないな」社長はむっとした。（お金 -5万円）"; }]] },
+  { id: "snake", min: 2, kick: "営業電話", title: "「100%防ぐ」製品",
+    q: "「AIがあらゆる攻撃を100%防ぐ『完全防御ボックス』！今なら20万円です。社長さんにもご案内済みです」",
+    o: [["買う", () => { S.flags.snake = true; pay(20); return "届いた箱の中身は、古いメールフィルタだった。20万円が消えた。「100%防ぐ」製品は存在しない。"; }],
+        ["断る", () => "「100%防ぐ」製品は存在しない。正しい判断だ。"]] },
+  { id: "byod", min: 2, cond: () => !S.flags.byod, kick: "社員", title: "在宅勤務の相談",
+    q: "「家の私物パソコンでも仕事できるようにしてほしいです。みんなそう言ってます」",
+    o: [["許可する", () => { S.flags.byod = true; xtra("mal", 2); return "社員は大喜びだ。ただ、守れていない私物PCが社内につながるようになった。（明日、🦠が社内に直接2体）"; }],
+        ["会社のPCを貸し出す（10万円）", () => { pay(10); return "少しお金はかかったが、守れるPCで安全に在宅できるようになった。"; }]] },
+  { id: "oldpc", min: 2, kick: "社員", title: "古いパソコン",
+    q: "「総務のパソコン、もうサポートが切れたWindowsらしいです。でも動くし、いいですよね？」",
+    o: [["買い替える（8万円）", () => { pay(8); return "新しいPCに入れ替えた。更新が届かないPCは、それだけで穴になる。"; }],
+        ["動くならそのままで", () => { xtra("mal", 2); return "更新されないPCは、攻撃者にとって鍵の開いたドアだ。（明日、🦠が社内に直接2体）"; }]] },
+  { id: "insurance", min: 1, kick: "保険会社", title: "サイバー保険",
+    q: "「サイバー攻撃の被害に備える保険です。調査費や損害の一部を補償します。年10万円です」",
+    o: [["入る（10万円）", () => { pay(10); S.flags.insurance = true; return "保険に入った。攻撃は防げないが、大きな被害を一度だけ半分にできる。（次の大きな被害が半分に）"; }],
+        ["入らない", () => "保険は守りの代わりにはならない。でも、被害のあとの立ち直りを助けてくれる。"]] },
+  { id: "intel", min: 1, kick: "業界団体", title: "情報共有の勉強会",
+    q: "「同業の情シス担当が集まって、最近の攻撃の情報を共有する会があります。今夜、来ませんか？」",
+    o: [["参加する", () => { S.flags.intel = true; return "他社が受けた最新の手口を教わった。（明日は、予報にない攻撃が来ない）"; }],
+        ["疲れたので帰る", () => "今日はゆっくり休んだ。"]] },
+  { id: "drill", min: 1, kick: "自分", title: "訓練メール",
+    q: "社員に、わざと怪しいメールを送って、開いてしまうか試す「訓練メール」。明日やってみる？（5万円）",
+    o: [["やる（5万円）", () => { pay(5); S.flags.drill = S.day + 1; return "3割の社員がリンクを開いた。……でも、その後の説明で目が覚めたらしい。（明日だけ、返事のない問い合わせで社員が7割正しく判断する）"; }],
+        ["やらない", () => "訓練は、責めるためではなく、気づくためのもの。"]] },
+  { id: "nephew", min: 2, kick: "社長", title: "社長の甥っ子",
+    q: "「甥がパソコンに詳しくてな。手伝わせたいから、管理者のIDとパスワードを渡しておいてくれ」",
+    o: [["渡す", () => { xtra("acct", 1); xtra("mal", 1); return "甥は便利なフリーソフトを次々と入れてくれた。そのひとつが……。（明日、👤🦠が社内に直接1体ずつ）"; }],
+        ["本人用のIDを作り、権限を絞る", () => "必要なことだけできるIDを用意した。社長は少し不満そうだ。"]] },
+  { id: "checksheet", min: 2, kick: "取引先", title: "セキュリティチェックシート",
+    q: "大手の取引先から「セキュリティ対策の状況を記入してください」と、100問のチェックシートが届いた。",
+    o: [["正直に書く", () => { const n = TKEYS.filter(k => S.own[k]).length; if (n >= 4) { S.budget += 8; return "対策がしっかりしていると評価され、取引が増えた。社長が予算を増やしてくれた。（毎日の予算 +8万円）"; } return "「まだ足りない対策が多いですね」と指摘された。取引は続けられたが、宿題が増えた。"; }],
+        ["全部「対応済み」にしておく", () => { S.hp -= 8; return "後日の監査で、嘘がばれた。取引先の信用を失った。（体力 -8）"; }]] },
+  { id: "surplus", min: 2, kick: "社長", title: "予算が余った",
+    q: "「年度末で、別の部署の予算が少し余った。情シスで使うか？」",
+    o: [["ありがたく使う（+15万円）", () => { S.money += 15; return "使えるお金が15万円増えた。"; }],
+        ["今回は辞退して、来期の予算を増やしてもらう", () => { S.budget += 5; return "「欲がないな」社長は感心したようだ。（毎日の予算 +5万円）"; }]] },
+  { id: "nas", min: 2, kick: "自分", title: "忘れられたファイルサーバー",
+    q: "倉庫の隅で、3年前から更新されていないファイルサーバー（NAS）を見つけた。ネットにつながっている。",
+    o: [["更新して設定を見直す（5万円）", () => { pay(5); return "古い弱点をふさいだ。誰も知らない機器ほど、攻撃者は好む。"; }],
+        ["明日やる", () => { xtra("mal", 2); return "その夜のうちに、弱点を突かれていた。（明日、🦠が社内に直接2体）"; }]] },
+  { id: "cloudcfg", min: 2, kick: "自分", title: "クラウドの設定点検",
+    q: "会社のクラウドの共有設定、一度ちゃんと点検したほうがいい気がする。業者に頼むと5万円。",
+    o: [["点検する（5万円）", () => { pay(5); return "「誰でも見られる」設定のフォルダが3つ見つかった。すぐに閉じた。"; }],
+        ["たぶん大丈夫", () => { S.hp -= 6; return "「誰でも見られる」設定のフォルダが、すでに検索で見つかっていた。（体力 -6）"; }]] },
+  { id: "restore", min: 2, kick: "自分", title: "バックアップの復元テスト",
+    q: "バックアップ、本当に戻せるか試したことがない。週末に、復元のテストをしてみる？（5万円）",
+    o: [["テストする（5万円）", () => { if (!S.backup) return "……そもそも、バックアップを入れていなかった。テストする以前の問題だ。"; pay(5); S.flags.restore = true; return "戻す手順の抜けが見つかり、直せた。（バックアップの効果が 1/4 → 1/6 に）"; }],
+        ["取ってあるから大丈夫", () => "「取ってある」と「戻せる」は別の話。いざというときに戻せない例は、実際に多い。"]] },
+  { id: "shadow", min: 2, kick: "経理", title: "勝手に契約されたサービス",
+    q: "経理「営業部が、勝手にファイル共有サービスを契約してたみたいです。情シスは知ってました？」",
+    o: [["把握して、会社の管理下に置く（3万円）", () => { pay(3); return "設定を確かめ、二段階認証を付けた。知らないサービスは守れない。"; }],
+        ["便利ならいいか", () => { xtra("acct", 1); return "そのサービスのパスワードは、使い回しだった。（明日、👤が社内に直接1体）"; }]] },
+  { id: "alert", min: 2, kick: "監視ソフト", title: "帰り際のアラート",
+    q: "帰ろうとしたら、スマホに「不審な通信を検知」の通知。今日はもう疲れた。",
+    o: [["席に戻って確認する", () => "不審な通信を遮断してから帰った。少し遅くなったが、広がる前に止められた。"],
+        ["明日の朝に見る", () => { xtra("mal", 2); return "朝までに、社内のあちこちに広がっていた。（明日、🦠が社内に直接2体）"; }]] },
+  { id: "subsidy", min: 1, kick: "商工会", title: "IT導入の補助金",
+    q: "「セキュリティ対策に使える補助金があります。書類は少し面倒ですが、申請しますか？」",
+    o: [["申請する", () => { S.money += 12; return "面倒な書類を書き上げた。補助金が下りた。（お金 +12万円）"; }],
+        ["面倒なのでやめる", () => "国や自治体には、中小企業のセキュリティ対策を助ける制度がある。調べる価値はある。"]] },
+  { id: "dmarc", min: 2, kick: "取引先", title: "自社を名乗る詐欺メール",
+    q: "取引先から「御社の名前で、怪しいメールが届きましたよ」と連絡が来た。",
+    o: [["送信元を確かめる設定（DMARCなど）を入れる（5万円）", () => { pay(5); return "自社を名乗るなりすましメールが、相手に届きにくくなった。"; }],
+        ["うちのせいじゃないので放っておく", () => { S.hp -= 6; return "なりすましメールで、取引先がだまされた。「御社のメールでしたよね？」と信用を失った。（体力 -6）"; }]] },
+  { id: "vpneol", min: 2, cond: () => !S.up.patch, kick: "メーカー", title: "VPN機器のサポート終了",
+    q: "「お使いのVPN機器は、今月で更新の提供を終了します。後継機は15万円です」",
+    o: [["買い替える（15万円）", () => { pay(15); S.flags.newvpn = true; return "新しい機器に入れ替えた。これで、弱点が出るたびの当て直しも楽になる。（今後、🔧の当て直しが不要に）"; }],
+        ["まだ動くので使い続ける", () => { S.bonus = Object.assign(S.bonus || {}, { vpn: 3 }); return "更新が止まった機器は、攻撃者のリストに載った。（明日、🚪+3）"; }]] },
+  { id: "hdd", min: 1, kick: "総務", title: "古いハードディスク",
+    q: "総務「大掃除で、古いパソコンのハードディスクが10台出てきました。燃えないゴミでいいですか？」",
+    o: [["専門業者でデータを消して処分（3万円）", () => { pay(3); return "データを消してから処分した。消したつもりのデータも、専用の道具なら読み出せる。"; }],
+        ["燃えないゴミで出す", () => { S.hp -= 6; return "拾われたハードディスクから、顧客データが読み出された。（体力 -6）"; }]] },
+  { id: "logs", min: 1, kick: "自分", title: "記録（ログ）の保存",
+    q: "誰がいつ何をしたかの記録（ログ）、今は1週間で消える設定だ。長く保存するには5万円。",
+    o: [["保存する（5万円）", () => { pay(5); S.flags.logs = true; return "何かあっても、記録をたどって早く調べられる。（社内まで入られたときの後始末が半分に）"; }],
+        ["今のままでいい", () => "記録がないと、入られたときに「どこまでやられたか」が分からない。"]] },
+];
+function pickEvent() {
+  const elig = EV.filter(e => S.day >= e.min && !S.usedEv[e.id] && (!e.cond || e.cond()));
+  if (!elig.length || Math.random() < .15) return null;
+  const e = pick(elig);
+  S.usedEv[e.id] = true;
+  return e;
+}
+function showEvent(e) {
+  S.curEv = e;
+  document.body.className = "";
+  hud();
+  render(`<div class="scene">🌆 DAY ${S.day} ・ 夕方 ・ 退勤前</div><div class="ev"><div class="kick">${e.kick}</div><h2>${e.title}</h2><p class="q">${e.q}</p>
+    <div class="opts" id="evo">${e.o.map((o, i) => `<button onclick="G.ev(${i})">${o[0]}</button>`).join("")}</div><div id="evr"></div></div>`);
+}
+G.ev = (i) => {
+  const r = S.curEv.o[i][1]();
+  hud();
+  $("evo").innerHTML = `<button disabled style="border-color:var(--accent)">${S.curEv.o[i][0]}</button>`;
+  $("evr").innerHTML = `<div class="res">${r}</div><button class="go" onclick="${S.hp <= 0 ? "G.end(false)" : "G.nextDay()"}">${S.hp <= 0 ? "……" : "帰宅して、翌朝へ ▶"}</button>`;
+};
+
+/* ============ 準備（買う） ============ */
+/* ============ 昔の常識 → いま（エンディングで表示） ============ */
+const OLDNEW = [
+  ["パスワードは定期的に変える", "漏れていなければ変えなくていい", "pwrotate"],
+  ["記号や大文字を必ず混ぜる", "長さのほうが大事", "complexity"],
+  ["秘密の質問には本当の答えを", "答えもでたらめな文字列に（SNSで調べられる）", "secretq"],
+  ["パスワードは頭で覚える", "管理アプリに任せる", "pwmgr"],
+  ["SMSの二段階認証なら安心", "認証アプリやパスキーがより強い", "sms2fa"],
+  ["パスワード付きZIP＋別メール", "意味が薄い（政府も廃止）", "newhire"],
+  ["鍵マークがあれば安全なサイト", "偽サイトも鍵マーク付き", "survey"],
+  ["詐欺メールは日本語が変", "AIで自然な文面になった", null, "phish2"],
+  ["公衆Wi-Fiは絶対ダメ", "正式なものなら危険は下がった", "wifi"],
+  ["社内ネットワークの中は安全", "中でも毎回確かめる（ゼロトラスト）", null, "vpn2"],
+  ["ウイルス対策ソフトで十分", "ふるまいで見つける監視も要る", null, "mal"],
+  ["バックアップがあればOK", "切り離して、戻せるか試す", "bkdrive"],
+  ["教育すればミスは防げる", "ミスする前提で、報告しやすく", "report"],
+  ["漏えいはこっそり対処", "国への報告と本人通知が義務", "breachrpt"],
+];
+function oldNewRows() {
+  const R = S.callRes || {};
+  return OLDNEW.map(([o, n, cid, atk]) => {
+    const mark = cid && cid in R ? (R[cid] ? `<em class="ok">⭕</em>` : `<em class="ng">❌</em>`) : `<em></em>`;
+    const tap = cid ? `G.infoCall('${cid}')` : `G.infoAtk('${atk}')`;
+    return `<button class="onrow" onclick="${tap}"><span class="o">${o}</span><span class="n">→ ${n}</span>${mark}</button>`;
+  }).join("");
+}
+const NEWS = {
+  2: ["📧", "ウイルス付きメールが来はじめた"],
+  3: ["🚪", "VPN機器の弱点が狙われている"],
+  4: ["🎣", "二段階認証をすり抜ける手口と、AI製の詐欺メールが出た"],
+  5: ["🤝", "取引先が乗っ取られた"],
+  6: ["🕳️", "未知の弱点が狙われはじめた"],
+};
+G.prep = () => {
+  hud();
+  const W = WAVES[S.day];
+  const alerts = [];
+  if (NEWS[S.day]) alerts.push(`<button class="alert" onclick="G.infoAtk('${Object.keys(EN).find(k => EN[k].ic === NEWS[S.day][0])}')">${NEWS[S.day][0]} ${NEWS[S.day][1]}<span>ⓘ</span></button>`);
+  if (S.vuln && !S.up.patch) alerts.push(`<button class="alert" onclick="G.infoDef('patch')">🔧 機器に新しい弱点。当て直しが必要<span>ⓘ</span></button>`);
+  if (S.extra.length) alerts.push(`<div class="alert">${S.extra.map(k => k === "acct" ? "👤" : "🦠").join("")} 今日、社内に直接 ${S.extra.length}体</div>`);
+  if (S.bonus) alerts.push(`<div class="alert">${Object.keys(S.bonus).map(k => EN[k].ic + "+" + S.bonus[k]).join(" ")} 昨日の判断で、今日の攻撃が増える</div>`);
+  if (S.flags.intel) alerts.push(`<div class="alert" style="background:var(--okbg);color:var(--ok)">📡 情報共有のおかげで、今日は予報にない攻撃が来ない</div>`);
+  const newK = Object.keys(W).filter(k => !S.seen[k]);
+  S.seenOld = Object.assign({}, S.seen);
+  render(`<div class="scene">☀️ DAY ${S.day} ・ 昼 ・ 準備</div>
+    <div class="card"><h2>📡 今日の攻撃<small>タップで説明</small></h2><div class="fcl" id="fcl"></div><p class="hint" id="aim"></p><p class="hint">⚠️ 予報は外れることがある。予報にない攻撃が来る日もある</p>${alerts.join("")}</div>
+    <div class="boardwrap"><canvas id="cv"></canvas></div>
+    <div class="card"><h2>🛒 対策<small id="shopLeft"></small></h2><div class="slist" id="shop"></div></div>
+    <button class="go" onclick="G.night()">💼 始業する</button>`);
+  Object.keys(W).forEach(k => S.seen[k] = true);
+  setupCanvas(); drawBoard(); drawShop(); drawForecast();
+  $("cv").onclick = boardTapPrep;
+  if (newK.length) setTimeout(() => G.infoAtk(newK[0]), 250);   // 新しい攻撃は説明を自動で開く
+};
+function drawShop() {
+  const row = (k) => {
+    const t = TW[k], own = S.own[k];
+    const broken = own && k === "patch" && S.vuln && !S.up.patch;
+    let btn;
+    if (broken) btn = `<button class="act warn" ${S.money < 3 ? "disabled" : ""} onclick="event.stopPropagation();G.repatch()">当て直す<small>3万</small></button>`;
+    else if (own && t.up && !S.up[k]) btn = `<button class="act up" ${S.money < t.up.cost ? "disabled" : ""} onclick="event.stopPropagation();G.upgrade('${k}')">⬆強化<small>${t.up.cost}万</small></button>`;
+    else if (own) btn = `<span class="done">${S.up[k] ? "⭐Lv2" : "導入済"}</span>`;
+    else btn = `<button class="act" ${S.money < t.cost ? "disabled" : ""} onclick="event.stopPropagation();G.buy('${k}')">導入<small>${t.cost}万</small></button>`;
+    return `<div class="srow ${own ? (broken ? "alert" : "on") : ""}" onclick="G.infoDef('${k}')"><span class="ic">${t.ic}</span>
+      <span class="nm">${nameOf(k)}<small>止める ${hitsOf(k).map(h => EN[h].ic).join("")}${S.up[k] && LANE_DEF.includes(k) ? " ・📞の穴なし" : ""}</small></span><span class="i">ⓘ</span>${btn}</div>`;
+  };
+  $("shop").innerHTML = `<div class="sgrp">🚪 入口</div>${TKEYS.filter(k => TW[k].layer === "entry").map(row).join("")}
+    <div class="sgrp">🧱 社内</div>${TKEYS.filter(k => TW[k].layer === "inside").map(row).join("")}
+    <div class="sgrp">👥 人</div>
+    <div class="srow ${S.train ? "on" : ""}" onclick="G.infoDef('train')"><span class="ic">🎓</span><span class="nm">社員研修<small>📞社員が自分で判断できる</small></span><span class="i">ⓘ</span>
+      ${S.train ? `<span class="done">実施済</span>` : `<button class="act" ${S.money < TRAIN.cost ? "disabled" : ""} onclick="event.stopPropagation();G.train()">実施<small>${TRAIN.cost}万</small></button>`}</div>
+    <div class="sgrp">💼 最後の砦</div>
+    <div class="srow ${S.backup ? "on" : ""}" onclick="G.infoDef('backup')"><span class="ic">💾</span><span class="nm">バックアップ<small>🦠の被害を1/4に</small></span><span class="i">ⓘ</span>
+      ${S.backup ? `<span class="done">導入済</span>` : `<button class="act" ${S.money < 15 ? "disabled" : ""} onclick="event.stopPropagation();G.backup()">導入<small>15万</small></button>`}</div>`;
+  $("shopLeft").textContent = `残り ${S.money}万円`;
+}
+function drawForecast() {
+  const { W, moved } = waveNow(), seen = WAVES[S.day];
+  $("fcl").innerHTML = Object.keys(W).map(k => `<button class="atk ${!S.seenOld[k] ? "new" : ""} ${moved[k] ? "aim" : ""} ${W[k] < seen[k] ? "less" : ""}" onclick="G.infoAtk('${k}')"><span class="i">${EN[k].ic}</span><span class="c">×${W[k]}</span>${moved[k] ? `<span class="m">🎯+${moved[k]}</span>` : ""}</button>`).join("");
+  $("aim").innerHTML = Object.keys(moved).length ? "🎯 止められる攻撃は減り、守りの薄いところに回ってくる" : "";
+}
+function refresh() { if ($("shop")) { drawShop(); drawBoard(); drawForecast(); } }
+function spend(c) { S.money -= c; S.spent += c; hud(); }
+G.buy = (k) => { if (S.own[k] || S.money < TW[k].cost) return; spend(TW[k].cost); S.own[k] = true; refresh(); };
+G.upgrade = (k) => { const u = TW[k].up; if (!S.own[k] || S.up[k] || S.money < u.cost) return; spend(u.cost); S.up[k] = true; if (k === "patch") S.vuln = false; refresh(); };
+G.repatch = () => { if (S.money < 3) return; spend(3); S.vuln = false; refresh(); };
+G.train = () => { if (S.train || S.money < TRAIN.cost) return; spend(TRAIN.cost); S.train = true; refresh(); };
+G.backup = () => { if (S.backup || S.money < BACKUP.cost) return; spend(BACKUP.cost); S.backup = true; refresh(); };
+// 盤面の関門をタップしても説明が開く
+function boardTapPrep(ev) {
+  const r = $("cv").getBoundingClientRect();
+  const px = (ev.clientX - r.left) / CV.w, py = (ev.clientY - r.top) / CV.h;
+  for (const k of TKEYS) for (const l of lanesOf(k)) {
+    const y = TW[k].layer === "entry" ? ENTRY_Y : INSIDE_Y;
+    if (Math.abs(px - LANES[l].x) < 1 / 6 && Math.abs(py - y) < .06) return G.infoDef(k);
+  }
+}
+
+/* ============ 盤面の描画 ============ */
+const CV = { w: 360, h: 480, ctx: null };
+function setupCanvas(work) {
+  const c = $("cv");
+  const w = c.clientWidth || 360, h = Math.min(work ? 440 : 600, Math.round(w * (work ? 1.05 : 1.3)));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = w * dpr; c.height = h * dpr; c.style.height = h + "px";
+  const ctx = c.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  Object.assign(CV, { w, h, ctx });
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+function gate(ctx, k, lane, y, col, N) {
+  const { w, h } = CV;
+  const x = LANES[lane].x * w, gw = w / 3 - 16, gh = h * .085;
+  const on = S.own[k], act = active(k);
+  rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10);
+  if (on) { ctx.fillStyle = act ? col.gate : col.gateOff; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = act ? col.ok : "#d7263d"; ctx.stroke(); }
+  else { ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = col.slot; ctx.stroke(); ctx.setLineDash([]); }
+  ctx.globalAlpha = on ? (act ? 1 : .45) : .28;
+  ctx.fillStyle = "#000"; ctx.font = `${Math.round(gh * .55)}px sans-serif`;
+  ctx.fillText(TW[k].ic + (S.up[k] ? "⭐" : ""), x, y * h + 1);
+  ctx.globalAlpha = 1;
+  // 状態の文字は関門の枠の下に出す（枠と重ねない）
+  const sy = y * h + gh / 2 + Math.round(w * .024) * .9;
+  if (!on) { ctx.fillStyle = col.txt; ctx.font = `800 ${Math.round(w * .024)}px sans-serif`; ctx.fillText("未導入", x, sy); }
+  if (on && !act) { ctx.fillStyle = "#d7263d"; ctx.font = `900 ${Math.round(w * .024)}px sans-serif`; ctx.fillText(S.off[k] ? "停止中" : "要更新", x, sy); }
+  if (N && N.hole && TW[k].layer === "entry" && N.hole[lane] > 0) {
+    rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10); ctx.fillStyle = "rgba(215,38,61,.82)"; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * .032)}px sans-serif`; ctx.fillText(`穴 ${Math.ceil(N.hole[lane])}`, x, y * h + 1);
+  }
+  if (N && N.flash[k + lane] > 0) { ctx.globalAlpha = N.flash[k + lane] / .4; rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10); ctx.fillStyle = "rgba(47,227,165,.55)"; ctx.fill(); ctx.globalAlpha = 1; }
+}
+function drawBoard(N) {
+  const { w, h, ctx } = CV;
+  if (!ctx || !$("cv")) return;
+  const night = false;
+  const col = night
+    ? { bg: "#0f1a30", zoneIn: "#132241", lane: "rgba(120,150,210,.08)", txt: "#8fa0c4", line: "#3d5385", slot: "rgba(143,160,196,.45)", gate: "#1d3b3a", gateOff: "#3a1a26", ok: "#2fe3a5", goal: "#3a1a26" }
+    : { bg: "#f7f9fc", zoneIn: "#eef3fb", lane: "rgba(20,33,61,.045)", txt: "#5b6680", line: "#9aa6bd", slot: "rgba(91,102,128,.45)", gate: "#e2f6ec", gateOff: "#fde6e9", ok: "#14935a", goal: "#fdeef0" };
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = col.bg; rr(ctx, 0, 0, w, h, 16); ctx.fill();
+  ctx.fillStyle = col.zoneIn; ctx.fillRect(0, BOUND * h, w, (GOAL - BOUND) * h);
+  ctx.fillStyle = col.goal; ctx.fillRect(0, GOAL * h, w, h - GOAL * h);
+  LANES.forEach((l, i) => { if (i % 2 === 0) { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w / 6, .072 * h, w / 3, (GOAL - .072) * h); } });
+  ctx.fillStyle = col.line; ctx.globalAlpha = .35; ctx.fillRect(10, .072 * h, w - 20, 1); ctx.globalAlpha = 1;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  LANES.forEach(l => {
+    // アイコンと名前を横に並べ、見出しの帯に収める
+    const fs = Math.round(w * .036), ty = .036 * h;
+    ctx.font = `800 ${fs}px sans-serif`;
+    const tw = ctx.measureText(l.n).width;
+    ctx.font = `${fs}px sans-serif`;
+    const iw = ctx.measureText(l.ic).width + fs * .3;
+    const x0 = l.x * w - (iw + tw) / 2;
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#000"; ctx.font = `${fs}px sans-serif`; ctx.fillText(l.ic, x0, ty);
+    ctx.fillStyle = col.txt; ctx.font = `800 ${fs}px sans-serif`; ctx.fillText(l.n, x0 + iw, ty);
+    ctx.textAlign = "center";
+  });
+  ctx.fillStyle = col.txt; ctx.font = `900 ${Math.round(w * .027)}px sans-serif`; ctx.textAlign = "left";
+  ctx.fillText("入口", 6, (ENTRY_Y - .08) * h);
+  ctx.fillText("社内", 6, (BOUND + .04) * h);
+  ctx.textAlign = "center";
+  ctx.fillText("💼 会社のデータ・お金", w / 2, (GOAL + .025) * h);
+  ctx.strokeStyle = col.line; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, BOUND * h); ctx.lineTo(w, BOUND * h); ctx.stroke(); ctx.setLineDash([]);
+  TKEYS.forEach(k => lanesOf(k).forEach(l => gate(ctx, k, l, TW[k].layer === "entry" ? ENTRY_Y : INSIDE_Y, col, N)));
+  if (!N) return;
+  N.en.forEach(e => {
+    const x = e.x * w, y = e.y * h, r = w * .045;
+    ctx.fillStyle = e.inside ? "rgba(215,38,61,.92)" : EN[e.t].bypass ? "rgba(255,214,102,.95)" : "rgba(255,255,255,.95)";
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.lineWidth = e.sur ? 3 : 1.5; ctx.strokeStyle = e.sur ? "#c27c00" : e.inside ? "#a0162a" : "rgba(20,33,61,.35)"; ctx.stroke();
+    ctx.fillStyle = "#000"; ctx.font = `${Math.round(r * 1.2)}px sans-serif`; ctx.fillText(EN[e.t].ic, x, y + 1);
+  });
+  N.pops.forEach(p => {
+    ctx.globalAlpha = clamp(p.life / .4, 0, 1);
+    ctx.font = `900 ${Math.round(w * .03)}px sans-serif`;
+    const tw = ctx.measureText(p.t).width + 10;
+    const yy = p.y * h - (1.2 - p.life) * 16;
+    const cx = clamp(p.x * w, tw / 2 + 2, w - tw / 2 - 2);
+    ctx.fillStyle = p.bg; rr(ctx, cx - tw / 2, yy - 9, tw, 18, 6); ctx.fill();
+    ctx.fillStyle = p.fg; ctx.fillText(p.t, cx, yy);
+    ctx.globalAlpha = 1;
+  });
+}
+
+/* ============ 業務時間（ウェーブ＋問い合わせ） ============ */
+let NT = null, RAF = 0;
+function stopNight() { if (RAF) cancelAnimationFrame(RAF); RAF = 0; NT = null; closeSheet(); }
+function buildNight() {
+  const W = waveNow().W, q = [];
+  if (S.bonus) { for (const k in S.bonus) W[k] = (W[k] || 0) + S.bonus[k]; S.bonus = null; }
+  Object.entries(W).forEach(([k, n]) => { for (let i = 0; i < n; i++) q.push(k); });
+  shuffle(q);
+  const span = 6 + q.length * 1.2;
+  const spawns = q.map((k, i) => ({ k, at: 1.2 + (i / q.length) * span + rnd(-.3, .3), inside: k === "supply" }));
+  S.extra.forEach((k, i) => spawns.push({ k, at: 3 + i * 2.5, inside: true }));
+  S.extra = [];
+  spawns.sort((a, b) => a.at - b.at);
+  // 予報にない攻撃（一定の確率で、予報にない種類がまとまって来る）
+  let surprise = null;
+  if (S.day >= 2 && !S.flags.intel && Math.random() < SURPRISE_P) {
+    const cand = OUTER.concat(["pw2", "phish2"], S.day >= 4 ? ["vpn2"] : []);   // 新しい手口が、ニュースより先に来ることもある
+    const notIn = cand.filter(k => !W[k]);
+    const k = pick(notIn.length ? notIn : cand), n = 2 + Math.floor(S.day / 3), at0 = 2 + span * rnd(.25, .6);
+    for (let i = 0; i < n; i++) spawns.push({ k, at: at0 + i * .8, surprise: true });
+    spawns.sort((a, b) => a.at - b.at);
+    surprise = { k, n };
+  }
+  const cl = callsFor(S.day);
+  const calls = cl.map((c, i) => ({ c, at: 3 + (i + rnd(.1, .6)) * (span + 4) / cl.length }));
+  return { t: 0, spawns, en: [], pops: [], speed: 1, ko: 0, leak: [], dmg: 0, breach: 0, done: false, flash: {}, calls, cur: null, callLog: [], hole: [0, 0, 0], surprise };
+}
+function pop(N, x, y, t, kind) {
+  const C = { ok: ["#14935a", "#fff"], ng: ["#d7263d", "#fff"], warn: ["#c27c00", "#fff"] }[kind];
+  N.pops.push({ x, y, t, bg: C[0], fg: C[1], life: 1.2 });
+}
+function blocker(e, layer) {
+  for (const k of TKEYS) {
+    const t = TW[k];
+    if (t.layer !== layer || !lanesOf(k).includes(e.lane) || !hitsOf(k).includes(e.t) || !active(k)) continue;
+    if (k === "mfa" && S.flags.no2fa && e.boss) continue;
+    return k;
+  }
+  return null;
+}
+// 敵を社内に直接出す（問い合わせのミスなど）
+function spawnInside(N, t, from) {
+  const lane = t === "acct" ? 1 : pick([0, 2]);
+  N.en.push({ t, from, lane, x: LANES[lane].x - .09, y: BOUND + .02, inside: true });
+}
+function stepCalls(N, dt) {
+  if (N.cur) {
+    N.cur.t -= dt;
+    if (N.cur.t <= 0) { if (N.cur.res) { N.cur = null; drawCall(N); } else answerCall(N, null); }
+    else if (!N.cur.res && $("tbar")) $("tbar").style.width = (N.cur.t / CALL_T * 100) + "%";
+  }
+  if (!N.cur && N.calls.length && N.calls[0].at <= N.t) {
+    const c = N.calls.shift().c;
+    N.cur = { c, t: CALL_T, flip: Math.random() < .5 };
+    drawCall(N);
+  }
+}
+function answerCall(N, good) {
+  const cur = N.cur; if (!cur || cur.res) return;
+  const auto = good === null;
+  if (auto) good = Math.random() < (S.train ? .8 : S.flags.drill === S.day ? .7 : .5);
+  const c = cur.c, h = c.hit;
+  S.calls++; if (good) S.callsOk++;
+  if (auto && good && S.train) S.st.autoOk++;
+  const log = { id: c.id, ok: good, auto };
+  N.callLog.push(log);
+  (S.callRes = S.callRes || {})[c.id] = good;
+  if (!good) {
+    const guard = h.hole !== undefined && S.up[LANE_DEF[h.hole]] ? LANE_DEF[h.hole] : null;
+    if (guard) {
+      cur.saved = guard; S.st.saved = (S.st.saved || 0) + 1;
+      N.flash[guard + h.hole] = .8;
+      pop(N, LANES[h.hole].x, ENTRY_Y + .07, `⭐${TW[guard].up.n}で穴を防いだ`, "ok");
+    } else if (h.hole !== undefined) {
+      const l = h.hole, base = ["phish", "pw", "vpn"][l];
+      N.hole[l] = HOLE_T; S.st.holes++;
+      N.en.push({ t: base, from: base, lane: l, x: LANES[l].x - .08, y: TOP, inside: false, call: true });   // 攻撃者がすかさず穴を突く
+      pop(N, LANES[l].x, ENTRY_Y + .07, "📞ミスで穴が開いた", "ng");
+    }
+    if (h.spawn) { spawnInside(N, h.spawn, "call"); pop(N, .5, BOUND + .06, "📞ミス：社内に直接", "warn"); }
+    if (h.biz) { S.st.biz++; S.money = Math.max(0, S.money - h.biz); pop(N, .5, GOAL - .02, `業務が止まった 予算-${h.biz}万`, "warn"); }
+    if (h.hp) { const d = Math.round(h.hp * (1 + (S.day - 1) * DAY_SCALE)); S.hp -= d; N.dmg += d; N.leak.push({ from: "call", as: c.id, dmg: d, mit: false }); pop(N, .5, GOAL - .02, `${h.n} -${d}`, "ng"); }
+    if (h.off) {
+      const has = h.off === "backup" ? S.backup : S.own[h.off];
+      if (has) {
+        S.off[h.off] = true;
+        if (h.off === "backup") pop(N, .5, GOAL - .06, "💾バックアップが使えない", "ng");
+        else pop(N, LANES[lanesOf(h.off)[0]].x, (TW[h.off].layer === "entry" ? ENTRY_Y : INSIDE_Y) - .05, `${TW[h.off].ic}${TW[h.off].n}が止まった`, "ng");
+      } else spawnInside(N, h.off === "perm" ? "acct" : "mal", "call");
+    }
+  }
+  if (cur.saved) log.saved = cur.saved;
+  if (!good && !cur.saved && !h.biz) {
+    const p = Math.round(CALL_PEN * (1 + (S.day - 1) * DAY_SCALE));
+    S.hp -= p; N.dmg += p; log.pen = p;
+    pop(N, .5, BOUND - .06, `📞後始末 -${p}`, "ng");
+  }
+  cur.res = { good, auto }; cur.t = cur.saved ? 3.4 : 2.6;
+  drawCall(N); hud();
+}
+G.answer = (i) => { const N = NT; if (!N || !N.cur || N.cur.res) return; answerCall(N, (i === 0) !== N.cur.flip); };
+function drawCall(N) {
+  const box = $("inbox"); if (!box) return;
+  const cur = N.cur;
+  if (!cur) { box.innerHTML = `<div class="empty">📭 問い合わせはありません${N.calls.length ? "" : "（今日はもう来ない）"}</div>`; return; }
+  const c = cur.c;
+  if (cur.res) {
+    const g = cur.res.good;
+    box.innerHTML = `<div class="call ${g ? "ok" : "ng"}" onclick="G.skipCall()"><div class="who">📞 ${c.who}<span>${cur.res.auto ? (S.train ? "🎓 研修を思い出して自分で判断" : "⏳ 返事がないので自分で判断") : ""}</span></div>
+      <div class="r"><b>${g ? "⭕ " + c.good : "❌ " + c.bad}</b><br>${g ? c.ok : cur.saved ? `<span class="saved">⭐ ${TW[cur.saved].up.n}のおかげで被害なし。${SAVE_TXT[cur.saved]}</span>` : c.ng}</div></div>`;
+    return;
+  }
+  const opts = [[c.good, 1], [c.bad, 0]]; if (cur.flip) opts.reverse();
+  box.innerHTML = `<div class="call"><div class="who">📞 ${c.who}から<span>${S.train ? "🎓 返事がなくても8割は正しく判断" : "返事がないと自分で判断します"}</span></div><p class="q">${c.q}</p>
+    <div class="tb"><i id="tbar" style="width:100%"></i></div>
+    <div class="ans">${opts.map((o, i) => `<button onclick="G.answer(${i})">${o[0]}</button>`).join("")}</div></div>`;
+}
+G.skipCall = () => { const N = NT; if (N && N.cur && N.cur.res) { N.cur = null; drawCall(N); } };
+function nightStep(N, dt) {
+  N.t += dt;
+  stepCalls(N, dt);
+  while (N.spawns.length && N.spawns[0].at <= N.t) {
+    const s = N.spawns.shift();
+    const lane = s.k === "supply" ? pick([0, 1, 2]) : s.k === "acct" ? 1 : s.inside ? pick([0, 2]) : EN[s.k].lane;
+    const t = s.inside ? (lane === 1 ? "acct" : "mal") : s.k;
+    N.en.push({ t, from: s.k, lane, x: LANES[lane].x + .09, y: s.inside ? BOUND + .02 : TOP, inside: !!s.inside, boss: s.k === "pw" && Math.random() < .3, sur: !!s.surprise });
+    if (s.surprise && !N.surAnn) { N.surAnn = true; S.seen[s.k] = true; N.pops.push({ x: LANES[lane].x, y: TOP + .1, t: `⚠️ 予報にない攻撃！ ${EN[s.k].ic}×${N.surprise.n}`, bg: "#c27c00", fg: "#fff", life: 3 }); }
+  }
+  for (const k in N.flash) N.flash[k] -= dt;
+  N.hole = N.hole.map(v => Math.max(0, v - dt));
+  for (const e of N.en) {
+    e.y += EN[e.t].spd * dt;
+    if (!e.inside && !e.passE && e.y >= ENTRY_Y) {
+      e.passE = true;
+      const b = N.hole[e.lane] > 0 ? null : blocker(e, "entry");
+      if (!b && N.hole[e.lane] > 0 && S.own[TKEYS.find(k => TW[k].layer === "entry" && lanesOf(k).includes(e.lane))]) pop(N, e.x, ENTRY_Y - .05, "穴から侵入！", "ng");
+      if (b) { e.gone = true; N.ko++; S.ko++; N.flash[b + e.lane] = .4; pop(N, e.x, ENTRY_Y - .05, "ブロック", "ok"); continue; }
+      if (EN[e.t].bypass && S.own[TKEYS.find(k => TW[k].hits.includes(EN[e.t].base))]) pop(N, e.x, ENTRY_Y - .05, "すり抜け！", "warn");
+      else if (e.boss && S.own.mfa && S.flags.no2fa) pop(N, e.x, ENTRY_Y - .05, "社長の穴！", "warn");
+    }
+    if (!e.inside && e.y >= BOUND) {
+      e.inside = true; e.t = EN[e.from].to;
+      const bd = S.flags.logs ? BREACH_DMG / 2 : BREACH_DMG; S.hp -= bd; N.dmg += bd; N.breach++;
+      pop(N, e.x, BOUND, `侵入 -${BREACH_DMG}`, "ng");
+    }
+    if (e.inside && !e.passI && e.y >= INSIDE_Y) {
+      e.passI = true;
+      const b = blocker(e, "inside");
+      if (b) { e.gone = true; N.ko++; S.ko++; S.st.inKO++; N.flash[b + e.lane] = .4; pop(N, e.x, INSIDE_Y - .05, "ブロック", "ok"); continue; }
+    }
+    if (e.y >= GOAL) {
+      let dmg = Math.round(EN[e.t].dmg * (1 + (S.day - 1) * DAY_SCALE));
+      let mit = false;
+      if (e.t === "mal" && S.backup && !S.off.backup) { dmg = Math.round(dmg / (S.flags.restore ? 6 : 4)); mit = true; S.st.mitig++; }
+      if (S.flags.insurance && dmg >= 8) { dmg = Math.round(dmg / 2); S.flags.insurance = false; pop(N, e.x, GOAL - .07, "📄保険で半分", "ok"); }
+      N.dmg += dmg; S.hp -= dmg;
+      N.leak.push({ from: e.from === "call" ? e.t : e.from, as: e.t, dmg, mit, call: e.from === "call" || !!e.call });
+      pop(N, e.x, GOAL - .02, `-${dmg}`, "ng");
+      e.gone = true;
+    }
+  }
+  N.en = N.en.filter(e => !e.gone);
+  N.pops.forEach(p => p.life -= dt); N.pops = N.pops.filter(p => p.life > 0);
+  if (!N.spawns.length && !N.en.length && !N.calls.length && !N.cur) N.done = true;
+}
+G.night = () => {
+  closeSheet();
+  document.body.className = "";
+  hud();
+  render(`<div class="scene">💼 DAY ${S.day} ・ 業務時間</div>
+    <div class="boardwrap"><canvas id="cv"></canvas><div class="overlay" id="ov"><div><h2>💼 始業</h2><p>攻撃は、買った対策が自動で止める。<br>あなたは、社員からの📞問い合わせに答えよう。<br>放っておくと、社員が自分で判断してしまう。</p>
+      <button class="go blue" style="margin-top:14px" onclick="G.runNight()">業務開始</button></div></div></div>
+    <div class="boardbar"><span class="info" id="ninfo"></span><button class="pill" id="spd" onclick="G.speed()">▶▶ 2倍速</button></div>
+    <div class="inbox" id="inbox"></div>`);
+  setupCanvas(true);
+  NT = buildNight();
+  drawBoard(NT); updInfo(); drawCall(NT);
+  window.scrollTo(0, 0);
+};
+function updInfo() {
+  const N = NT; if (!N || !$("ninfo")) return;
+  const ok = N.callLog.filter(x => x.ok).length;
+  $("ninfo").textContent = `攻撃 残り ${N.spawns.length + N.en.length}　🧱侵入 ${N.breach}　📞 ${ok}/${N.callLog.length}`;
+}
+G.speed = () => { if (!NT) return; NT.speed = NT.speed === 1 ? 2 : 1; $("spd").classList.toggle("on", NT.speed === 2); };
+G.runNight = () => {
+  $("ov").remove();
+  const N = NT;
+  let last = performance.now();
+  const loop = (now) => {
+    if (NT !== N) return;
+    const dt = Math.min(.05, (now - last) / 1000) * N.speed; last = now;
+    nightStep(N, dt);
+    drawBoard(N); updInfo(); hud();
+    if (S.hp <= 0) { RAF = 0; return gameOver(N); }
+    if (N.done) { RAF = 0; setTimeout(() => { if (NT === N) endNight(); }, 900); return; }
+    RAF = requestAnimationFrame(loop);
+  };
+  RAF = requestAnimationFrame(loop);
+};
+// 何で倒れたか（最後の被害）
+function causeOf(N) {
+  const L = N.leak[N.leak.length - 1];
+  if (!L) return { k: "mal" };
+  if (L.from === "call") { const c = CALLS.find(x => x.id === L.as); return { k: "fraud", n: c ? c.hit.n : "詐欺" }; }
+  return { k: L.as === "acct" ? "acct" : "mal" };
+}
+const CRASH = {
+  mal: { scr: `<div class="rk">🔒</div><p class="big">会社のファイルは<br>すべて暗号化されました</p><p>戻してほしければ、72時間以内に<br>身代金を支払え。</p><p class="mono">FILES ENCRYPTED: 128,406</p>`,
+    head: "社内システム全面停止", sub: "ランサムウェア被害、復旧のめど立たず", boss: "……工場も止まった、請求書も出せない。君ひとりに任せきりにした、私の責任でもある。" },
+  acct: { scr: `<div class="rk">📤</div><p class="big">顧客情報 30,000件が<br>ネットに公開されました</p><p>取引先から、電話が鳴りやまない。</p><p class="mono">LEAKED: customers.xlsx</p>`,
+    head: "顧客情報 大量流出", sub: "不正ログインで、取引先にも被害広がる", boss: "……お客様に、どう説明すればいいんだ。謝罪会見の原稿を、一緒に考えてくれ。" },
+  fraud: { scr: `<div class="rk">💸</div><p class="big">口座の残高が<br>尽きました</p><p>「本物だと思ったんです」</p><p class="mono">BALANCE: ¥0</p>`,
+    head: "詐欺被害で資金繰り悪化", sub: "「本物だと思った」担当者が証言", boss: "……声も、メールも、本物にしか見えなかったそうだ。今の詐欺は、そういうものなんだな。" },
+};
+function gameOver(N) {
+  S.cause = causeOf(N);
+  const C = CRASH[S.cause.k];
+  const bw = document.querySelector(".boardwrap");
+  document.body.classList.add("crash");
+  if (bw) bw.classList.add("shake");
+  setTimeout(() => {
+    if (NT !== N || !bw) return;
+    const d = document.createElement("div");
+    d.className = "ransom";
+    d.innerHTML = `<div>${C.scr}<button class="go" style="margin-top:16px;background:#d7263d;box-shadow:0 4px 0 #7a0f1c" onclick="G.crashNext()">翌朝 ▶</button></div>`;
+    bw.appendChild(d);
+    if ($("inbox")) $("inbox").innerHTML = `<div class="empty" style="border-color:#d7263d;color:#d7263d">📵 問い合わせの電話が、鳴りやまない</div>`;
+  }, 1100);
+}
+G.crashNext = () => {
+  const N = NT;
+  if (!N) return;
+  document.body.classList.remove("crash");
+  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach, calls: N.callLog, surprise: N.surprise };
+  S.leaks += N.leak.length;
+  NT = null;
+  G.end(false);
+};
+function endNight() {
+  const N = NT;
+  S.last = { ko: N.ko, leak: N.leak, dmg: N.dmg, breach: N.breach, calls: N.callLog, surprise: N.surprise };
+  S.off = {};
+  S.leaks += N.leak.length;
+  if (N.surprise) S.st.sur++;
+  if (!N.leak.length && S.day >= 2) S.st.quiet++;
+  S.flags.intel = false;
+  NT = null;
+  if (S.hp <= 0) return G.end(false);
+  if (S.day >= DAYS) return G.end(true);
+  const ev = pickEvent();
+  if (ev) { showEvent(ev); return; }
+  G.nextDay();
+}
+G.nextDay = () => {
+  const N = { leak: S.last.leak };
+  if (N.leak.length > 0) S.budget = Math.min(70, Math.round(S.budget * 1.2) + 3);
+  else S.budget = Math.max(30, Math.round(S.budget * .85));
+  S.day++;
+  S.money += S.budget;
+  if (S.hp <= 0) return G.end(false);
+  if (VULN_DAYS.includes(S.day) && S.own.patch && !S.up.patch && !S.flags.newvpn) S.vuln = true;
+  G.morning();
+}
+
+/* ============ 称号 ============ */
+const BADGES = [
+  { id: "clear", ic: "🛡️", n: "生還", d: "7日間、会社を守り抜いた", ok: (w) => w },
+  { id: "iron", ic: "🏰", n: "鉄壁のひとり情シス", d: "体力60以上でクリア", ok: (w) => w && S.hp >= 60 },
+  { id: "call", ic: "📞", n: "問い合わせの鬼", d: "問い合わせ20件以上、正解率90%以上", ok: () => S.calls >= 20 && S.callsOk / S.calls >= .9 },
+  { id: "layer", ic: "🧱", n: "多層防御の使い手", d: "社内で20件以上の攻撃を止めた", ok: () => S.st.inKO >= 20 },
+  { id: "backup", ic: "💾", n: "最後の砦", d: "バックアップで3回以上被害を軽くした", ok: () => S.st.mitig >= 3 },
+  { id: "train", ic: "🎓", n: "研修のたまもの", d: "研修のおかげで、社員が5回以上正しく判断した", ok: () => S.st.autoOk >= 5 },
+  { id: "sur", ic: "⚠️", n: "予報は当てにならない", d: "予報にない攻撃を2回以上しのいだ", ok: (w) => S.st.sur >= 2 && (w || S.day >= 6) },
+  { id: "passkey", ic: "🔑", n: "パスキー推進派", d: "二段階認証をパスキーに強化した", ok: () => !!S.up.mfa },
+  { id: "zt", ic: "🌐", n: "ゼロトラスト導入", d: "機器の更新をゼロトラストに強化した", ok: () => !!S.up.patch },
+  { id: "full", ic: "🧰", n: "全部入り", d: "すべての対策・強化・バックアップ・研修をそろえた", ok: () => TKEYS.every(k => S.own[k] && (!TW[k].up || S.up[k])) && S.backup && S.train },
+  { id: "quiet", ic: "🌙", n: "誰にも褒められない", d: "被害ゼロの日が3日以上", ok: () => S.st.quiet >= 3 },
+  { id: "thrift", ic: "💴", n: "倹約家", d: "使ったお金150万円以下でクリア", ok: (w) => w && S.spent <= 150 },
+  { id: "doubt", ic: "🙅", n: "疑いすぎ注意", d: "慎重すぎて、仕事を2回以上止めた", ok: () => S.st.biz >= 2 },
+  { id: "holes", ic: "🕳️", n: "穴だらけ", d: "問い合わせのミスで、入口に5回以上穴を開けた", ok: () => S.st.holes >= 5 },
+  { id: "old", ic: "📼", n: "昔の常識の人", d: "「昔の常識」の問い合わせで3回以上まちがえた", ok: () => OLDNEW.filter(r => r[2] && S.callRes[r[2]] === false).length >= 3 },
+  { id: "yes", ic: "🙇", n: "社長のイエスマン", d: "社長の二段階認証を外してあげた", ok: () => !!S.flags.no2fa },
+  { id: "box", ic: "📦", n: "100%を信じた", d: "「完全防御ボックス」を買った", ok: () => !!S.flags.snake },
+  { id: "dead", ic: "💀", n: "倒産", d: "会社を倒産させた", ok: (w) => !w },
+];
+const BKEY = "hitori-joshisu-badges";
+function loadBadges() { try { return JSON.parse(localStorage.getItem(BKEY) || "{}") || {}; } catch (e) { return {}; } }
+function saveBadges(o) { try { localStorage.setItem(BKEY, JSON.stringify(o)); } catch (e) {} }
+function badgeGrid(have, fresh) {
+  return `<div class="bgrid">${BADGES.map(b => have[b.id]
+    ? `<div class="bdg on ${fresh && fresh[b.id] ? "new" : ""}"><span class="bi">${b.ic}</span><b>${b.n}</b><small>${b.d}</small>${fresh && fresh[b.id] ? `<i>NEW</i>` : ""}</div>`
+    : `<div class="bdg"><span class="bi">？</span><b>？？？</b><small>${b.d}</small></div>`).join("")}</div>`;
+}
+G.badges = () => {
+  const have = loadBadges();
+  sheet(`<div class="shk">コレクション</div><h2>🏅 称号 ${BADGES.filter(b => have[b.id]).length}/${BADGES.length}</h2>
+    <p class="long">プレイの結果に応じて、称号がもらえます。集めた称号は、このブラウザに保存されます。</p>${badgeGrid(have)}`);
+};
+
+/* ============ エンディング ============ */
+G.end = (ok) => {
+  stopNight();
+  document.body.className = "";
+  $("hud").classList.remove("on");
+  const hp = Math.max(0, Math.round(S.hp));
+  let rank, lead;
+  if (!ok) { rank = "倒産"; lead = `${S.day}日目、会社の体力が尽きた。<br>攻撃者たちは、もう次の会社を探している。`; }
+  else if (hp >= 60) { rank = "鉄壁のひとり情シス"; lead = "7日間、ほとんど何も起きなかった。<br>だから社長は、最後まで「本当に攻撃なんて来てるのか？」と言っていた。<br>それが、守る側の仕事の正体だ。"; }
+  else if (hp >= 40) { rank = "現場の守護神"; lead = "いくつか被害は出た。それでも会社は回り続けた。"; }
+  else if (hp >= 20) { rank = "満身創痍の情シス"; lead = "会社は生き残った。ぎりぎりで。<br>今日も社長室に呼ばれている。"; }
+  else { rank = "首の皮一枚"; lead = "倒産だけは免れた。<br>机には、取引先へのお詫び状の束が残っている。"; }
+  const got = BADGES.filter(b => b.ok(ok)), have = loadBadges(), fresh = {};
+  got.forEach(b => { if (!have[b.id]) fresh[b.id] = true; have[b.id] = true; });
+  saveBadges(have);
+  const nHave = BADGES.filter(b => have[b.id]).length;
+  const C = !ok && CRASH[(S.cause || { k: "mal" }).k];
+  const gogai = C ? `<div class="gogai"><div class="gk">号外</div><div class="gb"><small>DAY ${S.day} ・ 社員30人の会社</small><h2>${C.head}</h2><p>${C.sub}</p></div></div>
+    <div class="boss angry" style="margin-top:12px"><div class="av">👔</div><div class="say"><b>社長</b>${C.boss}</div></div>` : "";
+  const text = `「ひとり情シス防衛戦」${ok ? "7日間を守り抜いた" : S.day + "日目に倒産した"}。\n称号【${rank}】${got.length ? " ほか" + got.map(b => b.ic).join("") : ""} 体力${hp} / 止めた攻撃${S.ko}件 / 問い合わせ正解${S.callsOk}/${S.calls}\n#ひとり情シス防衛戦`;
+  const sheetRows = OUTER.map(k => {
+    const nt = NEWTYPE.find(x => EN[x].base === k);
+    return `<div class="crow"><button onclick="G.infoAtk('${k}')">${EN[k].ic}</button><span>→</span><b>${stoppers(k).map(s => s.slice(0, 2)).join("")}</b>
+      <span class="sep"></span><button onclick="G.infoAtk('${nt}')">${EN[nt].ic}</button><span>→</span><b>${stoppers(nt).map(s => s.slice(0, 2)).join("")}</b>
+      <span class="sep"></span><button onclick="G.infoAtk('${EN[k].to}')">${EN[EN[k].to].ic}</button><span>→</span><b>${stoppers(EN[k].to).map(s => s.slice(0, 2)).join("")}</b></div>`;
+  }).join("");
+  render(`<div class="end">
+    ${gogai}
+    <div class="rank ${ok ? "" : "bad"}">${rank}</div>
+    <h1>${ok ? "7日間、守り抜いた。" : "会社は倒産した。"}</h1>
+    <p class="lead">${lead}</p>
+    <div class="trio">
+      <div><b>${hp}</b><small>残った体力</small></div>
+      <div><b>${S.ko}</b><small>止めた攻撃</small></div>
+      <div><b>${S.leaks}</b><small>通した攻撃</small></div>
+    </div>
+    <div class="card"><h2>🏅 今回の称号<small>コレクション ${nHave}/${BADGES.length}</small></h2>
+      ${got.length ? `<div class="bgrid">${got.map(b => `<div class="bdg on ${fresh[b.id] ? "new" : ""}"><span class="bi">${b.ic}</span><b>${b.n}</b><small>${b.d}</small>${fresh[b.id] ? `<i>NEW</i>` : ""}</div>`).join("")}</div>` : `<p class="calm">今回は称号なし。</p>`}
+      <button class="pill" style="margin-top:10px;background:var(--acbg);color:var(--accent)" onclick="G.badges()">すべての称号を見る</button></div>
+    <div class="card"><h2>📘 攻撃と対策<small>アイコンをタップで説明</small></h2>${sheetRows}
+      <div class="crow"><button onclick="G.infoAtk('supply')">🤝</button><span>→</span><b>🗂️🛡️</b><span class="sep"></span><button onclick="G.infoDef('backup')">💾</button><span style="font-size:12px;color:var(--sub)">やられても戻せる</span></div>
+      <p class="long" style="margin-top:12px">どんな対策にも、すり抜ける手口がある。だから入口で止めるだけでなく、社内で広げず、最後はバックアップで立ち直る。これを「多層防御」という。</p>
+      <p class="long">現実で、個人がまずやるなら：二段階認証かパスキーを設定する。パスワードを使い回さない。更新はすぐ当てる。お金の話は折り返して確かめる。大事なデータはバックアップする。</p></div>
+    <div class="card"><h2>📚 昔の常識 → いま<small>タップで説明</small></h2>${oldNewRows()}
+      <p class="hint">⭕❌は、今回その問い合わせに答えた結果</p></div>
+    <div class="share">
+      <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(GAME_URL)}" target="_blank" rel="noopener">𝕏 結果をポスト</a>
+      <button onclick="G.start()">もう一度</button>
+    </div>
+    <p class="note">このゲームはフィクションです。数値はゲーム用に単純化したものです。<br>実況・配信・動画投稿・収益化OK ／ <a href="https://red-freegames.github.io/">RED FREE GAMES</a> の他のゲームで遊ぶ</p>
+  </div>`);
+  window.scrollTo(0, 0);
+};
+
+window.addEventListener("resize", () => { if ($("cv")) { setupCanvas(!!NT); drawBoard(NT || undefined); } });
+window.G = G;
+G.title();
+</script>
+</body>
+</html>
