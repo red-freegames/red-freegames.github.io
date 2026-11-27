@@ -21,9 +21,8 @@
         await wait(120);
         if (S.curOrder.join(',') !== '0,1,2') shuffledSeen++;
         const q = S.st.qs[S.st.qi];
-        let bi = 0;
-        q.opts.forEach((o, i) => { if (o.d < q.opts[bi].d) bi = i; });
-        NK.answer(bi);
+        const order = [0, 1, 2].sort((a, b) => q.opts[a].d - q.opts[b].d);
+        NK.answer(S.st.streak >= 3 && S.st.susp < 45 ? order[1] : order[0]);
       } else if (S.phase === 'aizuchi'){
         aizuchiSeen++;
         const az = S.az;
@@ -36,12 +35,13 @@
       }
     }
     ck('reached end', S.phase === 'end', S.phase);
-    ck('ending is clear', S.lastEnding === 'clear', S.lastEnding);
+    ck('ending is a clear kind', __NK__.CLEAR_KINDS.includes(S.lastEnding), S.lastEnding);
     ck('option order shuffled at least once', shuffledSeen >= 1, shuffledSeen);
     ck('aizuchi appeared 5 times', aizuchiSeen === 5, aizuchiSeen);
     ck('all 15 answered', S.st.qi === 15, S.st.qi);
-    ck('end screen title', document.getElementById('endTitle').textContent.includes('寝ていいよ'), document.getElementById('endTitle').textContent);
-    ck('ending saved to zukan', !!JSON.parse(localStorage.getItem('nk_endings_v1') || '{}').clear);
+    ck('end screen title', document.getElementById('endTitle').textContent === __NK__.ENDINGS[S.lastEnding].title, document.getElementById('endTitle').textContent);
+    ck('ending saved to zukan', !!JSON.parse(localStorage.getItem('nk_endings_v1') || '{}')[S.lastEnding]);
+    ck('title shown on end screen', !!S.title && document.getElementById('endStats').innerHTML.includes('称号「' + S.title + '」'), S.title);
     ck('stage clear recorded', !!JSON.parse(localStorage.getItem('nk_clears_v1') || '{}').s2);
     NK.shareImage();
     ck('share image did not throw', true);

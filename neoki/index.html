@@ -98,6 +98,12 @@
   .zend { display:flex; gap:9px; align-items:center; background:rgba(255,255,255,.06); border-radius:10px; padding:9px 12px; margin-top:6px; font-size:13px; }
   .zend .zi { font-size:18px; }
   .zend.locked { opacity:.45; }
+  details.hz { margin-top:12px; background:#17142a; border-radius:10px; padding:9px 12px; font-size:13px; }
+  details.hz summary { font-weight:800; cursor:pointer; text-align:center; }
+  .hzi { margin-top:7px; padding-top:7px; border-top:1px solid rgba(255,255,255,.08); line-height:1.5; }
+  .hzi .hq { display:block; font-size:11px; opacity:.6; }
+  .hzi.locked { opacity:.45; }
+  #endStats .ttlb { display:inline-block; margin-bottom:6px; padding:4px 14px; border-radius:999px; background:rgba(255,215,106,.14); border:1px solid rgba(255,215,106,.5); color:#ffd76a; font-weight:900; }
   .foot { padding:10px 16px 14px; text-align:center; font-size:10px; color:rgba(255,255,255,.35); }
   /* 縦が短い端末：操作エリアを詰めて会話ログの高さを確保 */
   @media (max-height:700px){
@@ -156,6 +162,8 @@
       ⏱️ 返事を<b>悩むほど眠気が加速</b>する。通話が長引くほど、さらに加速。<br>
       🌊 ときどき<b>眠気の波</b>が来て、眠気が一気に加速する。<br>
       💔 <b>不信感</b>は返事を間違えると上がる。100で「もういい、別れる」。溜まると機嫌が悪くなり、許してもらいにくくなる。<br>
+      💗 良い返事が続くと彼女が<b>甘えモード</b>に。声が甘くて、眠くなる。<br>
+      🔁 調子のいい<b>約束</b>をすると、あとで<b>追及</b>される。<br>
       質問は毎回ランダム、正解の場所もシャッフルされる。<br>
       眠気が限界に近づくと、言ってはいけない<b>「本音」</b>のボタンが出てくる。押すなよ、絶対に押すなよ。
     </div>
@@ -183,13 +191,13 @@
 /* ================= 設定・データ・ロジック ================= */
 const STAGES = [
   { id:'s1', short:'まだ起きてる？', totalQ:10, tick:0.32, slowSec:12, slowPenalty:4, suspStart:0, creep:0, slapMax:4, honneAt:70, azBase:2.1, azWidthMul:1.3, aizuchiAfter:[2,5,8], rage:false,
-    accelDiv:14, rampDiv:360, waveStart:55, waveCycle:70, waveDur:7, waveMul:1.5,
+    accelDiv:14, accelGrace:3, rampDiv:360, comboSleep:1.5, comboMax:5, fuMax:1, waveStart:55, waveCycle:70, waveDur:7, waveMul:1.5,
     desc:'彼女はまだ穏やか。眠気もゆるやか。全10問。' },
-  { id:'s2', short:'ねえ、起きてる？', totalQ:15, tick:0.45, slowSec:9, slowPenalty:6, suspStart:0, creep:0, slapMax:3, honneAt:65, azBase:1.7, azWidthMul:1.0, aizuchiAfter:[2,5,8,11,14], rage:false,
-    accelDiv:10, rampDiv:240, waveStart:45, waveCycle:55, waveDur:8, waveMul:1.8,
+  { id:'s2', short:'ねえ、起きてる？', totalQ:15, tick:0.32, slowSec:9, slowPenalty:6, suspStart:0, creep:0, slapMax:3, honneAt:65, azBase:1.7, azWidthMul:1.0, aizuchiAfter:[2,5,8,11,14], rage:false,
+    accelDiv:10, accelGrace:4, rampDiv:300, comboSleep:2, comboMax:5.5, fuMax:2, waveStart:45, waveCycle:55, waveDur:8, waveMul:1.8,
     desc:'いつもの尋問電話。全15問。悩むほど眠気が加速する。' },
   { id:'s3', short:'もう疲れた', totalQ:18, tick:0.56, slowSec:6, slowPenalty:8, suspStart:30, creep:0.22, slapMax:2, honneAt:55, azBase:1.25, azWidthMul:0.7, aizuchiAfter:[2,5,8,11,14,17], rage:true,
-    accelDiv:7, rampDiv:200, waveStart:38, waveCycle:45, waveDur:7, waveMul:2.0,
+    accelDiv:7, accelGrace:2, rampDiv:200, comboSleep:0, comboMax:0, fuMax:3, /* 不機嫌なので甘えモードは来ない */ waveStart:38, waveCycle:45, waveDur:7, waveMul:2.0,
     desc:'最終ステージ。彼女は最初から不機嫌。優しくしても怒るし、時間でもイライラが溜まる。眠気の加速も波も最大。地雷質問あり。全18問。' },
 ];
 const AIZUCHI_HIT = -4, AIZUCHI_MISS = 7, SLAP_SLEEP = -12, SLAP_SUSP = 5;
@@ -200,7 +208,7 @@ const QUESTIONS = [
     { t:'仕事が立て込んでて、気づかなかった', d:4, s:0, r:'ふーん…' },
     { t:'え、遅かった？ 普通じゃない？', d:14, s:-4, r:'普通って何？ 私からの連絡、そんなもんなんだ' } ] },
   { q:'今日、飲み会に女の子いた？', honne:'いたよ。可愛い子もいた', opts:[
-    { t:'いたけど、ずっと男と野球の話してた。写真送ろうか？', d:-6, s:2, r:'…送らなくていい。信じる' },
+    { t:'いたけど、ずっと男と野球の話してた。写真送ろうか？', d:-6, s:2, mem:'photo', r:'…送らなくていい。信じる' },
     { t:'会社の人たちだけだよ', d:4, s:0, r:'会社の人たち、ね…' },
     { t:'いたけど何もないって', d:14, s:-4, r:'『何もない』って言う人ほど何かある' } ] },
   { q:'私と仕事、どっちが大事？', honne:'そりゃ仕事でしょ', opts:[
@@ -224,7 +232,7 @@ const QUESTIONS = [
     { t:'縁起でもないこと言うなよ', d:4, s:0, r:'答えてないじゃん' },
     { t:'人間いつか死ぬからな', d:14, s:-4, r:'冷た…' } ] },
   { q:'浮気したこと、ある？', honne:'今まさに電話で浮気中', opts:[
-    { t:'ないし、しない。ミサキだけだよ', d:-6, s:2, r:'…証拠はないけど、信じる' },
+    { t:'ないし、しない。ミサキだけだよ', d:-6, s:2, mem:'only', r:'…証拠はないけど、信じる' },
     { t:'ないよ、多分', d:4, s:0, r:'多分って何？ 曖昧なのやめて' },
     { t:'男はみんな浮気する生き物だろ', d:14, s:-4, r:'開き直ったね' } ] },
   { q:'今、私のこと考えてた？', honne:'正直、寝ることしか考えてない', opts:[
@@ -236,7 +244,7 @@ const QUESTIONS = [
     { t:'うん、普通に', d:4, s:0, r:'普通に、か' },
     { t:'電話越しだとよく聞こえない', d:14, s:-4, r:'聞く気がないだけじゃない？' } ] },
   { q:'明日、私と会うの楽しみ？', honne:'正直、家で寝てたい', opts:[
-    { t:'もちろん。何時にどこ行くか、もう決めてる', d:-6, s:2, r:'ほんと？ 楽しみにしてる' },
+    { t:'もちろん。何時にどこ行くか、もう決めてる', d:-6, s:2, mem:'plan', r:'ほんと？ 楽しみにしてる' },
     { t:'楽しみだよ', d:4, s:0, r:'棒読み…' },
     { t:'明日はゆっくり寝たいかも', d:14, s:-4, r:'私より睡眠なんだ、やっぱり' } ] },
   { q:'私って、重い？', honne:'重い。かなり重い', opts:[
@@ -244,7 +252,7 @@ const QUESTIONS = [
     { t:'たまに、かな', d:4, s:0, r:'たまに、ね…' },
     { t:'重い自覚あるなら直して', d:14, s:-4, r:'……最低' } ] },
   { q:'他の女とLINEしてない？', honne:'してるよ、さっきまで', opts:[
-    { t:'してない。履歴、今度見せるよ', d:-6, s:2, r:'見せなくていい。…今度見せて' },
+    { t:'してない。履歴、今度見せるよ', d:-6, s:2, mem:'history', r:'見せなくていい。…今度見せて' },
     { t:'仕事の連絡だけだよ', d:4, s:0, r:'仕事の女の人、ね' },
     { t:'いちいち詮索しないで', d:14, s:-4, r:'詮索って…怪しい' } ] },
   { q:'愛してるって言って', honne:'そういうの強制しないで', opts:[
@@ -260,15 +268,15 @@ const QUESTIONS = [
     { t:'1時くらいじゃない？', d:4, s:0, r:'くらい、ね。適当…' },
     { t:'時計なんて見てない', d:14, s:-4, r:'私との時間、数える気もないんだ' } ] },
   { q:'私の誕生日、ちゃんと覚えてる？', honne:'やばい、ど忘れした', opts:[
-    { t:'もちろん。サプライズも考えてるから楽しみにしてて', d:-6, s:2, r:'…ほんと？ 期待しちゃう' },
+    { t:'もちろん。サプライズも考えてるから楽しみにしてて', d:-6, s:2, mem:'surprise', r:'…ほんと？ 期待しちゃう' },
     { t:'覚えてるよ、多分', d:4, s:0, r:'多分って言った。今、多分って言った' },
     { t:'え、何月だっけ', d:14, s:-4, r:'……忘れてたんだ' } ] },
   { q:'昨日送った私の写真、ちゃんと見た？', honne:'見てない', opts:[
-    { t:'見た。あの笑顔、保存したよ', d:-6, s:2, r:'…！ 保存したの？ …えへへ' },
+    { t:'見た。あの笑顔、保存したよ', d:-6, s:2, mem:'savedPhoto', r:'…！ 保存したの？ …えへへ' },
     { t:'見たよ', d:4, s:0, r:'感想は？ …ないの？' },
     { t:'写真、多すぎてどれか分からない', d:14, s:-4, r:'送ったの1枚だけど' } ] },
   { q:'あんたのスマホ、パスワード教えて', honne:'絶対に無理', opts:[
-    { t:'教えるよ。でもミサキのも教えてね', d:-6, s:2, r:'…え、私のは…まあ、いいけど' },
+    { t:'教えるよ。でもミサキのも教えてね', d:-6, s:2, mem:'pass', r:'…え、私のは…まあ、いいけど' },
     { t:'なんで急に？', d:4, s:0, r:'答えられない理由があるんだ' },
     { t:'嫌だ。プライバシーはあるし', d:14, s:-4, r:'プライバシー、ね。私にはないんだ' } ] },
   { q:'私が5キロ太ったら、どうする？', honne:'さすがに引く', opts:[
@@ -288,7 +296,7 @@ const QUESTIONS = [
     { t:'上位ではあるよ', d:4, s:0, r:'上位って何位？ 1位じゃないんだ' },
     { t:'順位つけるものじゃないだろ', d:14, s:-4, r:'逃げた。つまり1位じゃない' } ] },
   { q:'元カノとまだ連絡、取ってないよね？', honne:'たまに生存確認はしてる', opts:[
-    { t:'取ってない。連絡先も消した', d:-6, s:2, r:'…消したんだ。…うん、信じる' },
+    { t:'取ってない。連絡先も消した', d:-6, s:2, mem:'exDeleted', r:'…消したんだ。…うん、信じる' },
     { t:'向こうからは来ないよ', d:4, s:0, r:'来たら返すの？ 聞き方、怪しい' },
     { t:'誕生日に一言くらいは送る', d:14, s:-4, r:'……なんで覚えてるの、誕生日' } ] },
   { q:'声が小さい。…寝そうになってない？', honne:'なってる', opts:[
@@ -296,6 +304,41 @@ const QUESTIONS = [
     { t:'ちょっと眠いのは事実', d:4, s:0, r:'正直なのはいいけどさ…' },
     { t:'正直、限界近い', d:14, s:-4, r:'限界、ね。私との電話が' } ] },
 ];
+/* 追及：さっきの「約束」を覚えていて、数問後に掘り返してくる（mem の付いた答えを選ぶと発生） */
+const FOLLOWUPS = {
+  photo: { q:'…やっぱり、さっきの飲み会の写真送って', honne:'撮ってない。勢いで言った', followup:true, opts:[
+    { t:'今送った。男しか写ってないやつ', d:-8, s:2, r:'…ほんとに男ばっか。ふふ、疑ってごめん' },
+    { t:'え、送らなくていいって言ったじゃん', d:10, s:0, r:'言ったけど。送れない理由あるの？' },
+    { t:'…あ、写真撮ってなかったわ', d:20, s:-4, r:'は？ じゃあさっきの『写真送ろうか』は何だったの？' } ] },
+  exDeleted: { q:'連絡先、消したんだよね。…じゃあ元カノの誕生日も、もう覚えてない？', honne:'3月14日', followup:true, opts:[
+    { t:'覚えてない。本当にもう関係ない', d:-8, s:2, r:'…よかった。それでいい' },
+    { t:'誕生日なんて最初から興味なかった', d:8, s:0, r:'最初から、ね。付き合ってたのに？' },
+    { t:'えーと、確か3月の…あ', d:20, s:-4, r:'……消したのに、覚えてるんだ' } ] },
+  surprise: { q:'さっき言ってた誕生日のサプライズって、何？ ヒントだけ', honne:'何も考えてない', followup:true, opts:[
+    { t:'言ったらサプライズにならないよ。楽しみにしてて', d:-8, s:2, r:'…ずるい。…楽しみにする' },
+    { t:'うーん…ケーキ、とか？', d:10, s:0, r:'とか、って。まだ考えてないでしょ' },
+    { t:'あれは…勢いで言った', d:20, s:-4, r:'勢い。私の誕生日、勢いなんだ' } ] },
+  savedPhoto: { q:'保存したって言った写真、私どんな服着てた？', honne:'保存してない', followup:true, opts:[
+    { t:'服より、顔ばっかり見てた', d:-8, s:2, r:'…っ、ばか。…正解にしといてあげる' },
+    { t:'えっと…白っぽいやつ？', d:12, s:0, r:'…黒なんだけど' },
+    { t:'ごめん、実はまだちゃんと見てない', d:20, s:-4, r:'保存したって言ったよね、さっき' } ] },
+  plan: { q:'明日のこと、もう決めてるんだよね。何時にどこ？', honne:'何も決めてない', followup:true, opts:[
+    { t:'10時に駅前。あとは着いてからのお楽しみ', d:-8, s:2, r:'…ちゃんと決めてる。えらい' },
+    { t:'ミサキの行きたいとこでいいよ', d:10, s:0, r:'決めてるって言ったのは誰？' },
+    { t:'…起きれたら連絡する', d:20, s:-4, r:'起きれたら？ 楽しみなんじゃなかったの？' } ] },
+  pass: { q:'パスワード教えてくれるんだよね。じゃあ今、言って', honne:'教えるわけない', followup:true, opts:[
+    { t:'ミサキの誕生日。…付き合った日に変えた', d:-8, s:2, r:'…え、ほんと？ …ずるい' },
+    { t:'明日、直接見せる', d:8, s:0, r:'今は言えないんだ' },
+    { t:'…眠くて思い出せない', d:20, s:-4, r:'自分のパスワード忘れる人、いる？' } ] },
+  only: { q:'「ミサキだけ」って言ったよね。…じゃあ今鳴った通知、誰？', honne:'マッチングアプリの通知', followup:true, opts:[
+    { t:'ゲームの通知。うるさいから今アプリ消した', d:-8, s:2, r:'…消したんだ。そこまでしなくていいのに。…嬉しいけど' },
+    { t:'通知なんて鳴ってないよ', d:10, s:0, r:'鳴った。私、耳いいから' },
+    { t:'…あ、それは会社の後輩の子', d:20, s:-4, r:'子、ね。女の子なんだ' } ] },
+  history: { q:'履歴見せるって言ったよね。トーク一覧の一番上、誰？', honne:'知らない女', followup:true, opts:[
+    { t:'ミサキ。ずっと一番上', d:-8, s:2, r:'…ふふ、知ってた' },
+    { t:'公式アカウント、かな', d:8, s:0, r:'かな、って。見ればわかるでしょ' },
+    { t:'…一番上は、ちょっと見せられない', d:20, s:-4, r:'見せるって言ったのに？' } ] },
+};
 /* 最終ステージ専用の地雷質問：どの答えも不信感が上がる */
 const TRAPS = [
   { q:'あんたの元カノの話、もっと詳しく聞かせて', honne:'語りたくない', trap:true, opts:[
@@ -332,7 +375,45 @@ const ENDINGS = {
   sleep:   { icon:'💤', name:'エンディング「寝落ちバレ」', title:'「…寝てるでしょ。いびき、聞こえてる」', sub:'限界だった。静寂のあと、遠くで電話が切れる音がした。' },
   breakup: { icon:'💔', name:'エンディング「もういい、別れる」', title:'「もういい。別れる」', sub:'不信感が限界を超えた。明日の朝、謝罪の電話から始まる。' },
   honne:   { icon:'🗯️', name:'エンディング「本音漏れ」', title:'言ってはいけない一言が、出た。', sub:'眠気は、人間の本音のロックを外す。' },
+  herSleep:{ icon:'😪', name:'エンディング「彼女が先に寝た」', title:'「…すぅ…すぅ…」', sub:'不信感ほぼゼロの安心感で、彼女のほうが先に寝落ちした。（条件：甘えモード5連続以上を経験し、不信感5以下で全問クリア）' },
+  brink:   { icon:'🫠', name:'エンディング「意識の境界線」', title:'「…寝ていいよ」「……」', sub:'眠気90超えで最後まで耐えた。おやすみと言えたかは、覚えていない。（クリア条件：眠気90以上で全問クリア）' },
+  slapped: { icon:'👋', name:'エンディング「今の音、なに？」', title:'「今の音なに？ …誰といるの？」', sub:'ほっぺたを叩く音が、決定打になった。' },
 };
+const CLEAR_KINDS = ['clear', 'herSleep', 'brink'];
+/* 全問クリアの中身や、終わり方の原因でエンディングを出し分ける */
+function finalEnding(st, kind, cause){
+  if (kind === 'clear'){
+    if (st.susp <= 5 && st.maxStreak >= 5) return 'herSleep';
+    if (st.sleep >= 90) return 'brink';
+  }
+  if (kind === 'breakup' && cause === 'slap') return 'slapped';
+  return kind;
+}
+/* 称号：そのプレイの特徴をひとことで（結果画面・画像・シェアに出す） */
+function titleOf(st, kind, reached){
+  const used = st.slapMax - st.slapsLeft;
+  if (CLEAR_KINDS.includes(kind)){
+    if (st.rage) return '修羅場の生還者';
+    if (kind === 'herSleep') return '安眠導入のプロ';
+    if (st.fuFail === 0 && st.fuPass >= 2) return '一貫性の鬼';
+    if (st.azMiss === 0 && st.azHit >= 3) return '相づち職人';
+    if (used === 0) return 'ほっぺた無傷の完走者';
+    if (kind === 'brink') return '意識の綱渡り師';
+    return '立派な彼氏';
+  }
+  if (kind === 'honne') return reached <= 3 ? '開始早々の本音' : '正直すぎる彼氏';
+  if (kind === 'slapped') return '自爆ビンタ';
+  if (kind === 'breakup'){
+    if (st.fuFail >= 1) return '矛盾を突かれた男';
+    if (st.badCount >= 5) return '火に油の天才';
+    return '言葉選びの迷子';
+  }
+  if (reached <= 5) return '秒で寝る男';
+  if (st.maxStreak >= 6) return '甘やかされて寝落ち';
+  return '睡魔に完敗';
+}
+/* 本音図鑑の対象：全質問（通常・地雷・追及） */
+function allHonneQuestions(){ return QUESTIONS.concat(TRAPS, Object.keys(FOLLOWUPS).map(k => FOLLOWUPS[k])); }
 function clamp100(v){ return Math.max(0, Math.min(100, v)); }
 function shuffled(arr, rng){
   const a = arr.slice();
@@ -357,17 +438,20 @@ function newState(stageIdx, qs){
     creep: sd.creep, rage: sd.rage, totalQ: sd.totalQ, azBase: sd.azBase, azWidthMul: sd.azWidthMul,
     aizuchiAfter: sd.aizuchiAfter,
     accelDiv: sd.accelDiv, rampDiv: sd.rampDiv, waveStart: sd.waveStart, waveCycle: sd.waveCycle,
-    waveDur: sd.waveDur, waveMul: sd.waveMul };
+    waveDur: sd.waveDur, waveMul: sd.waveMul, accelGrace: sd.accelGrace,
+    comboSleep: sd.comboSleep, comboMax: sd.comboMax, streak: 0, maxStreak: 0,
+    fuLeft: sd.fuMax, fuGap: 3, mems: [], fuPass: 0, fuFail: 0,
+    slapMax: sd.slapMax, azHit: 0, azMiss: 0, goodCount: 0, badCount: 0 };
 }
 /* 彼女の機嫌：不信感の蓄積で変わる。不機嫌だと許してもらいにくく、疑い状態だと失点が重い */
 function moodOf(st){
   return st.susp >= 60 ? 'bad' : (st.susp >= 30 ? 'doubt' : 'normal');
 }
-/* 眠気の進む速さ：悩む時間（質問経過）×通話の長さ×眠気の波 で加速する */
+/* 眠気の進む速さ：悩む時間（質問経過・最初の accelGrace 秒は猶予）×通話の長さ×眠気の波 で加速する */
 function sleepRate(st, ctx){
   const c = ctx || {};
   let mul = 1 + (c.callElapsed || 0) / st.rampDiv;
-  if (c.phase === 'question') mul *= 1 + (c.qElapsed || 0) / st.accelDiv;
+  if (c.phase === 'question') mul *= 1 + Math.max(0, (c.qElapsed || 0) - (st.accelGrace || 0)) / st.accelDiv; /* 読む時間ぶんは猶予 */
   if (c.wave) mul *= st.waveMul;
   if (mul > 6) mul = 6;
   return { rate: st.tick * mul, mul };
@@ -396,10 +480,31 @@ function applyAnswer(st, opt, elapsedSec){
   if (d > 0){ if (mood === 'doubt') d += 2; else if (mood === 'bad') d += 3; } /* 疑われていると失点が重い */
   st.susp = clamp100(st.susp + d);
   st.sleep = clamp100(st.sleep + opt.s);
+  /* 甘えモード：良い答えが続くと彼女が上機嫌になり、声が甘くて眠気が増える（無難・悪い答えで途切れる） */
+  let combo = 0;
+  if (opt.d < 0){
+    st.streak++; st.goodCount++;
+    if (st.streak >= 2 && st.comboSleep > 0){ combo = Math.min(st.comboMax, st.comboSleep * (st.streak - 1)); st.sleep = clamp100(st.sleep + combo); }
+  } else { st.streak = 0; if (opt.d >= 14) st.badCount++; }
+  if (st.streak > st.maxStreak) st.maxStreak = st.streak;
+  const q = st.qs[st.qi];
+  if (q && q.followup){ if (opt.d < 0) st.fuPass++; else st.fuFail++; }
+  if (opt.mem && FOLLOWUPS[opt.mem] && !st.mems.some(m => m.key === opt.mem)) st.mems.push({ key: opt.mem, at: st.qi, used: false });
   st.qi++;
-  return { slow, end: checkEnd(st) };
+  return { slow, combo, streak: st.streak, end: checkEnd(st) };
+}
+/* 次の出題の前に呼ぶ：約束から fuGap 問以上たっていたら、その問題を追及に差し替える */
+function injectFollowup(st){
+  if (st.fuLeft <= 0 || st.qi >= st.totalQ) return null;
+  if (st.qs[st.qi] && st.qs[st.qi].trap) return null; /* 地雷質問は最終ステージの持ち味なので潰さない */
+  const m = st.mems.find(x => !x.used && st.qi - x.at >= st.fuGap);
+  if (!m) return null;
+  m.used = true; st.fuLeft--;
+  st.qs[st.qi] = FOLLOWUPS[m.key];
+  return st.qs[st.qi];
 }
 function applyAizuchi(st, hit){
+  if (hit) st.azHit++; else st.azMiss++;
   st.susp = clamp100(st.susp + (hit ? AIZUCHI_HIT : AIZUCHI_MISS));
   st.aizuchiDone++;
   return checkEnd(st);
@@ -411,7 +516,7 @@ function applySlap(st){
   st.susp = clamp100(st.susp + SLAP_SUSP);
   return true;
 }
-globalThis.__NK__ = { STAGES, QUESTIONS, TRAPS, AIZUCHI, ENDINGS, RAGE_GOOD_REACTS, newState, drawQuestions, shuffled, advanceTime, applyAnswer, applyAizuchi, applySlap, checkEnd, moodOf, sleepRate, isWave };
+globalThis.__NK__ = { STAGES, QUESTIONS, TRAPS, FOLLOWUPS, AIZUCHI, ENDINGS, CLEAR_KINDS, RAGE_GOOD_REACTS, finalEnding, titleOf, allHonneQuestions, injectFollowup, newState, drawQuestions, shuffled, advanceTime, applyAnswer, applyAizuchi, applySlap, checkEnd, moodOf, sleepRate, isWave };
 </script>
 
 <script>
@@ -473,6 +578,7 @@ function renderGauges(){
     const mood = moodOf(st);
     if (mood === 'bad'){ cs.textContent = '● 通話中（不機嫌！）'; cs.style.color = '#ff8fa5'; }
     else if (mood === 'doubt'){ cs.textContent = '● 通話中（疑ってる…）'; cs.style.color = '#ffd76a'; }
+    else if (st.streak >= 2){ cs.textContent = '● 通話中（甘えモード💗）'; cs.style.color = '#ff9db4'; }
     else { cs.textContent = '● 通話中'; cs.style.color = '#9fe8a8'; }
   }
 }
@@ -489,8 +595,9 @@ function showQuestion(){
   if (S.phase === 'end') return;
   const st = S.st;
   S.phase = 'question'; S.qStart = nowS(); S.qNo = st.qi + 1;
+  if (injectFollowup(st)) addBubble('sys', '（…さっきの話、覚えてたらしい）');
   const q = st.qs[st.qi];
-  $('qcount').textContent = '「' + STAGES[st.stage].short + '」質問 ' + (st.qi + 1) + ' / ' + st.totalQ;
+  $('qcount').textContent = (q.followup ? '🔁 追及！ ' : '') + '「' + STAGES[st.stage].short + '」質問 ' + (st.qi + 1) + ' / ' + st.totalQ;
   addBubble('her', q.q);
   const order = shuffled([0, 1, 2]);
   S.curOrder = order;
@@ -538,14 +645,18 @@ function resolveAizuchi(hit){
   if (end) setTimeout(() => endGame(end), 900);
   else setTimeout(showQuestion, 1100);
 }
-function endGame(kind){
+function endGame(kind0, cause){
   if (S.phase === 'end') return;
+  const kind = finalEnding(S.st, kind0, cause);
   S.phase = 'end'; S.st.end = kind;
   $('aizuchi').style.display = 'none';
   $('optsWrap').innerHTML = ''; $('honneBtn').style.display = 'none'; $('slapBtn').style.display = 'none';
   $('qcount').textContent = '';
   const un = unlockedEndings(); un[kind] = true; storeSet('nk_endings_v1', un);
-  if (kind === 'clear'){
+  if (kind === 'honne'){
+    const hn = storeGet('nk_honne_v1') || {}; hn[S.st.qs[S.st.qi].q] = true; storeSet('nk_honne_v1', hn);
+  }
+  if (CLEAR_KINDS.includes(kind)){
     const cl = clearedStages(); cl[STAGES[S.st.stage].id] = true; storeSet('nk_clears_v1', cl);
   }
   const E = ENDINGS[kind];
@@ -555,8 +666,10 @@ function endGame(kind){
     $('endLine').style.display = 'block';
     $('endLineText').textContent = '「' + S.st.fatalLine + '」';
   } else $('endLine').style.display = 'none';
-  const reached = kind === 'clear' ? '全' + S.st.totalQ + '問クリア' : reachedNo() + '問目で終了';
-  $('endStats').innerHTML = 'ステージ：' + STAGES[S.st.stage].short + '<br>到達：' + reached + '<br>最終ゲージ：眠気 ' + Math.round(S.st.sleep) + ' ／ 不信感 ' + Math.round(S.st.susp) + '<br>通話時間：' + fmtTime(nowS() - S.startedAt);
+  const cleared = CLEAR_KINDS.includes(kind);
+  const reached = cleared ? '全' + S.st.totalQ + '問クリア' : reachedNo() + '問目で終了';
+  S.title = titleOf(S.st, kind, reachedNo());
+  $('endStats').innerHTML = '<span class="ttlb">🏷️ 称号「' + S.title + '」</span><br>' + E.name + '<br>ステージ：' + STAGES[S.st.stage].short + '<br>到達：' + reached + '<br>最終ゲージ：眠気 ' + Math.round(S.st.sleep) + ' ／ 不信感 ' + Math.round(S.st.susp) + '<br>通話時間：' + fmtTime(nowS() - S.startedAt);
   renderZukan($('zukan'));
   setTimeout(() => $('endScr').classList.add('on'), 700);
   S.lastEnding = kind;
@@ -570,7 +683,16 @@ function renderZukan(el){
       return un[k]
         ? '<div class="zend"><span class="zi">' + e.icon + '</span><span>' + e.name + '</span></div>'
         : '<div class="zend locked"><span class="zi">🔒</span><span>？？？</span></div>';
-    }).join('');
+    }).join('') + renderHonneZukan();
+}
+/* 本音図鑑：本音エンドで言ってしまった一言を集める（追及の質問は解放まで伏せる） */
+function renderHonneZukan(){
+  const hn = storeGet('nk_honne_v1') || {}, all = allHonneQuestions();
+  const got = all.filter(q => hn[q.q]).length;
+  return '<details class="hz"><summary>🗯️ 本音図鑑（' + got + ' / ' + all.length + '）</summary>' +
+    all.map(q => hn[q.q]
+      ? '<div class="hzi"><span class="hq">' + q.q + '</span>「' + q.honne + '」</div>'
+      : '<div class="hzi locked"><span class="hq">' + (q.followup ? '🔁 （追及の質問）' : q.q) + '</span>？？？</div>').join('') + '</details>';
 }
 const NK = {
   pickStage(i){
@@ -595,7 +717,8 @@ const NK = {
     $('optsWrap').innerHTML = '';
     addBubble('me', opt.t);
     if (res.slow) addBubble('sys', '（返事が遅かった…彼女の声が少し冷たくなった）');
-    addBubble('react', (st.rage && opt.d < 0) ? RAGE_GOOD_REACTS[st.qi % RAGE_GOOD_REACTS.length] : opt.r);
+    addBubble('react', (st.rage && opt.d < 0 && !q.followup) ? RAGE_GOOD_REACTS[st.qi % RAGE_GOOD_REACTS.length] : opt.r);
+    if (res.combo > 0) addBubble('sys', '（💗 甘えモード×' + res.streak + '：声が甘くて眠気 +' + res.combo.toFixed(1).replace('.0', '') + '）');
     S.phase = 'reaction';
     renderGauges();
     if (res.end) setTimeout(() => endGame(res.end), 1300);
@@ -612,7 +735,7 @@ const NK = {
     addBubble('sys', '（バチン！ …「今の音、何？」怪しまれたが、目は覚めた）');
     renderGauges();
     const end = checkEnd(S.st);
-    if (end) endGame(end);
+    if (end) endGame(end, 'slap');
   },
   honne(){
     if (S.phase !== 'question' || S.st.sleep < S.st.honneAt) return;
@@ -632,13 +755,15 @@ const NK = {
       ctx.textAlign = 'center';
       ctx.fillStyle = '#8a94a6'; ctx.font = '700 34px sans-serif';
       ctx.fillText('ねえ、起きてる？ 〜メンヘラ彼女の尋問電話〜', 600, 84);
-      ctx.fillStyle = '#ffffff'; ctx.font = '900 62px sans-serif';
-      ctx.fillText(E.name, 600, 210);
-      ctx.font = '900 54px sans-serif'; ctx.fillStyle = '#ffd76a';
+      ctx.fillStyle = '#ffffff'; ctx.font = '900 58px sans-serif';
+      ctx.fillText(E.name, 600, 190);
+      ctx.font = '900 52px sans-serif'; ctx.fillStyle = '#ffd76a';
       const main = (kind === 'honne' && S.st.fatalLine) ? '「' + S.st.fatalLine + '」' : E.title;
-      ctx.fillText(main, 600, 330);
-      ctx.fillStyle = '#c9d2e8'; ctx.font = '700 38px sans-serif';
-      ctx.fillText((kind === 'clear' ? '全' + S.st.totalQ + '問に耐えきった' : '到達 ' + reachedNo() + '問目') + ' ／ ステージ「' + STAGES[S.st.stage].short + '」', 600, 440);
+      ctx.fillText(main, 600, 295);
+      ctx.fillStyle = '#ff9db4'; ctx.font = '900 40px sans-serif';
+      ctx.fillText('称号「' + (S.title || '') + '」', 600, 380);
+      ctx.fillStyle = '#c9d2e8'; ctx.font = '700 36px sans-serif';
+      ctx.fillText((CLEAR_KINDS.includes(kind) ? '全' + S.st.totalQ + '問に耐えきった' : '到達 ' + reachedNo() + '問目') + ' ／ ステージ「' + STAGES[S.st.stage].short + '」', 600, 460);
       ctx.fillStyle = '#8a94a6'; ctx.font = '400 28px sans-serif';
       ctx.fillText('眠気 ' + Math.round(S.st.sleep) + ' ・ 不信感 ' + Math.round(S.st.susp) + ' ｜ 眠いのに終わらない、尋問電話に耐えるゲーム', 600, 545);
       const a = document.createElement('a');
@@ -650,9 +775,10 @@ const NK = {
     const stg = 'ステージ「' + STAGES[S.st.stage].short + '」';
     let text;
     if (kind === 'clear') text = 'メンヘラ彼女の尋問電話（' + stg + '）、全' + S.st.totalQ + '問に耐えきって「寝ていいよ」をもらいました。';
+    else if (CLEAR_KINDS.includes(kind)) text = 'メンヘラ彼女の尋問電話（' + stg + '）、全' + S.st.totalQ + '問に耐えきりました（' + E.name + '）。';
     else if (kind === 'honne') text = '眠すぎて彼女に言ってしまいました。「' + (S.st.fatalLine || '') + '」…終わりました。（' + stg + '）';
     else text = '彼女の尋問電話（' + stg + '）、' + reachedNo() + '問目で力尽きました（' + E.name + '）。';
-    text += ' #ねえ起きてる';
+    text += ' 称号「' + (S.title || '') + '」 #ねえ起きてる';
     try { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank'); } catch(e){}
   },
 };

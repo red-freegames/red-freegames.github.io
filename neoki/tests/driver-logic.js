@@ -7,6 +7,9 @@
   function mulberry32(a){ return function(){ a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   const best = q => q.opts.reduce((a, b) => (b.d < a.d ? b : a));
   const worst = q => q.opts.reduce((a, b) => (b.d > a.d ? b : a));
+  const mid = q => q.opts.slice().sort((a, b) => a.d - b.d)[1];
+  /* 上手いプレイ＝良い答え中心、甘えモードが3連続したら無難な答えで切る */
+  const play = st => (st.streak >= 3 && st.susp < 45 ? mid : best)(st.qs[st.qi]);
 
   /* データ健全性 */
   ck('questions = 25', N.QUESTIONS.length === 25, N.QUESTIONS.length);
@@ -33,7 +36,7 @@
   {
     const s1 = N.newState(0, []), s2 = N.newState(1, []), s3 = N.newState(2, []);
     ck('s1 params', s1.totalQ === 10 && s1.tick === 0.32 && s1.slapsLeft === 4 && s1.susp === 0);
-    ck('s2 params', s2.totalQ === 15 && s2.tick === 0.45 && s2.slapsLeft === 3 && s2.susp === 0);
+    ck('s2 params', s2.totalQ === 15 && s2.tick === 0.32 && s2.slapsLeft === 3 && s2.susp === 0);
     ck('s3 params (rage)', s3.totalQ === 18 && s3.susp === 30 && s3.slapsLeft === 2 && s3.rage === true && s3.creep > 0);
   }
 
@@ -45,7 +48,7 @@
     for (let n = 0; n < st.totalQ && !end; n++){
       end = N.advanceTime(st, 4);
       if (end) break;
-      end = N.applyAnswer(st, best(st.qs[st.qi]), 4).end;
+      end = N.applyAnswer(st, play(st), 4).end;
       if (!slapped && st.qi === 8){ N.applySlap(st); slapped = true; }
       if (!end && st.aizuchiAfter.includes(st.qi)){
         end = N.advanceTime(st, 3);
@@ -60,8 +63,8 @@
   /* ステージ2：放置で寝落ち */
   {
     const st = N.newState(1, N.drawQuestions(1, mulberry32(1)));
-    ck('idle 220s no end', N.advanceTime(st, 220) === null, Math.round(st.sleep));
-    ck('idle 225s sleep end', N.advanceTime(st, 5) === 'sleep');
+    ck('idle 310s no end', N.advanceTime(st, 310) === null, Math.round(st.sleep));
+    ck('idle 315s sleep end', N.advanceTime(st, 5) === 'sleep');
   }
 
   /* ステージ2：全問ワーストで破局 */
@@ -151,8 +154,9 @@
   {
     const st = N.newState(1, []);
     ck('rate base x1', Math.abs(N.sleepRate(st, { phase:'question', qElapsed:0, callElapsed:0, wave:false }).mul - 1) < 1e-9);
-    ck('rate: thinking 10s doubles (s2)', Math.abs(N.sleepRate(st, { phase:'question', qElapsed:10, callElapsed:0, wave:false }).mul - 2) < 1e-9);
-    ck('rate: long call 240s doubles', Math.abs(N.sleepRate(st, { phase:'aizuchi', qElapsed:0, callElapsed:240, wave:false }).mul - 2) < 1e-9);
+    ck('rate: grace 4s then thinking 10s more doubles (s2)', Math.abs(N.sleepRate(st, { phase:'question', qElapsed:14, callElapsed:0, wave:false }).mul - 2) < 1e-9);
+    ck('rate: no accel within grace', Math.abs(N.sleepRate(st, { phase:'question', qElapsed:4, callElapsed:0, wave:false }).mul - 1) < 1e-9);
+    ck('rate: long call 300s doubles', Math.abs(N.sleepRate(st, { phase:'aizuchi', qElapsed:0, callElapsed:300, wave:false }).mul - 2) < 1e-9);
     ck('rate: wave x1.8', Math.abs(N.sleepRate(st, { phase:'aizuchi', qElapsed:0, callElapsed:0, wave:true }).mul - 1.8) < 1e-9);
     ck('rate: no q-accel outside question', Math.abs(N.sleepRate(st, { phase:'reaction', qElapsed:10, callElapsed:0, wave:false }).mul - 1) < 1e-9);
     ck('wave schedule s2', N.isWave(st, 44) === false && N.isWave(st, 46) === true && N.isWave(st, 54) === false && N.isWave(st, 100) === true && N.isWave(st, 109) === false);
@@ -190,7 +194,7 @@
       tm.q = 0;
       end = simAdv(st, tm, 4, 'question');
       if (end) break;
-      end = N.applyAnswer(st, best(st.qs[st.qi]), 4).end;
+      end = N.applyAnswer(st, play(st), 4).end;
       if (!slapped && st.qi === 8){ N.applySlap(st); slapped = true; }
       end = end || simAdv(st, tm, 1.7, 'reaction');
       if (!end && st.aizuchiAfter.includes(st.qi)){ end = simAdv(st, tm, 3, 'aizuchi'); if (!end) end = N.applyAizuchi(st, true); }
@@ -228,6 +232,49 @@
       if (!end && st.aizuchiAfter.includes(st.qi)){ end = simAdv(st, tm, 3, 'aizuchi'); if (!end) end = N.applyAizuchi(st, true); }
     }
     ck('s3 ctx skilled player: can clear', end === null && st.qi === 18, 'end=' + end + ' qi=' + st.qi + ' sleep=' + Math.round(st.sleep) + ' susp=' + Math.round(st.susp));
+  }
+
+  /* ===== 甘えモード・追及・エンディング出し分け・称号・本音図鑑 ===== */
+  {
+    const st = N.newState(1, N.QUESTIONS.slice(0, 15));
+    const g = { t:'x', d:-6, s:2, r:'x' };
+    const r1 = N.applyAnswer(st, g, 2), r2 = N.applyAnswer(st, g, 2), r3 = N.applyAnswer(st, g, 2);
+    ck('combo: 1st none, 2nd +2, 3rd +4', r1.combo === 0 && r2.combo === 2 && r3.combo === 4, [r1.combo, r2.combo, r3.combo].join(','));
+    for (let i = 0; i < 5; i++) N.applyAnswer(st, g, 2);
+    ck('combo capped at 5.5', st.streak === 8 && N.applyAnswer(st, g, 2).combo === 5.5);
+    N.applyAnswer(st, { t:'x', d:4, s:0, r:'x' }, 2);
+    ck('neutral breaks streak', st.streak === 0 && st.maxStreak === 9, st.streak + '/' + st.maxStreak);
+    const s3 = N.newState(2, N.QUESTIONS.slice(0, 18)); N.applyAnswer(s3, g, 2);
+    ck('no amae mode in rage stage', N.applyAnswer(s3, g, 2).combo === 0);
+  }
+  {
+    ck('followups = 8, all have honne + good opt', Object.keys(N.FOLLOWUPS).length === 8 && Object.values(N.FOLLOWUPS).every(f => f.honne && f.opts.length === 3 && f.opts.some(o => o.d < 0)));
+    const memKeys = N.QUESTIONS.flatMap(q => q.opts.filter(o => o.mem).map(o => o.mem));
+    ck('every followup has exactly one seed answer', Object.keys(N.FOLLOWUPS).every(k => memKeys.filter(m => m === k).length === 1) && memKeys.length === 8);
+    const seedQ = N.QUESTIONS.find(q => q.opts.some(o => o.mem === 'plan'));
+    const qs = [seedQ].concat(N.QUESTIONS.filter(q => q !== seedQ).slice(0, 14));
+    const st = N.newState(1, qs);
+    N.applyAnswer(st, seedQ.opts.find(o => o.mem), 2);
+    ck('no followup before gap', N.injectFollowup(st) === null && (N.applyAnswer(st, mid(st.qs[st.qi]), 2), N.injectFollowup(st)) === null);
+    N.applyAnswer(st, mid(st.qs[st.qi]), 2);
+    const fu = N.injectFollowup(st);
+    ck('followup injected 3 questions later', fu === N.FOLLOWUPS.plan && st.qs[3] === N.FOLLOWUPS.plan && st.fuLeft === 1);
+    N.applyAnswer(st, best(fu), 2);
+    ck('followup pass counted, not re-injected', st.fuPass === 1 && N.injectFollowup(st) === null);
+    const t = N.newState(2, [N.TRAPS[0], N.TRAPS[1]]); t.mems.push({ key:'plan', at:-5, used:false });
+    ck('followup never replaces a trap', N.injectFollowup(t) === null);
+  }
+  {
+    const st = N.newState(1, []);
+    st.susp = 3; st.maxStreak = 5; ck('herSleep: susp<=5 & streak>=5', N.finalEnding(st, 'clear') === 'herSleep');
+    st.maxStreak = 4; ck('plain clear without long streak', N.finalEnding(st, 'clear') === 'clear');
+    st.susp = 40; st.sleep = 95; ck('brink: sleep>=90', N.finalEnding(st, 'clear') === 'brink');
+    ck('slapped breakup', N.finalEnding(st, 'breakup', 'slap') === 'slapped' && N.finalEnding(st, 'breakup') === 'breakup');
+    ck('7 endings', Object.keys(N.ENDINGS).length === 7);
+    ck('title for rage clear', N.titleOf(N.newState(2, []), 'brink', 18) === '修羅場の生還者');
+    ck('title for early honne', N.titleOf(st, 'honne', 2) === '開始早々の本音');
+    const all = N.allHonneQuestions();
+    ck('honne zukan = 36 unique questions', all.length === 36 && new Set(all.map(q => q.q)).size === 36, all.length);
   }
 
   console.log(fails === 0 ? 'ALL_LOGIC_PASS' : 'LOGIC_FAILS=' + fails);

@@ -52,6 +52,8 @@ function playOne(stage, P, seed){
   const W = makeWorld(seed);
   const { UI, L, rng } = W, NK = UI.NK;
   const anomalies = [];
+  const tune = process.env.TUNE ? JSON.parse(process.env.TUNE) : {};
+  Object.assign(L.STAGES[stage], tune[stage] || {});
   NK.pickStage(stage);
   NK.start();
   let pendingQ = -1, pendingAz = false;
@@ -85,8 +87,10 @@ function playOne(stage, P, seed){
           case 'neutral': pick = idx[1]; break;
           case 'worst': pick = idx[2]; break;
           case 'random': pick = Math.floor(rng() * 3); break;
+          case 'breaker': { /* 甘えモードが続いたら無難な答えで切る */
+            const s2 = S2.st; pick = (s2.streak >= P.breakAt && s2.susp < 45) ? idx[1] : idx[0]; break; }
           case 'smart': { /* 眠気が危ないなら悪い答えで目を覚ます */
-            const s2 = S2.st; pick = (s2.sleep > 80 && s2.susp < 55) ? idx[2] : (s2.sleep > 70 && s2.susp < 70 ? idx[1] : idx[0]); break; }
+            const s2 = S2.st; pick = (s2.sleep > 80 && s2.susp < 55) ? idx[2] : ((s2.sleep > 65 || s2.streak >= 3) && s2.susp < 60 ? idx[1] : idx[0]); break; }
           default: { const r = rng(); pick = r < P.good ? idx[0] : (r < P.good + (1 - P.good) * 0.7 ? idx[1] : idx[2]); }
         }
         const k = idx.indexOf(pick); log.answers[['good', 'mid', 'bad'][k]]++;
@@ -111,8 +115,8 @@ function playOne(stage, P, seed){
   /* 進めきる（endGame の遅延 on 表示まで） */
   for (let i = 0; i < 50 && W.step(); i++){}
   const S = UI.state(), st = S.st;
-  if (st.end === 'clear' && st.sleep >= 100) anomalies.push('clear with sleep 100');
-  if (st.end === 'clear' && st.susp >= 100) anomalies.push('clear with susp 100');
+  if (L.CLEAR_KINDS.includes(st.end) && st.sleep >= 100) anomalies.push('clear with sleep 100');
+  if (L.CLEAR_KINDS.includes(st.end) && st.susp >= 100) anomalies.push('clear with susp 100');
   /* 到達表示の整合：結果画面とシェア文 */
   const stats = W.$('endStats').innerHTML;
   const m = stats.match(/到達：(\d+)問目/);
@@ -120,12 +124,13 @@ function playOne(stage, P, seed){
   const tw = decodeURIComponent((W.opened[0] || '').split('text=')[1] || '');
   const m2 = tw.match(/、(\d+)問目で力尽き/);
   if (m && m2 && m[1] !== m2[1]) anomalies.push('reached mismatch: endStats ' + m[1] + ' vs share ' + m2[1] + ' (' + st.end + ')');
-  return { end: st.end, qi: st.qi, sleep: st.sleep, susp: st.susp, time: W.now() / 1000, log, anomalies, slapsLeft: st.slapsLeft };
+  return { title: S.title, fu: st.fuPass + st.fuFail, end: st.end, qi: st.qi, sleep: st.sleep, susp: st.susp, time: W.now() / 1000, log, anomalies, slapsLeft: st.slapsLeft };
 }
 
 function summarize(label, runs){
   const n = runs.length, c = {};
-  runs.forEach(r => { c[r.end] = (c[r.end] || 0) + 1; });
+  const fam = { herSleep: 'clear', brink: 'clear', slapped: 'breakup' };
+  runs.forEach(r => { const k = fam[r.end] || r.end; c[k] = (c[k] || 0) + 1; });
   const pct = k => ((c[k] || 0) / n * 100).toFixed(0).padStart(3) + '%';
   const avg = f => (runs.reduce((a, r) => a + f(r), 0) / n);
   const azT = avg(r => r.log.azHit + r.log.azMiss) || 1;
@@ -137,6 +142,8 @@ function summarize(label, runs){
 }
 
 const N = +(process.argv[2] || 400);
+const ONLY = process.env.STAGE ? process.env.STAGE.split(',').map(Number) : [0, 1, 2];
+const DETAIL = !!process.env.DETAIL;
 const HUMAN = { policy: 'human', good: 0.8, think: 4, azSigma: 0.09, azLag: 0, slapAt: 85 };
 const profiles = [
   ['上手い人（3秒・良答90%・ほっぺた85）', { ...HUMAN, think: 3, good: 0.9 }],
@@ -148,13 +155,19 @@ const profiles = [
   ['全問良答（3秒）', { ...HUMAN, think: 3, policy: 'good' }],
   ['全問無難（3秒）', { ...HUMAN, think: 3, policy: 'neutral' }],
   ['全問ワースト（3秒）', { ...HUMAN, think: 3, policy: 'worst' }],
+  ['コンボ切り（4秒・3連続で無難）', { ...HUMAN, think: 4, policy: 'breaker', breakAt: 3 }],
   ['戦略家（3秒・眠い時は悪答で覚醒）', { ...HUMAN, think: 3, policy: 'smart' }],
   ['神（1.5秒・全問良答・相づち完璧）', { ...HUMAN, think: 1.5, policy: 'good', azSigma: 0.02, slapAt: 80 }],
 ];
-for (let s = 0; s < 3; s++){
+for (const s of ONLY){
   console.log('\n===== ステージ' + (s + 1) + ' =====');
   for (const [name, P] of profiles){
     const runs = []; for (let i = 0; i < N; i++) runs.push(playOne(s, P, 1000 * s + i + 7));
     summarize(name, runs);
+    if (DETAIL){
+      const e = {}, t = {}; runs.forEach(r => { e[r.end] = (e[r.end] || 0) + 1; t[r.title] = (t[r.title] || 0) + 1; });
+      console.log('    endings ' + JSON.stringify(e) + '  追及/回 ' + (runs.reduce((a, r) => a + r.fu, 0) / runs.length).toFixed(2));
+      console.log('    titles  ' + JSON.stringify(t));
+    }
   }
 }
