@@ -12,7 +12,10 @@
   const play = st => (st.streak >= 3 && st.susp < 45 ? mid : best)(st.qs[st.qi]);
 
   /* データ健全性 */
-  ck('questions = 25', N.QUESTIONS.length === 25, N.QUESTIONS.length);
+  ck('pools = 18 / 22 / 20', N.POOLS.map(p => p.length).join() === '18,22,20', N.POOLS.map(p => p.length).join());
+  ck('pools are disjoint (no shared question text)', new Set(N.QUESTIONS.map(q => q.q)).size === N.QUESTIONS.length);
+  ck('each pool >= its totalQ (stage3 incl. traps)', N.STAGES.every((sd, i) => N.POOLS[i].length + (sd.rage ? N.TRAPS.length : 0) > sd.totalQ));
+  ck('every stage has followup seeds >= fuMax', N.STAGES.every((sd, i) => N.POOLS[i].filter(q => q.opts.some(o => o.mem)).length >= sd.fuMax));
   ck('traps = 3', N.TRAPS.length === 3, N.TRAPS.length);
   ck('all questions have honne + 3 opts', N.QUESTIONS.concat(N.TRAPS).every(q => q.honne && q.opts.length === 3 && q.opts.every(o => o.t && o.r)));
   ck('every normal question has a good opt (d<0)', N.QUESTIONS.every(q => q.opts.some(o => o.d < 0)));
@@ -26,8 +29,9 @@
     const d2 = N.drawQuestions(1, mulberry32(7));
     const d3 = N.drawQuestions(2, mulberry32(7));
     ck('draw s1 = 10 unique, no traps', d1.length === 10 && new Set(d1).size === 10 && d1.every(q => !q.trap));
+    ck('draws come only from own stage pool', d1.every(q => N.POOLS[0].includes(q)) && d2.every(q => N.POOLS[1].includes(q)) && d3.every(q => N.POOLS[2].includes(q) || N.TRAPS.includes(q)));
     ck('draw s2 = 15 unique, no traps', d2.length === 15 && new Set(d2).size === 15 && d2.every(q => !q.trap));
-    ck('draw s3 = 18 unique from 28', d3.length === 18 && new Set(d3).size === 18);
+    ck('draw s3 = 18 unique from 23', d3.length === 18 && new Set(d3).size === 18);
     const d3b = N.drawQuestions(2, mulberry32(99));
     ck('draw varies by seed', d3[0].q !== d3b[0].q || d3[1].q !== d3b[1].q);
   }
@@ -248,9 +252,9 @@
     ck('no amae mode in rage stage', N.applyAnswer(s3, g, 2).combo === 0);
   }
   {
-    ck('followups = 8, all have honne + good opt', Object.keys(N.FOLLOWUPS).length === 8 && Object.values(N.FOLLOWUPS).every(f => f.honne && f.opts.length === 3 && f.opts.some(o => o.d < 0)));
+    ck('followups = 11, all have honne + good opt', Object.keys(N.FOLLOWUPS).length === 11 && Object.values(N.FOLLOWUPS).every(f => f.honne && f.opts.length === 3 && f.opts.some(o => o.d < 0)));
     const memKeys = N.QUESTIONS.flatMap(q => q.opts.filter(o => o.mem).map(o => o.mem));
-    ck('every followup has exactly one seed answer', Object.keys(N.FOLLOWUPS).every(k => memKeys.filter(m => m === k).length === 1) && memKeys.length === 8);
+    ck('every followup has exactly one seed answer', Object.keys(N.FOLLOWUPS).every(k => memKeys.filter(m => m === k).length === 1) && memKeys.length === 11);
     const seedQ = N.QUESTIONS.find(q => q.opts.some(o => o.mem === 'plan'));
     const qs = [seedQ].concat(N.QUESTIONS.filter(q => q !== seedQ).slice(0, 14));
     const st = N.newState(1, qs);
@@ -274,7 +278,7 @@
     ck('title for rage clear', N.titleOf(N.newState(2, []), 'brink', 18) === '修羅場の生還者');
     ck('title for early honne', N.titleOf(st, 'honne', 2) === '開始早々の本音');
     const all = N.allHonneQuestions();
-    ck('honne zukan = 36 unique questions', all.length === 36 && new Set(all.map(q => q.q)).size === 36, all.length);
+    ck('honne zukan = 74 unique questions', all.length === 74 && new Set(all.map(q => q.q)).size === 74, all.length);
   }
 
   console.log(fails === 0 ? 'ALL_LOGIC_PASS' : 'LOGIC_FAILS=' + fails);
