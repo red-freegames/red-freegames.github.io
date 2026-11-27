@@ -239,6 +239,13 @@ body.crash{animation:redflash 1s}
 .gogai small{font-size:11px;color:#555}
 .gogai h2{font-size:26px;font-weight:900;line-height:1.3;margin-top:2px}
 .gogai p{font-size:14px;font-weight:700;margin-top:4px;border-top:1px solid #1a1a1a;padding-top:4px}
+.breach{margin-top:8px;background:var(--warnbg);border-radius:10px;padding:8px 12px}
+.breach div{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.breach b{font-size:14px;color:var(--ink)}
+.breach span{font-size:13px;font-weight:900;color:var(--ng)}
+.breach small{display:block;font-size:11.5px;color:var(--sub);line-height:1.6;margin-top:2px}
+.rline .sv{display:block;font-style:normal;font-size:11.5px;color:var(--ok);font-weight:900}
+.call .saved{color:var(--ok);font-weight:800}
 .calm{font-size:13px;color:var(--sub);margin-top:6px}
 .hint{font-size:11px;color:var(--sub);margin-top:6px}
 .crow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px dashed var(--line);font-size:18px}
@@ -301,7 +308,7 @@ const LANES = [
   { x: .5,    ic: "🔐", n: "ログイン" },
   { x: 5 / 6, ic: "🚪", n: "VPN" },
 ];
-const TOP = .08, ENTRY_Y = .3, BOUND = .5, INSIDE_Y = .74, GOAL = .95;
+const TOP = .11, ENTRY_Y = .3, BOUND = .5, INSIDE_Y = .74, GOAL = .95;
 
 /* ============ 攻撃 ============
    n: 画面に出す短い名前 / long: タップで読む説明
@@ -463,7 +470,8 @@ G.infoDef = (k) => {
   const where = `${lanesOf(k).map(l => LANES[l].ic + LANES[l].n).join("・")}の${t.layer === "entry" ? "入口" : "社内"}`;
   let up = "";
   if (t.up) up = `<div class="shup"><div class="shk">⬆ Lv2に強化</div><h3>${t.ic} ${t.up.n}</h3><p class="long">${t.up.long}</p>
-    <div class="flow"><div><span>追加で止める</span>${t.up.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div></div>
+    <div class="flow"><div><span>追加で止める</span>${t.up.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div>
+      ${LANE_DEF.includes(k) ? `<div><span>さらに</span><i>📞 問い合わせのミスでも、${LANES[LANE_DEF.indexOf(k)].n}の入口に穴が開かない</i></div>` : ""}</div>
     <div class="shbuy">${S.up[k] ? `<button class="act off" disabled>強化済み</button>` : S.own[k] ? `<button class="act" ${S.money < t.up.cost ? "disabled" : ""} onclick="G.upgrade('${k}');G.infoDef('${k}')">強化する　${t.up.cost}万円</button>` : `<button class="act off" disabled>先に導入が必要</button>`}</div></div>`;
   sheet(`<div class="shk">対策 ・ ${where}</div><h2>${t.ic} ${t.n}</h2><p class="long">${t.long}</p>
     <div class="flow"><div><span>止める</span>${t.hits.map(h => `<i>${EN[h].ic}${EN[h].n}</i>`).join("")}</div></div>
@@ -506,15 +514,16 @@ G.morning = () => {
   } else {
     if (L.leak.length && L.dmg >= 20) { angry = true; boss = pick(["昨日のアレはなんだ！取引先から電話が鳴りっぱなしだぞ！……予算は出す。二度と起こすな。", "朝から警察と保険会社の対応だよ。……わかった、予算は増やそう。"]); }
     else if (L.leak.length) { angry = true; boss = pick(["昨日、少しやられたそうじゃないか。……まあいい、予算は少し増やす。", "「ちょっとした被害」で済んでよかったな、とは言わんぞ。予算は増やしておく。"]); }
+    else if (L.breach >= 8) { angry = true; boss = pick([`被害はなかったそうだが、社内まで${L.breach}回も入られたらしいな。そのたびに調査で残業だろう？`, `「社内で止めたから大丈夫」？　${L.breach}回も入られて、何が大丈夫なんだ。`]); }
     else boss = pick(["昨日も何も起きなかったな。本当に攻撃なんて来てるのか？予算は減らすぞ。", "平和だな。もう対策は足りてるんだろう？予算は減らす。", "何も起きないなら、その予算は営業に回したいんだがね。"]);
     const lines = L.leak.filter(x => x.from !== "call").map(x => `<button class="rline" onclick="G.infoAtk('${x.from}')"><span>${EN[x.from].ic}→${EN[x.as].ic}</span><span class="g">${x.call ? "📞" : ""}${EN[x.as].goal}${x.mit ? "（💾軽減）" : ""}</span><b>-${x.dmg}</b><span class="fix">${stoppers(x.from).concat(stoppers(x.as)).map(s => s.slice(0, 2)).filter((v, i, a) => a.indexOf(v) === i).join("")}</span></button>`).join("");
     const bad = (L.calls || []).filter(x => !x.ok);
     if (bad.length) { angry = true; boss += pick(["　それと、社員の問い合わせにまずい返事をしたそうだな。", "　あと、社員から『情シスに聞いたらいいって言われた』と聞いたぞ。"]); }
-    const clines = bad.map(x => { const c = CALLS.find(y => y.id === x.id); return `<button class="rline" onclick="G.infoCall('${c.id}')"><span>📞</span><span class="g">${c.who}「${c.bad}」${x.auto ? "（自己判断）" : ""}</span><span class="fix">ⓘ</span></button>`; }).join("");
+    const clines = bad.map(x => { const c = CALLS.find(y => y.id === x.id); return `<button class="rline" onclick="G.infoCall('${c.id}')"><span>📞</span><span class="g">${c.who}「${c.bad}」${x.auto ? "（自己判断）" : ""}${x.saved ? `<em class="sv">⭐${TW[x.saved].up.n}で被害なし</em>` : ""}</span><span class="fix">ⓘ</span></button>`; }).join("");
     report = `<div class="card"><h2>📋 昨日の報告<small>止めた ${L.ko} ・ 被害 ${L.leak.length} ・ 📞 ${(L.calls || []).length - bad.length}/${(L.calls || []).length}</small></h2>
       ${L.surprise ? `<button class="alert" onclick="G.infoAtk('${L.surprise.k}')">⚠️ 予報にない攻撃が来た：${EN[L.surprise.k].ic}${EN[L.surprise.k].n}×${L.surprise.n}<span>ⓘ</span></button>` : ""}
       ${lines || (clines ? "" : `<p class="calm">すべて止めた。……誰も褒めてくれない。</p>`)}${clines}
-      ${L.breach ? `<p class="calm">侵入されたぶんの対応 ${L.breach}件 -${Math.round(L.breach / 2)}</p>` : ""}
+      ${L.breach ? `<div class="breach"><div><b>🚪→🧱 社内まで入られた ${L.breach}件</b><span>調査と対応で 体力 -${Math.round(L.breach / 2)}</span></div><small>社内で止めても、入られた時点で後始末が要る。入口で止めれば0。${S.own.mfa || S.own.filter || S.own.patch ? "すり抜け型は⬆強化で入口で止まる" : ""}</small></div>` : ""}
       ${lines ? `<p class="hint">右のアイコンは、止められた対策。タップで説明</p>` : ""}</div>`;
   }
   render(`<div class="scene">☀️ DAY ${S.day} ・ 朝 ・ 社長室</div>
@@ -530,6 +539,8 @@ G.afterBoss = () => { const e = pickEvent(); if (e) return showEvent(e); G.prep(
    good: 正しい対応 / bad: まずい対応。hit: まずいときに起きること
    spawn: 社内に敵が湧く（社内の対策で止められる） / hp: 直接の被害 / off: その対策がその日止まる */
 const CALL_T = 10, HOLE_T = 7, SURPRISE_P = .35;
+const LANE_DEF = ["filter", "mfa", "patch"];   // 入口ごとの対策（強化すると問い合わせのミスで穴が開かない）
+const SAVE_TXT = { mfa: "パスキーは偽サイトでは使えないので、盗まれても入れない。", filter: "AI判定フィルタが、なりすましの添付を受信前に止めていた。", patch: "ゼロトラストで、機器を外に公開していなかった。" };
 const CALLS = [
   /* ---- パスワード・アカウント ---- */
   { id: "pwchat", who: "営業", q: "パスワードを忘れました！チャットで新しいのを送ってください。急ぎです！",
@@ -828,6 +839,7 @@ G.infoCall = (id) => {
   const what = h.biz ? `仕事が止まる（予算 -${h.biz}万円）` : h.hole !== undefined ? `${LANES[h.hole].ic}${LANES[h.hole].n}の入口に穴が開き、そこを突いて攻撃が入ってくる` : h.spawn ? `社内に${EN[h.spawn].ic}${EN[h.spawn].n}が現れる` : h.hp ? `${h.n}（体力 -${h.hp}）` : `${h.off === "backup" ? "💾バックアップ" : TW[h.off].ic + TW[h.off].n}がその日使えない（入れていなければ社内に敵が現れる）`;
   sheet(`<div class="shk">問い合わせ ・ ${c.who}</div><h2>📞 ${c.q}</h2><p class="long">${c.long}</p>
     <div class="flow"><div><span>正しい対応</span><i>${c.good}</i></div><div><span>まずい対応</span><i class="ng">${c.bad}</i></div><div><span>まずいと</span><b>${what}</b></div>
+    ${h.hole !== undefined ? `<div><span>穴を防ぐ</span><i>${TW[LANE_DEF[h.hole]].ic}⭐${TW[LANE_DEF[h.hole]].up.n}に強化</i></div>` : ""}
     ${h.hole !== undefined ? `<div><span>社内で止める</span>${chipsOf(stoppers(EN[["phish", "pw", "vpn"][h.hole]].to), "in")}</div>` : ""}
     ${h.spawn ? `<div><span>社内で止める</span>${chipsOf(stoppers(h.spawn), "in")}</div>` : ""}</div>`);
 };
@@ -934,7 +946,7 @@ function drawShop() {
     else if (own) btn = `<span class="done">${S.up[k] ? "⭐Lv2" : "導入済"}</span>`;
     else btn = `<button class="act" ${S.money < t.cost ? "disabled" : ""} onclick="event.stopPropagation();G.buy('${k}')">導入<small>${t.cost}万</small></button>`;
     return `<div class="srow ${own ? (broken ? "alert" : "on") : ""}" onclick="G.infoDef('${k}')"><span class="ic">${t.ic}</span>
-      <span class="nm">${nameOf(k)}<small>止める ${hitsOf(k).map(h => EN[h].ic).join("")}</small></span><span class="i">ⓘ</span>${btn}</div>`;
+      <span class="nm">${nameOf(k)}<small>止める ${hitsOf(k).map(h => EN[h].ic).join("")}${S.up[k] && LANE_DEF.includes(k) ? " ・📞の穴なし" : ""}</small></span><span class="i">ⓘ</span>${btn}</div>`;
   };
   $("shop").innerHTML = `<div class="sgrp">🚪 入口</div>${TKEYS.filter(k => TW[k].layer === "entry").map(row).join("")}
     <div class="sgrp">🧱 社内</div>${TKEYS.filter(k => TW[k].layer === "inside").map(row).join("")}
@@ -991,8 +1003,10 @@ function gate(ctx, k, lane, y, col, N) {
   ctx.fillStyle = "#000"; ctx.font = `${Math.round(gh * .55)}px sans-serif`;
   ctx.fillText(TW[k].ic + (S.up[k] ? "⭐" : ""), x, y * h + 1);
   ctx.globalAlpha = 1;
-  if (!on) { ctx.fillStyle = col.txt; ctx.font = `800 ${Math.round(w * .024)}px sans-serif`; ctx.fillText("未導入", x, y * h + gh * .62); }
-  if (on && !act) { ctx.fillStyle = "#d7263d"; ctx.font = `900 ${Math.round(w * .024)}px sans-serif`; ctx.fillText("要更新", x, y * h + gh * .62); }
+  // 状態の文字は関門の枠の下に出す（枠と重ねない）
+  const sy = y * h + gh / 2 + Math.round(w * .024) * .9;
+  if (!on) { ctx.fillStyle = col.txt; ctx.font = `800 ${Math.round(w * .024)}px sans-serif`; ctx.fillText("未導入", x, sy); }
+  if (on && !act) { ctx.fillStyle = "#d7263d"; ctx.font = `900 ${Math.round(w * .024)}px sans-serif`; ctx.fillText(S.off[k] ? "停止中" : "要更新", x, sy); }
   if (N && N.hole && TW[k].layer === "entry" && N.hole[lane] > 0) {
     rr(ctx, x - gw / 2, y * h - gh / 2, gw, gh, 10); ctx.fillStyle = "rgba(215,38,61,.82)"; ctx.fill();
     ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * .032)}px sans-serif`; ctx.fillText(`穴 ${Math.ceil(N.hole[lane])}`, x, y * h + 1);
@@ -1010,11 +1024,21 @@ function drawBoard(N) {
   ctx.fillStyle = col.bg; rr(ctx, 0, 0, w, h, 16); ctx.fill();
   ctx.fillStyle = col.zoneIn; ctx.fillRect(0, BOUND * h, w, (GOAL - BOUND) * h);
   ctx.fillStyle = col.goal; ctx.fillRect(0, GOAL * h, w, h - GOAL * h);
-  LANES.forEach((l, i) => { if (i % 2 === 0) { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w / 6, TOP * h, w / 3, (GOAL - TOP) * h); } });
+  LANES.forEach((l, i) => { if (i % 2 === 0) { ctx.fillStyle = col.lane; ctx.fillRect(l.x * w - w / 6, .072 * h, w / 3, (GOAL - .072) * h); } });
+  ctx.fillStyle = col.line; ctx.globalAlpha = .35; ctx.fillRect(10, .072 * h, w - 20, 1); ctx.globalAlpha = 1;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   LANES.forEach(l => {
-    ctx.fillStyle = "#000"; ctx.font = `${Math.round(w * .048)}px sans-serif`; ctx.fillText(l.ic, l.x * w, .03 * h);
-    ctx.fillStyle = col.txt; ctx.font = `800 ${Math.round(w * .027)}px sans-serif`; ctx.fillText(l.n, l.x * w, .066 * h);
+    // アイコンと名前を横に並べ、見出しの帯に収める
+    const fs = Math.round(w * .036), ty = .036 * h;
+    ctx.font = `800 ${fs}px sans-serif`;
+    const tw = ctx.measureText(l.n).width;
+    ctx.font = `${fs}px sans-serif`;
+    const iw = ctx.measureText(l.ic).width + fs * .3;
+    const x0 = l.x * w - (iw + tw) / 2;
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#000"; ctx.font = `${fs}px sans-serif`; ctx.fillText(l.ic, x0, ty);
+    ctx.fillStyle = col.txt; ctx.font = `800 ${fs}px sans-serif`; ctx.fillText(l.n, x0 + iw, ty);
+    ctx.textAlign = "center";
   });
   ctx.fillStyle = col.txt; ctx.font = `900 ${Math.round(w * .027)}px sans-serif`; ctx.textAlign = "left";
   ctx.fillText("入口", 6, (ENTRY_Y - .08) * h);
@@ -1107,10 +1131,16 @@ function answerCall(N, good) {
   const c = cur.c, h = c.hit;
   S.calls++; if (good) S.callsOk++;
   if (auto && good && S.train) S.st.autoOk++;
-  N.callLog.push({ id: c.id, ok: good, auto });
+  const log = { id: c.id, ok: good, auto };
+  N.callLog.push(log);
   (S.callRes = S.callRes || {})[c.id] = good;
   if (!good) {
-    if (h.hole !== undefined) {
+    const guard = h.hole !== undefined && S.up[LANE_DEF[h.hole]] ? LANE_DEF[h.hole] : null;
+    if (guard) {
+      cur.saved = guard; S.st.saved = (S.st.saved || 0) + 1;
+      N.flash[guard + h.hole] = .8;
+      pop(N, LANES[h.hole].x, ENTRY_Y + .07, `⭐${TW[guard].up.n}で穴を防いだ`, "ok");
+    } else if (h.hole !== undefined) {
       const l = h.hole, base = ["phish", "pw", "vpn"][l];
       N.hole[l] = HOLE_T; S.st.holes++;
       N.en.push({ t: base, from: base, lane: l, x: LANES[l].x - .08, y: TOP, inside: false, call: true });   // 攻撃者がすかさず穴を突く
@@ -1128,7 +1158,8 @@ function answerCall(N, good) {
       } else spawnInside(N, h.off === "perm" ? "acct" : "mal", "call");
     }
   }
-  cur.res = { good, auto }; cur.t = 2.6;
+  if (cur.saved) log.saved = cur.saved;
+  cur.res = { good, auto }; cur.t = cur.saved ? 3.4 : 2.6;
   drawCall(N); hud();
 }
 G.answer = (i) => { const N = NT; if (!N || !N.cur || N.cur.res) return; answerCall(N, (i === 0) !== N.cur.flip); };
@@ -1140,7 +1171,7 @@ function drawCall(N) {
   if (cur.res) {
     const g = cur.res.good;
     box.innerHTML = `<div class="call ${g ? "ok" : "ng"}" onclick="G.skipCall()"><div class="who">📞 ${c.who}<span>${cur.res.auto ? (S.train ? "🎓 研修を思い出して自分で判断" : "⏳ 返事がないので自分で判断") : ""}</span></div>
-      <div class="r"><b>${g ? "⭕ " + c.good : "❌ " + c.bad}</b><br>${g ? c.ok : c.ng}</div></div>`;
+      <div class="r"><b>${g ? "⭕ " + c.good : "❌ " + c.bad}</b><br>${g ? c.ok : cur.saved ? `<span class="saved">⭐ ${TW[cur.saved].up.n}のおかげで被害なし。${SAVE_TXT[cur.saved]}</span>` : c.ng}</div></div>`;
     return;
   }
   const opts = [[c.good, 1], [c.bad, 0]]; if (cur.flip) opts.reverse();
@@ -1174,7 +1205,7 @@ function nightStep(N, dt) {
     if (!e.inside && e.y >= BOUND) {
       e.inside = true; e.t = EN[e.from].to;
       S.hp -= .5; N.dmg += .5; N.breach++;
-      pop(N, e.x, BOUND, `侵入`, "ng");
+      pop(N, e.x, BOUND, `侵入 -0.5`, "ng");
     }
     if (e.inside && !e.passI && e.y >= INSIDE_Y) {
       e.passI = true;
@@ -1212,7 +1243,7 @@ G.night = () => {
 function updInfo() {
   const N = NT; if (!N || !$("ninfo")) return;
   const ok = N.callLog.filter(x => x.ok).length;
-  $("ninfo").textContent = `攻撃 残り ${N.spawns.length + N.en.length}　📞 ${ok}/${N.callLog.length}`;
+  $("ninfo").textContent = `攻撃 残り ${N.spawns.length + N.en.length}　🧱侵入 ${N.breach}　📞 ${ok}/${N.callLog.length}`;
 }
 G.speed = () => { if (!NT) return; NT.speed = NT.speed === 1 ? 2 : 1; $("spd").classList.toggle("on", NT.speed === 2); };
 G.runNight = () => {
