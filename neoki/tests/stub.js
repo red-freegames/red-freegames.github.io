@@ -29,7 +29,7 @@ function __makeEl(id){
   });
   return el;
 }
-['callTime','callStat','gSleep','gSusp','vSleep','vSusp','rateMul','log','nowText','qcount','optsWrap','honneBtn','aizuchi','amonText','timingZone','timingMark','slapBtn','slapLeft','startScr','endScr','endTitle','endSub','endLine','endLineText','endStats','zukan','zukanStart','shareCanvas','stageList'].forEach(id => { __registry[id] = __makeEl(id); });
+['callTime','callStat','gSleep','gSusp','vSleep','vSusp','rateMul','log','nowText','qcount','optsWrap','honneBtn','aizuchi','amonText','timingZone','timingMark','slapBtn','slapLeft','startScr','endScr','endResult','endTitle','endSub','endLine','endLineText','endStats','zukan','zukanStart','shareCanvas','stageList'].forEach(id => { __registry[id] = __makeEl(id); });
 globalThis.document = {
   getElementById: id => __registry[id] || null,
   createElement: tag => __makeEl(''),

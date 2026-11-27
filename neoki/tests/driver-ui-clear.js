@@ -43,8 +43,10 @@
     ck('ending saved to zukan', !!JSON.parse(localStorage.getItem('nk_endings_v1') || '{}')[S.lastEnding]);
     ck('title shown on end screen', !!S.title && document.getElementById('endStats').innerHTML.includes('称号「' + S.title + '」'), S.title);
     ck('stage clear recorded', !!JSON.parse(localStorage.getItem('nk_clears_v1') || '{}').s2);
-    NK.shareImage();
-    ck('share image did not throw', true);
+    ck('result headline says clear', document.getElementById('endResult').className === 'win' && document.getElementById('endResult').innerHTML.includes('クリア！'), document.getElementById('endResult').innerHTML);
+    NK.shareX();
+    const tx = UI.state().lastShareText || '';
+    ck('share text is multi-line with clear + title + hashtag', tx.split('\n').length >= 6 && tx.includes('🎉 クリア！') && tx.includes('称号「') && tx.endsWith('#ねえ起きてる'), JSON.stringify(tx));
   } catch (e) {
     console.log('FAIL exception: ' + (e && e.stack || e)); fails++;
   }

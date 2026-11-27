@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>ねえ、起きてる？ 〜メンヘラ彼女の尋問電話〜</title>
 <meta name="description" content="眠いのに終わらない、メンヘラ彼女の尋問電話。眠気と不信感の板挟みで、全問に耐えきれるか？ 眠すぎると「言ってはいけない本音」が出そうになる。">
 <meta property="og:title" content="ねえ、起きてる？">
@@ -91,12 +91,19 @@
   .stageCard.rage { border-color:rgba(255,77,109,.55); }
   .stageCard.rage.sel { border-color:#ff4d6d; background:rgba(255,77,109,.16); box-shadow:0 0 0 1px #ff4d6d inset; }
   /* 開始・結果オーバーレイ */
-  .overlay { position:absolute; inset:0; z-index:80; background:rgba(5,4,12,.94); display:none; flex-direction:column; align-items:center; justify-content:flex-start; padding:28px 24px; text-align:center; overflow-y:auto; }
+  .overlay { position:absolute; inset:0; z-index:80; background:#07060e; display:none; flex-direction:column; align-items:center; justify-content:flex-start; padding:28px 24px; text-align:center; overflow-y:auto; }
   .overlay.on { display:flex; }
+  /* 下端はアプリ内ブラウザのバーに隠れやすいので広めに空ける */
+  .overlay { padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); }
   /* 中身が画面より高いときは上から並べてスクロール（center だと上端が見切れて戻れない） */
   .overlay > :first-child { margin-top:auto; }
   .overlay > :last-child { margin-bottom:auto; }
   .overlay .ttl { font-size:30px; font-weight:900; line-height:1.35; }
+  #endResult { font-size:clamp(40px, 13vw, 56px); white-space:nowrap; font-weight:900; line-height:1.1; letter-spacing:.02em; }
+  #endResult small { white-space:normal; display:block; margin-top:8px; font-size:15px; font-weight:800; letter-spacing:0; opacity:.9; }
+  #endResult.win { color:#7dffb0; text-shadow:0 0 24px rgba(125,255,176,.45); }
+  #endResult.lose { color:#ff5f7e; text-shadow:0 0 24px rgba(255,95,126,.45); }
+  #endScr .ttl { margin-top:18px; font-size:24px; }
   .overlay .sub { margin-top:12px; font-size:14px; line-height:1.8; opacity:.85; }
   .overlay .howto { margin-top:16px; text-align:left; font-size:13px; line-height:1.9; background:rgba(255,255,255,.06); border-radius:14px; padding:14px 18px; }
   .bigbtn { margin-top:22px; padding:15px 42px; border-radius:999px; border:none; background:linear-gradient(90deg,#ff7eb0,#b04df0); color:#fff; font-size:17px; font-weight:900; cursor:pointer; font-family:inherit; box-shadow:0 10px 30px rgba(176,77,240,.4); }
@@ -119,7 +126,7 @@
   #endStats .ttlb { display:inline-block; margin-bottom:6px; padding:4px 14px; border-radius:999px; background:rgba(255,215,106,.14); border:1px solid rgba(255,215,106,.5); color:#ffd76a; font-weight:900; }
   .sitelink { margin-top:18px; font-size:12px; line-height:1.8; opacity:.75; }
   .sitelink a { color:#ffd76a; font-weight:800; }
-  .foot { padding:10px 16px 14px; text-align:center; font-size:10px; color:rgba(255,255,255,.35); }
+  .foot { padding:10px 16px calc(40px + env(safe-area-inset-bottom, 0px)); text-align:center; font-size:10px; color:rgba(255,255,255,.35); }
   /* 縦が短い端末：操作エリアを詰めて会話ログの高さを確保 */
   @media (max-height:700px){
     #callbar { padding:8px 14px 4px; }
@@ -134,7 +141,7 @@
     .opt { padding:9px 12px; margin-top:6px; font-size:13.5px; line-height:1.4; }
     #honneBtn { margin-top:8px; padding:9px; font-size:14px; }
     #slapBtn { margin-top:6px; padding:7px; font-size:12px; }
-    .foot { padding:4px 16px 6px; }
+    .foot { padding:4px 16px calc(28px + env(safe-area-inset-bottom, 0px)); }
   }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
@@ -191,18 +198,17 @@
   </div>
 
   <div class="overlay" id="endScr">
+    <div id="endResult"></div>
     <div class="ttl" id="endTitle"></div>
     <div class="sub" id="endSub"></div>
     <div id="endLine" style="display:none"><div class="el">最後に言ってしまった一言</div><div class="ev" id="endLineText"></div></div>
     <div id="endStats"></div>
-    <button class="bigbtn" onclick="NK.shareImage()">結果画像を保存</button>
-    <button class="ghostbtn" onclick="NK.shareX()">Xでシェア</button>
+    <button class="bigbtn" onclick="NK.shareX()">𝕏 でシェア</button>
     <button class="ghostbtn" onclick="location.reload()">もう一度電話に出る</button>
     <div id="zukan" style="width:100%"></div>
     <div class="sitelink"><a href="https://red-freegames.github.io/">🎮 他のゲームを見る</a></div>
   </div>
 
-  <canvas id="shareCanvas" width="1200" height="630" style="display:none"></canvas>
 </div>
 
 <script>
@@ -848,6 +854,10 @@ function endGame(kind0, cause){
     const cl = clearedStages(); cl[STAGES[S.st.stage].id] = true; storeSet('nk_clears_v1', cl);
   }
   const E = ENDINGS[kind];
+  const won = CLEAR_KINDS.includes(kind);
+  const er = $('endResult');
+  er.className = won ? 'win' : 'lose';
+  er.innerHTML = (won ? '🎉 クリア！' : '💀 失敗…') + '<small>' + (won ? '全' + S.st.totalQ + '問に耐えきった' : reachedNo() + '問目で' + LOSE_WHY[kind]) + '</small>';
   $('endTitle').textContent = E.title;
   $('endSub').textContent = E.sub;
   if (kind === 'honne' && S.st.fatalLine){
@@ -862,6 +872,7 @@ function endGame(kind0, cause){
   setTimeout(() => $('endScr').classList.add('on'), 700);
   S.lastEnding = kind;
 }
+const LOSE_WHY = { sleep: '寝落ちした', breakup: 'フラれた', slapped: 'フラれた', honne: '本音が出た' };
 function renderZukan(el){
   const un = unlockedEndings();
   const got = Object.keys(ENDINGS).filter(k => un[k]).length;
@@ -934,39 +945,19 @@ const NK = {
     S.phase = 'reaction';
     setTimeout(() => endGame('honne'), 900);
   },
-  shareImage(){
-    try {
-      const kind = S.lastEnding || 'clear', E = ENDINGS[kind];
-      const cv = $('shareCanvas'), ctx = cv.getContext('2d');
-      ctx.fillStyle = '#0d0a1a'; ctx.fillRect(0, 0, 1200, 630);
-      ctx.fillStyle = '#b04df0'; ctx.fillRect(0, 0, 1200, 10);
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#8a94a6'; ctx.font = '700 34px sans-serif';
-      ctx.fillText('ねえ、起きてる？ 〜メンヘラ彼女の尋問電話〜', 600, 84);
-      ctx.fillStyle = '#ffffff'; ctx.font = '900 58px sans-serif';
-      ctx.fillText(E.name, 600, 190);
-      ctx.font = '900 52px sans-serif'; ctx.fillStyle = '#ffd76a';
-      const main = (kind === 'honne' && S.st.fatalLine) ? '「' + S.st.fatalLine + '」' : E.title;
-      ctx.fillText(main, 600, 295);
-      ctx.fillStyle = '#ff9db4'; ctx.font = '900 40px sans-serif';
-      ctx.fillText('称号「' + (S.title || '') + '」', 600, 380);
-      ctx.fillStyle = '#c9d2e8'; ctx.font = '700 36px sans-serif';
-      ctx.fillText((CLEAR_KINDS.includes(kind) ? '全' + S.st.totalQ + '問に耐えきった' : '到達 ' + reachedNo() + '問目') + ' ／ ステージ「' + STAGES[S.st.stage].short + '」', 600, 460);
-      ctx.fillStyle = '#8a94a6'; ctx.font = '400 28px sans-serif';
-      ctx.fillText('眠気 ' + Math.round(S.st.sleep) + ' ・ 不信感 ' + Math.round(S.st.susp) + ' ｜ 眠いのに終わらない、尋問電話に耐えるゲーム', 600, 545);
-      const a = document.createElement('a');
-      a.download = 'ne-oki-result.png'; a.href = cv.toDataURL('image/png'); a.click();
-    } catch(e){}
-  },
   shareX(){
-    const kind = S.lastEnding || 'clear', E = ENDINGS[kind];
-    const stg = 'ステージ「' + STAGES[S.st.stage].short + '」';
-    let text;
-    if (kind === 'clear') text = 'メンヘラ彼女の尋問電話（' + stg + '）、全' + S.st.totalQ + '問に耐えきって「寝ていいよ」をもらいました。';
-    else if (CLEAR_KINDS.includes(kind)) text = 'メンヘラ彼女の尋問電話（' + stg + '）、全' + S.st.totalQ + '問に耐えきりました（' + E.name + '）。';
-    else if (kind === 'honne') text = '眠すぎて彼女に言ってしまいました。「' + (S.st.fatalLine || '') + '」…終わりました。（' + stg + '）';
-    else text = '彼女の尋問電話（' + stg + '）、' + reachedNo() + '問目で力尽きました（' + E.name + '）。';
-    text += ' 称号「' + (S.title || '') + '」 #ねえ起きてる';
+    const kind = S.lastEnding || 'clear', E = ENDINGS[kind], st = S.st;
+    const won = CLEAR_KINDS.includes(kind);
+    const lines = ['📞『ねえ、起きてる？』' + (st.rage ? '最終ステージ' : 'ステージ' + (st.stage + 1)) + '「' + STAGES[st.stage].short + '」', ''];
+    if (won) lines.push('🎉 クリア！ 全' + st.totalQ + '問に耐えきった');
+    else lines.push('💀 失敗… ' + reachedNo() + '問目で' + LOSE_WHY[kind]);
+    if (kind === 'honne' && st.fatalLine) lines.push('🗯️「' + st.fatalLine + '」');
+    else lines.push(E.icon + ' ' + E.name);
+    lines.push('🏷️ 称号「' + (S.title || '') + '」');
+    lines.push('😴 眠気 ' + Math.round(st.sleep) + '／💔 不信感 ' + Math.round(st.susp));
+    lines.push('', '#ねえ起きてる');
+    const text = lines.join('\n');
+    S.lastShareText = text;
     try { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent('https://red-freegames.github.io/neoki/'), '_blank'); } catch(e){}
   },
 };
