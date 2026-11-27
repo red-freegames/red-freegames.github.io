@@ -295,7 +295,7 @@ const TACTICS = [
   { id:"liner", icon:"🧍", name:"並ばせ屋の動員", unlockAt:350000,
     desc:"SNSで雇ったバイトに行列させる。購入上限が5倍。ただし目立つ。" },
   { id:"bot", icon:"🤖", name:"Bot自動購入", unlockAt:450000,
-    desc:"週の初めに自動で買い占める。最も稼げて、最も汚い。" },
+    desc:"週の初めに、自分の購入枠とは別に自動で買い占める。最も稼げて、最も汚い。" },
 ];
 let pendingUnlocks = [];
 function checkUnlocks(){
@@ -482,6 +482,8 @@ while (guard-- > 0 && s.listed > 0) doSale(it);
 rep.sold.push({ id: it.id, name: nm(it), count: soldCount, revenue: S.cash - cash0, pct: s.pricePct });
 rep.revenue += S.cash - cash0;
 rep.profit += S.profit - profit0;
+/* 高額出品の通報：商品ごとに週1回だけ判定（売った個数では増えない） */
+if (!it.illegal && Math.round(it.list * s.pricePct / 100) >= it.list * 2.2 && Math.random() < 0.35) addRisk(5, "高額出品が通報された");
 pushLog("💴 「" + nm(it) + "」" + W("sold", soldCount) + "（" + Math.round(S.cash - cash0).toLocaleString() + "円）", "good");
 }
 if (unsoldCount > 0){
@@ -514,14 +516,14 @@ if (S.belowSales === 5) pushLog("……あれ？ 称号が変わった気がす�
 } else if (price >= it.list * 1.3){
 S.gougeSales += 1;
 }
-if (it.illegal) addRisk(18, "チケットの転売が通報された");
-else if (price >= it.list * 2.2 && Math.random() < 0.3) addRisk(4, "高額出品が通報された");
+if (it.illegal) addRisk(10, "チケットの転売が通報された");
 if (S.profit >= GOAL_PROFIT &&!S.goalDone){ S.goalDone = true; S.goalWeek = S.week; onGoal();}
 }
 function pickWave(){
 const pool = ITEMS.slice();
 const picks = [];
-const nPick = Math.random() < 0.3 ? 1 : 2;
+const roll = Math.random();
+const nPick = roll < 0.2 ? 1 : roll < 0.85 ? 2 : 3;
 for (let i = 0; i < nPick && pool.length; i++){
 picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
 }
@@ -556,12 +558,21 @@ runEvent();
 /* ニュースで動いた分も「今週の相場の動き」に含める（フィーバー表示・売れ行き判定と一致させる） */
 ITEMS.forEach(it => { const s = S.items[it.id]; if (s.prevMult > 0) s.weekChange = (s.mult - s.prevMult) / s.prevMult; });
 }
+/* フィーバー中（相場が+25%以上跳ねた）の商品は、入荷予定になくても必ず入荷させる */
+ITEMS.forEach(it => {
+const s = S.items[it.id];
+if (s.weekChange < 0.25 || s.stock > 0) return;
+s.stock = Math.max(2, Math.round(it.stock * (S.tactics.group ? 1.3 : 1) / 2));
+pushLog("🔥 フィーバー中の「" + nm(it) + "」が緊急入荷（" + s.stock + "個）", "good");
+});
 /* 来週の噂 */
 S.rumor = makeRumor(picks);
-/* Botは週の初めに自動で買い占める */
+/* Botは週の初めに自動で買い占める（違法なチケットには手を出さない） */
 if (S.tactics.bot){
-ITEMS.slice().sort((a,b) => S.items[b.id].mult - S.items[a.id].mult).forEach(it => {
+ITEMS.filter(it => !it.illegal).sort((a,b) => S.items[b.id].mult - S.items[a.id].mult).forEach(it => {
 const got = doBuy(it, canBuy(it));
+/* Botの購入は別枠：プレイヤー自身の今週の購入上限は減らさない */
+S.items[it.id].boughtThisWeek -= got;
 if (got > 0) pushLog("🤖 Botが「" + nm(it) + "」を " + got + "個 自動購入", "");
 });
 }
@@ -572,10 +583,10 @@ if (S.over) return;
 settleSales();
 checkUnlocks();
 /* リスク精算（手口を維持するコスト） */
-let d = -8;
-if (S.tactics.multi) d += 2;
-if (S.tactics.liner) d += 6;
-if (S.tactics.bot) d += 8;
+let d = -10;
+if (S.tactics.multi) d += 1;
+if (S.tactics.liner) d += 3;
+if (S.tactics.bot) d += 4;
 S.risk = Math.max(0, Math.min(120, S.risk + d));
 if (S.risk >= 100 &&!S.frozen && S.goalWeek !== S.week){ S.frozen = true; S.over = true; pendingReport = null; onFreeze(); return;}
 /* 破産救済：所持金が尽きたら知人が貸してくれる（借金は増える） */
@@ -651,9 +662,9 @@ pushLog("バズりで「" + nm(it) + "」の相場が急騰", "good");}},
 { w:2, run(){ const s = S.items.toy; s.mult *= 1.8; s.momentum = 0.07;
 setTicker("🎄 クリスマス商戦が開始！ 子供向け玩具の需要が爆発しています");
 pushLog("商戦で変身ベルトの相場が急騰", "good");}},
-{ w:2, run(){ addRisk(14, "フリマ各社が転売対策を強化した");
+{ w:2, run(){ addRisk(10, "フリマ各社が転売対策を強化した");
 setTicker("🚨 フリマ各社が転売対策を強化。高額出品の監視が厳しくなっています", true);}},
-{ w:1, run(){ if (S.tactics.liner || S.tactics.bot){ addRisk(18, "あなたの手口がSNSで炎上した");
+{ w:1, run(){ if (S.tactics.liner || S.tactics.bot){ addRisk(14, "あなたの手口がSNSで炎上した");
 setTicker("🔥 組織的な買い占めがSNSで炎上しています", true);}
 else { setTicker("🔥 転売ヤーへの批判がSNSで高まっています", true);}}},
 { w:2, run(){ setTicker("📰 " + NEWS_FLAVOR[Math.floor(Math.random()*NEWS_FLAVOR.length)]);}},
@@ -988,7 +999,7 @@ function render(){
   ITEMS.forEach(it => { const s = S.items[it.id]; if (!hottest || s.weekChange > hottest.weekChange) hottest = { it, weekChange: s.weekChange }; });
   const fever = !!hottest && hottest.weekChange >= 0.25 && !S.over;
   document.body.classList.toggle("fever", fever);
-  if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + nm(hottest.it) + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！";
+  if (fever) $("feverBar").textContent = "🔥 フィーバー！「" + nm(hottest.it) + "」の相場が跳ねている（+" + Math.round(hottest.weekChange * 100) + "%）——今週は高値でも売れる！" + (S.items[hottest.it.id].stock > 0 ? "　仕入れ欄に入荷中 🛒" : "");
   /* 噂 */
   const rb = $("rumorBar"); rb.innerHTML = "";
   if (S.rumorResult && !S.over){
