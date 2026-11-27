@@ -378,7 +378,7 @@ const WAVES = {
   7: { pw: 6, pw2: 5, phish: 6, phish2: 5, vpn: 5, vpn2: 4, supply: 6 },
 };
 const VULN_DAYS = [5];
-const BREACH_DMG = 1, DAY_SCALE = .1, CALL_PEN = 16;   // CALL_PEN: まずい返事の後始末（強化で防げたときはなし）   // 社内まで入られたときの後始末 / 日ごとの被害の増え方
+const BREACH_DMG = 1, DAY_SCALE = .1, CALL_PEN = 24;   // CALL_PEN: まずい返事の後始末（強化で防げたときはなし）   // 社内まで入られたときの後始末 / 日ごとの被害の増え方
 // 攻撃者は、入口で止められる攻撃を減らし、通る攻撃を増やしてくる（守りの薄いところを狙う）
 function entryBlocked(k) { return EN[k].lane !== undefined && TKEYS.some(t => TW[t].layer === "entry" && hitsOf(t).includes(k) && active(t)); }
 function waveNow() {
