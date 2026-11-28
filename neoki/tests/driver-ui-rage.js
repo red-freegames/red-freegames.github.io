@@ -42,7 +42,8 @@
     await wait(300);
     const reacts = document.getElementById('log').children.filter(c => c.className === 'bbl react');
     const lastReact = reacts.length ? reacts[reacts.length - 1].textContent : '';
-    ck('rage reaction used for good answer', N.RAGE_GOOD_REACTS.includes(lastReact), lastReact.slice(0, 40));
+    const goodOpt = q.opts[bi];
+    ck('rage stage reaction: shared rage line only for sweet questions, else own line', q.sweet ? N.RAGE_GOOD_REACTS.includes(lastReact) : lastReact === goodOpt.r, (q.sweet ? 'sweet ' : 'own ') + lastReact.slice(0, 40));
   } catch (e) {
     console.log('FAIL exception: ' + (e && e.stack || e)); fails++;
   }

@@ -20,6 +20,8 @@
   ck('all questions have honne + 3 opts', N.QUESTIONS.concat(N.TRAPS).every(q => q.honne && q.opts.length === 3 && q.opts.every(o => o.t && o.r)));
   ck('every normal question has a good opt (d<0)', N.QUESTIONS.every(q => q.opts.some(o => o.d < 0)));
   ck('every trap opt raises susp (d>0)', N.TRAPS.every(q => q.opts.every(o => o.d > 0)));
+  { const hs = N.allHonneQuestions().map(q => q.honne); ck('all honne lines are unique', new Set(hs).size === hs.length, hs.length - new Set(hs).size + ' dup'); }
+  ck('stage 3: exactly the 8 old sweet questions use shared rage reactions', N.POOLS[2].filter(q => q.sweet).length === 8 && N.POOLS[0].concat(N.POOLS[1]).every(q => !q.sweet));
   ck('aizuchi = 6', N.AIZUCHI.length === 6, N.AIZUCHI.length);
   ck('stages = 3', N.STAGES.length === 3 && N.STAGES[2].short === 'もう疲れた');
 
