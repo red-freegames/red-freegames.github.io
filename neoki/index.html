@@ -44,6 +44,8 @@
   #gSleep { background:linear-gradient(90deg,#6a5cff,#b04df0); }
   #gSusp { background:linear-gradient(90deg,#ff9d5c,#ff4d6d); }
   .gauge .gv { font-size:12px; font-weight:800; width:30px; text-align:right; font-variant-numeric:tabular-nums; }
+  #rateMul.wave { color:#7fd8ff; animation:wpulse .8s ease-in-out infinite; }
+  @keyframes wpulse { 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
   #rateMul, .rmPad { font-size:11px; font-weight:800; color:#c9b8ff; width:76px; flex:none; font-variant-numeric:tabular-nums; }
   /* 現在のセリフ（上部固定） */
   #nowBox { flex:none; margin:8px 14px 2px; background:linear-gradient(160deg,#2c2145,#1d1832); border:1px solid rgba(255,126,176,.45); border-radius:16px; padding:12px 14px; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,.35); }
@@ -1131,13 +1133,14 @@ function renderGauges(){
     if (S.waveOn) txt = '🌊波 ×' + st.waveMul.toFixed(1);
     else if (S.curMul && S.curMul >= 1.3) txt = '加速 ×' + S.curMul.toFixed(1);
     rm.textContent = txt;
+    rm.classList.toggle('wave', !!S.waveOn);
   }
   const cs = $('callStat');
   if (cs){
     const mood = moodOf(st);
     if (mood === 'bad'){ cs.textContent = '● 通話中（不機嫌！）'; cs.style.color = '#ff8fa5'; }
     else if (mood === 'doubt'){ cs.textContent = '● 通話中（疑ってる…）'; cs.style.color = '#ffd76a'; }
-    else if (st.streak >= 2){ cs.textContent = '● 通話中（甘えモード💗）'; cs.style.color = '#ff9db4'; }
+    else if (st.streak >= 2){ cs.textContent = '● 💗甘えモード（眠い…）'; cs.style.color = '#ff9db4'; }
     else { cs.textContent = '● 通話中'; cs.style.color = '#9fe8a8'; }
   }
 }
@@ -1154,7 +1157,7 @@ function showQuestion(){
   if (S.phase === 'end') return;
   const st = S.st;
   S.phase = 'question'; S.qStart = nowS(); S.qNo = st.qi + 1;
-  if (injectFollowup(st)) addBubble('sys', '（…さっきの話、覚えてたらしい）');
+  injectFollowup(st); /* 追及は qcount の「🔁 追及！」で知らせる */
   const q = st.qs[st.qi];
   $('qcount').textContent = (q.followup ? '🔁 追及！ ' : '') + '「' + STAGES[st.stage].short + '」質問 ' + (st.qi + 1) + ' / ' + st.totalQ;
   addBubble('her', q.q);
@@ -1199,7 +1202,7 @@ function resolveAizuchi(hit){
   S.phase = 'reaction';
   $('aizuchi').style.display = 'none';
   const end = applyAizuchi(st, hit);
-  addBubble('sys', hit ? '（相づち成功。彼女の声が少し柔らかくなった）' : '（相づちを外した。「…ねえ、聞いてる？」）');
+  addBubble('sys', hit ? '（相づち成功）' : '（相づち失敗…「ねえ、聞いてる？」）');
   renderGauges();
   if (end) setTimeout(() => endGame(end), 900);
   else setTimeout(showQuestion, 1100);
@@ -1270,7 +1273,6 @@ const NK = {
     $('startScr').classList.remove('on');
     $('log').innerHTML = '';
     addBubble('sys', '深夜1:07 ─ ミサキから着信');
-    addBubble('sys', 'ステージ「' + STAGES[S.selStage].short + '」');
     addBubble('her', STAGES[S.selStage].hello);
     showQuestion();
   },
@@ -1280,10 +1282,9 @@ const NK = {
     const res = applyAnswer(st, opt, nowS() - S.qStart);
     $('optsWrap').innerHTML = '';
     addBubble('me', opt.t);
-    if (res.slow) addBubble('sys', '（返事が遅かった…彼女の声が少し冷たくなった）');
+    if (res.slow) addBubble('sys', '（返事が遅い…不信感アップ）');
     /* 最終ステージ：反応が甘いままの旧質問（sweet）だけ、共通の怒り反応に差し替える。他は質問ごとの怒り口調の反応を使う */
     addBubble('react', (st.rage && opt.d < 0 && q.sweet) ? RAGE_GOOD_REACTS[st.qi % RAGE_GOOD_REACTS.length] : opt.r);
-    if (res.combo > 0) addBubble('sys', '（💗 甘えモード×' + res.streak + '：声が甘くて眠気 +' + res.combo.toFixed(1).replace('.0', '') + '）');
     S.phase = 'reaction';
     renderGauges();
     if (res.end) setTimeout(() => endGame(res.end), 1300);
@@ -1297,7 +1298,7 @@ const NK = {
   slap(){
     if (S.phase !== 'question' && S.phase !== 'aizuchi') return;
     if (!applySlap(S.st)) return;
-    addBubble('sys', '（バチン！ …「今の音、何？」怪しまれたが、目は覚めた）');
+    addBubble('sys', '（バチン！ 目は覚めたが怪しまれた）');
     renderGauges();
     const end = checkEnd(S.st);
     if (end) endGame(end, 'slap');
@@ -1346,7 +1347,6 @@ setInterval(() => {
   if (!S || S.phase === 'start' || S.phase === 'end' || document.hidden) return;
   const callElapsed = nowS() - S.startedAt;
   const wave = isWave(S.st, callElapsed);
-  if (wave && !S.waveOn) addBubble('sys', '（🌊 眠気の波が来た…！ 眠気が加速している）');
   S.waveOn = wave;
   const ctx = { phase: S.phase, qElapsed: S.phase === 'question' ? nowS() - S.qStart : 0, callElapsed: callElapsed, wave: wave };
   S.curMul = sleepRate(S.st, ctx).mul;
