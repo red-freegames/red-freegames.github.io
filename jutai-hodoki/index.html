@@ -37,7 +37,7 @@ a{color:inherit}
 .logo span{color:var(--gold)}
 #stageLabel{font-size:13px;font-weight:800;color:var(--sub);overflow:hidden;text-overflow:ellipsis}
 .tb-res{display:flex;gap:8px;flex:1;justify-content:center;overflow:hidden}
-.res{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:10px;padding:4px 12px 4px 8px;height:40px}
+.res{flex:none;display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:10px;padding:4px 12px 4px 8px;height:40px}
 .res>i{font-style:normal;font-size:20px}
 .res small{display:block;font-size:10px;font-weight:800;color:var(--sub);line-height:1.1;white-space:nowrap}
 .res b{display:block;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
@@ -77,6 +77,10 @@ a{color:inherit}
 .tool .ic{font-size:26px;line-height:1.1}
 .tool b{font-size:13px;font-weight:900}
 .tool small{font-size:10px;color:var(--sub);font-weight:700;white-space:nowrap}
+.tsep{width:1px;align-self:stretch;margin:6px 2px;background:var(--line)}
+.tool.act{width:76px}
+.tool.act .ic{font-size:24px;font-weight:900;color:var(--gold)}
+.tool:disabled{transform:none;background:var(--panel2)}
 .tool kbd{position:absolute;left:6px;top:5px;font-family:inherit;font-size:10px;font-weight:900;color:var(--sub);background:rgba(0,0,0,.35);border-radius:4px;padding:0 5px}
 /* 右下：本番テスト */
 #bTest{position:fixed;right:12px;bottom:12px;z-index:5;width:210px;padding:14px 12px;border-radius:14px;background:linear-gradient(#ff5a63,#e3262f);color:#fff;font-size:18px;font-weight:900;border:2px solid rgba(255,255,255,.25);box-shadow:0 6px 0 #8f1218,0 10px 24px rgba(0,0,0,.4)}
@@ -160,7 +164,8 @@ a{color:inherit}
 .help kbd{font-family:inherit;font-size:11px;font-weight:900;border:1px solid var(--sub);border-radius:4px;padding:0 5px}
 #mnote{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--accent);color:#fff;text-align:center;font-weight:800;font-size:12px;padding:4px;z-index:20}
 /* 狭い画面：HUDを縮める */
-@media (max-width:1180px){.brand,#stageLabel{display:none}.mbar,.jbar{width:60px}}
+@media (max-width:1440px){.brand,#stageLabel{display:none}.mbar,.jbar{width:64px}}
+@media (max-width:1180px){.mbar,.jbar{width:60px}}
 @media (max-width:980px){.logo{display:none}.res small,.mbar,.jbar{display:none}.res{padding:4px 10px 4px 6px}.seg button{min-width:30px}.ib{min-width:34px;padding:0 7px}#quest{width:230px}.tool{width:78px;height:72px}.tool small{display:none}#bTest{width:150px;font-size:15px}#camHint{display:none}#voice{display:none}}
 @media (max-width:760px){.logo{display:none}.res>i{display:none}.mbar,.jbar{display:none}.ib.txt{display:none}#quest{top:auto;bottom:178px;width:220px}#quest:not(.min) .kvs{display:none}#mnote{display:block}#bTest{bottom:auto;top:72px;width:auto;padding:8px 14px}#bTest small{display:none}}
 </style>
@@ -202,6 +207,9 @@ a{color:inherit}
     <button class="tool" data-tool="widen"><kbd>2</kbd><span class="ic">↔️</span><b>拡幅</b><small>1,500万円/マス</small></button>
     <button class="tool" data-tool="fly"><kbd>3</kbd><span class="ic">🌉</span><b>立体化</b><small>8,000万円〜</small></button>
     <button class="tool" data-tool="remove"><kbd>4</kbd><span class="ic">🚧</span><b>撤去</b><small>自作は全額返金</small></button>
+    <span class="tsep"></span>
+    <button class="tool act" id="dUndo" title="ひとつ前の工事を取り消す（Ctrl+Z）"><span class="ic">↶</span><b>戻す</b><small>Ctrl+Z</small></button>
+    <button class="tool act" id="dRedo" title="取り消した工事をやり直す（Ctrl+Y）"><span class="ic">↷</span><b>やり直す</b><small>Ctrl+Y</small></button>
   </div>
 </div>
 <div id="camHint" class="hud">ホイール：ズーム　右ドラッグ／WASD：移動<br><button id="bFit">⤢ 全体を表示</button></div>
@@ -859,6 +867,7 @@ const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-seri
 const FONT = '"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif';
 
 const ui = {
+  redo: [],
   phase: 'title', si: 0, st: null, net: null, sim: null, used: 0, tool: 'road', undo: [], speed: 1, paused: false, heat: false,
   drag: null, hover: -1, mouse: null, base: {}, hist: [], histT: 0, fx: [], voiceT: 0, acc: 0, cacheVer: -1, result: null, lastJam: 0,
 };
@@ -1225,10 +1234,11 @@ function toolCost(tool, i) {
 }
 function setTool(t) {
   ui.tool = t;
-  document.querySelectorAll('.tool').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  document.querySelectorAll('.tool[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
   updateHover();
 }
-function pushUndo() { ui.undo.push({ net: J.cloneNet(ui.net), used: ui.used }); if (ui.undo.length > 60) ui.undo.shift(); }
+const snap = () => ({ net: J.cloneNet(ui.net), used: ui.used });
+function pushUndo() { ui.undo.push(snap()); if (ui.undo.length > 60) ui.undo.shift(); ui.redoKeep = ui.redo; ui.redo = []; }
 function restoreNet(src) {
   const net = ui.net;
   for (const k of ['terr', 'road', 'link', 'wide', 'elev', 'orig', 'spent']) net[k].set(src[k]);
@@ -1237,7 +1247,14 @@ function restoreNet(src) {
 function undo() {
   if (ui.phase !== 'build') return;
   const u = ui.undo.pop(); if (!u) { toast('これ以上戻せません'); return; }
-  restoreNet(u.net); ui.used = u.used; refreshSide(); toast('ひとつ前に戻しました');
+  ui.redo.push(snap());
+  restoreNet(u.net); ui.used = u.used; ui.drag = null; refreshSide(); toast('ひとつ前に戻しました');
+}
+function redo() {
+  if (ui.phase !== 'build') return;
+  const u = ui.redo.pop(); if (!u) { toast('やり直せる操作がありません'); return; }
+  ui.undo.push(snap());
+  restoreNet(u.net); ui.used = u.used; ui.drag = null; refreshSide(); toast('やり直しました');
 }
 function resetNet() {
   if (ui.phase !== 'build') return;
@@ -1306,7 +1323,7 @@ cv.addEventListener('pointerleave', () => { ui.hover = -1; ui.mouse = null; upda
 function endDrag() {
   const d = ui.drag; ui.drag = null;
   if (!d) return;
-  if (d.tool !== 'road') { if (!d.changed) ui.undo.pop(); return; }
+  if (d.tool !== 'road') { if (!d.changed) { ui.undo.pop(); ui.redo = ui.redoKeep || []; } return; }
   const plan = J.planPath(ui.net, d.path);
   if (plan.ok === 0) { toast('ここには道路を作れません'); return; }
   const newTiles = d.path.slice(0, plan.ok);
@@ -1355,6 +1372,7 @@ window.addEventListener('keydown', e => {
   if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
   if (ui.phase === 'title' || $('ov').classList.contains('on')) { if (e.key === 'Escape' && ui.ovClose) ui.ovClose(); return; }
   const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
   if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); undo(); return; }
   const PAN = { w: [0, 1], arrowup: [0, 1], s: [0, -1], arrowdown: [0, -1], a: [1, 0], arrowleft: [1, 0], d: [-1, 0], arrowright: [-1, 0] };
   if (PAN[k] && !e.ctrlKey && !e.metaKey) { e.preventDefault(); cam.x += PAN[k][0] * 80; cam.y += PAN[k][1] * 80; clampCam(); return; }
@@ -1377,7 +1395,10 @@ function refreshSide() {
   $('moneyBar').style.width = Math.max(0, rem / st.budget * 100) + '%';
   $('usedText').textContent = `工事予算（使用 ${yen(ui.used)}）`;
   $('resMoney').title = `予算 ${yen(st.budget)} のうち ${yen(ui.used)} 使用`;
-  $('bUndo').disabled = !ui.undo.length;
+  const lock = ui.phase !== 'build';
+  $('bUndo').disabled = $('dUndo').disabled = lock || !ui.undo.length;
+  $('dRedo').disabled = lock || !ui.redo.length;
+  $('dUndo').querySelector('small').textContent = ui.undo.length ? `あと${ui.undo.length}回` : 'Ctrl+Z';
   updateHover();
 }
 function refreshStats() {
@@ -1452,7 +1473,7 @@ function newPreview() {
 }
 function loadStage(si) {
   ui.si = si; ui.st = J.STAGES[si];
-  ui.net = J.makeNet(ui.st); ui.used = 0; ui.undo = [];
+  ui.net = J.makeNet(ui.st); ui.used = 0; ui.undo = []; ui.redo = [];
   ui.phase = 'build'; ui.cacheVer = -1; ui.drag = null; ui.result = null;
   ui.speed = 1; ui.paused = false; syncSpeed();
   newPreview(); fitCam();
@@ -1475,7 +1496,7 @@ function startTest() {
   $('testHud').classList.add('on');
   $('modeText').textContent = '本番テスト中';
   $('bTest').disabled = true; $('bTest').style.opacity = .5;
-  updateHover(); placeTip();
+  updateHover(); placeTip(); refreshSide();
   voice(`${clockStr(ui.st, 0)}、ラッシュが始まった`);
 }
 function finishTest(skip) {
@@ -1589,7 +1610,7 @@ function showHelp(back) {
       <tr><td>右ドラッグ／<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>視点を動かす（右クリックで引きかけの道を取り消し）</td></tr>
       <tr><td>ホイール／<kbd>0</kbd></td><td>ズーム／全体を表示</td></tr>
       <tr><td><kbd>1</kbd>〜<kbd>4</kbd></td><td>道路／拡幅／立体化／撤去 を選ぶ</td></tr>
-      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>元に戻す</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> ／ <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>工事を戻す ／ やり直す（下のバーのボタンでも可）</td></tr>
       <tr><td><kbd>Space</kbd> <kbd>F</kbd> <kbd>H</kbd></td><td>一時停止／速度切替／混雑表示</td></tr>
       <tr><td><kbd>Enter</kbd></td><td>本番テスト開始</td></tr>
     </table>
@@ -1637,7 +1658,7 @@ function showResult() {
 }
 
 /* ---------- ボタン ---------- */
-document.querySelectorAll('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+document.querySelectorAll('.tool[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
 $('bTest').onclick = startTest;
 $('bPause').onclick = togglePause;
 document.querySelectorAll('#speedSeg [data-sp]').forEach(b => b.onclick = () => setSpeed(+b.dataset.sp));
@@ -1645,6 +1666,8 @@ $('bFit').onclick = fitCam;
 $('qToggle').onclick = () => { ui.qUser = true; const q = $('quest'); q.classList.toggle('min'); $('qToggle').textContent = q.classList.contains('min') ? '+' : '−'; fitCam(); };
 $('bHeat').onclick = toggleHeat;
 $('bUndo').onclick = undo;
+$('dUndo').onclick = undo;
+$('dRedo').onclick = redo;
 $('bReset').onclick = resetNet;
 $('bSkip').onclick = () => { if (ui.phase === 'test') finishTest(true); };
 $('bStages').onclick = () => { if (ui.phase === 'test') return toast('本番テスト中です'); showStages(); };
