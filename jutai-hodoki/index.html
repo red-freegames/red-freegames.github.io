@@ -18,192 +18,199 @@
 <meta name="twitter:image" content="https://red-freegames.github.io/jutai-hodoki/og.png">
 <link rel="canonical" href="https://red-freegames.github.io/jutai-hodoki/">
 <style>
-:root{color-scheme:light;--bg:#e7ecdf;--panel:#fff;--ink:#1f2a22;--sub:#617063;--line:#d3dbcb;--accent:#e8262b;--ok:#139254;--okbg:#e1f5ea;--warn:#c77800;--warnbg:#fff2d6;--ng:#d7263d;--ngbg:#fde5e8;--dark:#253229;--sel:#ffd54a}
-*{margin:0;padding:0;box-sizing:border-box}
+/* 管理ゲーム風HUD：地図が画面いっぱい、上に資源バー、下に工事ツールバー。暗いガラス調パネル＋ティール/黄のアクセント */
+:root{color-scheme:dark;--bg:#0f1a20;--panel:rgba(16,28,36,.92);--panel2:rgba(255,255,255,.06);--ink:#eef4f6;--sub:#9db1bc;--line:rgba(255,255,255,.12);--teal:#2fd0b5;--accent:#ff4b55;--ok:#3ddc8a;--warn:#ffb020;--ng:#ff5a67;--gold:#ffd54a;--dark:#0b1418}
+*{margin:0;padding:0;box-sizing:border-box;min-width:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.5;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;line-height:1.5;overflow:hidden;user-select:none}
 button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none}
+button:disabled{opacity:.4;cursor:default}
 a{color:inherit}
-#app{height:100vh;display:flex;flex-direction:column}
-#top{flex:none;height:48px;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--dark);color:#fff}
-#top .brand{font-size:11px;font-weight:900;letter-spacing:.08em;color:#ff8a8d;text-decoration:none}
-#top h1{font-size:20px;font-weight:900;letter-spacing:.06em}
-#top h1 span{color:var(--sel)}
-#stageLabel{font-size:13px;font-weight:800;color:#c9d6cc;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbtn{font-size:12px;font-weight:800;border:1.5px solid #6d7f72;border-radius:99px;padding:4px 12px;color:#e8efe9}
-.hbtn:hover{background:#34443a}
-#main{flex:1;min-height:0;display:flex;gap:12px;padding:10px 12px 12px;justify-content:center}
-#stageWrap{position:relative;flex:none;align-self:flex-start;width:min(calc(100vw - 360px),calc((100vh - 70px) * 1.5));aspect-ratio:3/2;border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px #2a372d,0 6px 20px rgba(0,0,0,.18);background:#8fcf6e}
-#cv{display:block;width:100%;height:100%;cursor:crosshair;touch-action:none}
-#side{flex:none;width:320px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:100%;padding-right:2px}
-.box{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px}
-.box h3{font-size:11px;font-weight:900;color:var(--sub);letter-spacing:.08em;margin-bottom:4px;display:flex;justify-content:space-between}
-.goal b{font-size:15px}
-.goal .tg{display:inline-block;background:var(--ngbg);color:var(--ng);font-weight:900;border-radius:6px;padding:0 6px;font-size:13px}
-.money .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.2}
-.money .bar{height:8px;background:#e8ece4;border-radius:5px;overflow:hidden;margin-top:4px}
-.money .bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
-.money small{font-size:11px;color:var(--sub);font-weight:700}
-.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.tool{position:relative;text-align:left;border:2px solid var(--line);border-radius:10px;padding:6px 8px 5px;background:#fafcf8}
-.tool:hover{border-color:#9fb3a3}
-.tool.on{border-color:var(--dark);background:var(--sel);box-shadow:0 2px 0 var(--dark)}
-.tool b{display:block;font-size:14px;font-weight:900}
-.tool small{display:block;font-size:10.5px;color:var(--sub);font-weight:700;line-height:1.35}
-.tool.on small{color:#4a3d00}
-.tool kbd{position:absolute;right:6px;top:5px;font-family:inherit;font-size:10px;font-weight:900;border:1.5px solid currentColor;border-radius:4px;padding:0 4px;color:var(--sub)}
-#hoverInfo{font-size:12.5px;min-height:44px;color:var(--sub)}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
+#cv.pan{cursor:grabbing}
+.hud{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(6px)}
+/* 上：資源バー */
+#topbar{position:fixed;left:10px;right:10px;top:10px;height:52px;display:flex;align-items:center;gap:14px;padding:0 10px 0 16px;z-index:5}
+.tb-left{display:flex;align-items:baseline;gap:12px;flex:0 1 auto;overflow:hidden;white-space:nowrap}
+.brand{font-size:10px;font-weight:900;letter-spacing:.08em;color:#ff8a8d;text-decoration:none}
+.logo{font-size:19px;font-weight:900;letter-spacing:.04em}
+.logo span{color:var(--gold)}
+#stageLabel{font-size:13px;font-weight:800;color:var(--sub);overflow:hidden;text-overflow:ellipsis}
+.tb-res{display:flex;gap:8px;flex:1;justify-content:center;overflow:hidden}
+.res{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:10px;padding:4px 12px 4px 8px;height:40px}
+.res>i{font-style:normal;font-size:20px}
+.res small{display:block;font-size:10px;font-weight:800;color:var(--sub);line-height:1.1;white-space:nowrap}
+.res b{display:block;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+.mbar,.jbar{position:relative;width:90px;height:7px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden}
+.mbar i,.jbar i{display:block;height:100%;background:var(--ok);transition:width .3s,background .3s}
+.jbar em{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff}
+.tb-right{display:flex;gap:6px;align-items:center;flex:none}
+.seg{display:flex;background:var(--panel2);border-radius:10px;padding:3px}
+.seg button{min-width:36px;height:34px;border-radius:8px;font-size:12px;font-weight:900;letter-spacing:-1px;color:var(--sub)}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--teal);color:#05221d}
+.ib{height:40px;min-width:40px;border-radius:10px;background:var(--panel2);font-size:16px;font-weight:900;padding:0 10px}
+.ib:hover:not(:disabled){background:rgba(255,255,255,.14)}
+.ib.on{background:var(--teal);color:#05221d}
+.ib.txt{font-size:13px}
+/* 左：目標パネル */
+#quest{position:fixed;left:10px;top:72px;width:272px;padding:12px 14px;z-index:4}
+#quest h3{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:900;color:var(--teal);letter-spacing:.04em}
+#quest h3 button{width:24px;height:24px;border-radius:6px;background:var(--panel2);font-weight:900}
+#quest.min #qBody{display:none}
+#goalText{margin-top:6px;font-size:13.5px}
+#goalText .tg{display:inline-block;background:rgba(255,90,103,.18);color:#ff9aa3;font-weight:900;border-radius:6px;padding:0 6px}
+#goalText small{display:block;margin-top:6px;color:var(--sub);font-size:12px;line-height:1.6}
+#spark{width:100%;height:52px;display:block;margin-top:10px;border-radius:8px}
+.kvs{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:12px;color:var(--sub);margin-top:8px}
+.kvs b{color:var(--ink);font-variant-numeric:tabular-nums;float:right}
+#warn{display:none;margin-top:8px;font-size:12px;font-weight:800;color:#ffd0d4;background:rgba(255,90,103,.2);border-radius:8px;padding:5px 8px}
+/* 下：工事ツールバー */
+#dock{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:5}
+#hoverInfo{font-size:12.5px;padding:6px 14px;border-radius:99px;white-space:nowrap;color:var(--sub);max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #hoverInfo b{color:var(--ink)}
 #hoverInfo .ng{color:var(--ng);font-weight:800}
-.jam{display:flex;align-items:baseline;gap:8px}
-.jam .v{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
-.jam .lbl{font-size:12px;font-weight:800}
-#spark{width:100%;height:46px;display:block;margin-top:4px}
-.kvs{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:12px;color:var(--sub);margin-top:4px}
-.kvs b{color:var(--ink);font-variant-numeric:tabular-nums;float:right}
-#warn{display:none;margin-top:6px;font-size:12px;font-weight:800;color:var(--ng);background:var(--ngbg);border-radius:8px;padding:4px 8px}
-.big{width:100%;font-size:16px;font-weight:900;background:var(--accent);color:#fff;border-radius:12px;padding:11px;border:2.5px solid var(--dark);box-shadow:0 4px 0 var(--dark)}
-.big:hover{filter:brightness(1.06)}
-.big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--dark)}
-.big small{display:block;font-size:11px;font-weight:700;opacity:.9}
-.row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.sbtn{flex:1;font-size:12px;font-weight:800;border:1.5px solid var(--line);border-radius:8px;padding:5px 4px;background:#fafcf8;white-space:nowrap}
-.sbtn:hover{border-color:#9fb3a3}
-.sbtn.on{background:var(--dark);color:#fff;border-color:var(--dark)}
-#voice{position:absolute;left:10px;bottom:10px;z-index:3;font-size:12.5px;font-weight:700;display:flex;flex-direction:column-reverse;gap:4px;pointer-events:none;max-width:46%}
+#toolbar{display:flex;gap:8px;padding:8px}
+.tool{position:relative;width:96px;height:84px;border-radius:12px;background:var(--panel2);border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:transform .08s}
+.tool:hover{background:rgba(255,255,255,.12);transform:translateY(-2px)}
+.tool.on{border-color:var(--teal);background:rgba(47,208,181,.18);box-shadow:0 0 0 3px rgba(47,208,181,.25)}
+.tool .ic{font-size:26px;line-height:1.1}
+.tool b{font-size:13px;font-weight:900}
+.tool small{font-size:10px;color:var(--sub);font-weight:700;white-space:nowrap}
+.tool kbd{position:absolute;left:6px;top:5px;font-family:inherit;font-size:10px;font-weight:900;color:var(--sub);background:rgba(0,0,0,.35);border-radius:4px;padding:0 5px}
+/* 右下：本番テスト */
+#bTest{position:fixed;right:12px;bottom:12px;z-index:5;width:210px;padding:14px 12px;border-radius:14px;background:linear-gradient(#ff5a63,#e3262f);color:#fff;font-size:18px;font-weight:900;border:2px solid rgba(255,255,255,.25);box-shadow:0 6px 0 #8f1218,0 10px 24px rgba(0,0,0,.4)}
+#bTest:hover:not(:disabled){filter:brightness(1.08)}
+#bTest:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 #8f1218}
+#bTest small{display:block;font-size:11px;font-weight:700;opacity:.9}
+#camHint{position:fixed;right:12px;bottom:108px;z-index:4;font-size:11px;color:var(--sub);padding:5px 10px;border-radius:10px;text-align:right;line-height:1.6}
+#camHint button{font-size:11px;font-weight:800;color:var(--teal)}
+/* 本番テスト中 */
+#testHud{position:fixed;left:50%;top:72px;transform:translateX(-50%);display:none;align-items:center;gap:14px;padding:8px 16px;z-index:5;font-weight:900}
+#testHud.on{display:flex}
+#testHud .clk{font-size:24px;font-variant-numeric:tabular-nums}
+#testHud small{font-size:11px;color:var(--sub);display:block}
+#testHud .pb{width:220px;height:9px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden}
+#testHud .pb i{display:block;height:100%;background:var(--gold)}
+#testHud button{font-size:12px;font-weight:800;border:1.5px solid var(--line);border-radius:99px;padding:4px 12px}
+/* 市民の声 */
+#voice{position:fixed;left:12px;bottom:14px;z-index:3;font-size:12.5px;font-weight:700;display:flex;flex-direction:column-reverse;gap:5px;pointer-events:none;max-width:min(340px,30vw)}
 #voice div{display:flex;gap:6px;align-items:flex-end;animation:vin .35s ease-out}
 #voice span{flex:none;font-size:18px;line-height:1.1}
-#voice p{background:rgba(255,255,255,.93);border:1.5px solid #2a372d;border-radius:10px 10px 10px 2px;padding:3px 9px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+#voice p{background:rgba(255,255,255,.95);color:#15232b;border-radius:12px 12px 12px 3px;padding:4px 10px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 #voice div:nth-child(2){opacity:.75}
 #voice div:nth-child(3){opacity:.45}
-@keyframes vin{from{opacity:0;transform:translateY(-6px)}}
-#tipc{position:absolute;pointer-events:none;font-size:12px;font-weight:800;background:rgba(20,28,22,.88);color:#fff;border-radius:6px;padding:2px 7px;white-space:nowrap;display:none;transform:translate(14px,14px);z-index:5}
-#tipc.ng{background:rgba(215,38,61,.92)}
-#toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(20,28,22,.9);color:#fff;font-weight:800;font-size:14px;border-radius:10px;padding:7px 16px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:6}
+@keyframes vin{from{opacity:0;transform:translateY(6px)}}
+#tipc{position:fixed;pointer-events:none;font-size:12px;font-weight:800;background:rgba(10,18,22,.92);color:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;white-space:nowrap;display:none;transform:translate(16px,16px);z-index:6}
+#tipc.ng{background:rgba(200,30,48,.95)}
+#toast{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:rgba(10,18,22,.94);border:1px solid var(--line);color:#fff;font-weight:800;font-size:14px;border-radius:10px;padding:8px 18px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:7}
 #toast.on{opacity:1}
-#testHud{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:none;align-items:center;gap:12px;background:rgba(20,28,22,.86);color:#fff;border-radius:12px;padding:6px 14px;z-index:4;font-weight:900}
-#testHud.on{display:flex}
-#testHud .clk{font-size:22px;font-variant-numeric:tabular-nums}
-#testHud .pb{width:180px;height:8px;background:#3d4a40;border-radius:5px;overflow:hidden}
-#testHud .pb i{display:block;height:100%;background:var(--sel)}
-#testHud small{font-size:11px;color:#c9d6cc;display:block}
-#testHud button{font-size:12px;font-weight:800;border:1.5px solid #7d8f81;border-radius:99px;padding:3px 10px;color:#fff}
-#ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(18,26,20,.55);z-index:10;padding:20px}
+/* モーダル */
+#ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,12,15,.6);z-index:10;padding:24px}
 #ov.on{display:flex}
-.card{background:var(--panel);border-radius:18px;border:3px solid var(--dark);box-shadow:0 8px 0 var(--dark);padding:22px 26px;max-width:640px;width:100%;max-height:100%;overflow-y:auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:24px 28px;max-width:660px;width:100%;max-height:100%;overflow-y:auto}
 .card h2{font-size:24px;font-weight:900;line-height:1.3}
-.card h2 small{display:block;font-size:12px;color:var(--sub);font-weight:800;letter-spacing:.1em}
+.card h2 small{display:block;font-size:12px;color:var(--teal);font-weight:800;letter-spacing:.1em}
 .card p{margin-top:8px}
 .title{text-align:center}
-.title .logo{font-size:64px;font-weight:900;letter-spacing:.08em;line-height:1.1;color:var(--dark);text-shadow:4px 4px 0 var(--sel)}
-.title .logo span{color:var(--accent)}
+.title .logo{font-size:68px;letter-spacing:.08em;line-height:1.1;text-shadow:4px 4px 0 #000}
 .title .catch{font-weight:800;margin-top:10px;color:var(--sub)}
 .title .feat{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
-.title .feat span{font-size:12px;font-weight:800;background:var(--dark);color:#fff;border-radius:99px;padding:3px 12px}
-.cta{display:inline-block;margin-top:18px;font-size:18px;font-weight:900;background:var(--accent);color:#fff;border-radius:14px;padding:12px 40px;border:3px solid var(--dark);box-shadow:0 5px 0 var(--dark);text-decoration:none}
-.cta:hover{filter:brightness(1.06)}
-.cta:active{transform:translateY(3px);box-shadow:0 2px 0 var(--dark)}
-.cta.sub{background:#fff;color:var(--ink);font-size:15px;padding:9px 22px}
+.title .feat span{font-size:12px;font-weight:800;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:3px 12px}
+.cta{display:inline-block;margin-top:18px;font-size:18px;font-weight:900;background:linear-gradient(#ff5a63,#e3262f);color:#fff;border-radius:14px;padding:12px 40px;box-shadow:0 5px 0 #8f1218;text-decoration:none}
+.cta:hover{filter:brightness(1.08)}
+.cta:active{transform:translateY(3px);box-shadow:0 2px 0 #8f1218}
+.cta.sub{background:var(--panel2);border:1px solid var(--line);box-shadow:none;font-size:15px;padding:10px 22px}
 .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:14px}
-.sc{text-align:left;border:2.5px solid var(--dark);border-radius:12px;padding:10px 12px;background:#fafcf8;box-shadow:0 3px 0 var(--dark)}
-.sc:hover:not(:disabled){background:#fffbe6}
-.sc:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.sc{text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel2)}
+.sc:hover:not(:disabled){border-color:var(--teal);background:rgba(47,208,181,.12)}
 .sc small{font-size:11px;font-weight:900;color:var(--sub)}
 .sc b{display:block;font-size:15px;font-weight:900;line-height:1.3;margin:2px 0}
-.sc .st{color:#e0a400;font-size:16px;letter-spacing:2px}
-.sc .st i{color:#cfd6cb;font-style:normal}
+.sc .st{color:var(--gold);font-size:16px;letter-spacing:2px}
+.sc .st i,.res .stars i{color:rgba(255,255,255,.18);font-style:normal}
 .boss{display:flex;gap:12px;align-items:flex-start;margin-top:14px}
-.boss .av{flex:none;width:52px;height:52px;border-radius:50%;background:var(--dark);display:grid;place-items:center;font-size:28px}
-.boss .say{background:#f2f5ef;border-radius:4px 14px 14px 14px;padding:10px 14px;font-size:14.5px;line-height:1.8}
-.boss .say b{display:block;font-size:11px;color:var(--sub)}
+.boss .av{flex:none;width:52px;height:52px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;font-size:28px}
+.boss .say{background:var(--panel2);border-radius:4px 14px 14px 14px;padding:10px 14px;font-size:14.5px;line-height:1.8}
+.boss .say b{display:block;font-size:11px;color:var(--teal)}
 .goalbox{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.goalbox div{background:#f2f5ef;border-radius:10px;padding:8px 10px;text-align:center}
-.goalbox small{display:block;font-size:11px;font-weight:800;color:var(--sub)}
+.goalbox div,.cmp div{background:var(--panel2);border-radius:10px;padding:8px 10px;text-align:center}
+.goalbox small,.cmp small{display:block;font-size:11px;font-weight:800;color:var(--sub)}
 .goalbox b{font-size:18px;font-weight:900}
-.hint{margin-top:12px;font-size:13px;background:var(--warnbg);border-radius:10px;padding:8px 12px;color:#6b4a00}
+.hint{margin-top:12px;font-size:13px;background:rgba(255,176,32,.14);border:1px solid rgba(255,176,32,.3);border-radius:10px;padding:8px 12px;color:#ffe2a8}
 .res .verdict{font-size:30px;font-weight:900;text-align:center;line-height:1.3}
 .res .verdict.ok{color:var(--ok)}
 .res .verdict.ng{color:var(--ng)}
-.res .stars{text-align:center;font-size:42px;letter-spacing:8px;color:#f0b400;line-height:1.2;margin-top:4px}
-.res .stars i{color:#d6ddd2;font-style:normal}
+.res .stars{text-align:center;font-size:42px;letter-spacing:8px;color:var(--gold);line-height:1.2;margin-top:4px}
 .cmp{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:12px;text-align:center}
-.cmp div{background:#f2f5ef;border-radius:12px;padding:8px}
-.cmp small{display:block;font-size:11px;font-weight:800;color:var(--sub)}
 .cmp b{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
 .cmp .arr{font-size:24px;font-weight:900;color:var(--sub)}
 .crit{margin-top:12px;font-size:13px;display:grid;gap:4px}
-.crit div{display:flex;justify-content:space-between;gap:8px;background:#f7f9f5;border-radius:8px;padding:4px 10px}
+.crit div{display:flex;justify-content:space-between;gap:8px;background:var(--panel2);border-radius:8px;padding:4px 10px}
 .crit .y{color:var(--ok);font-weight:900}
-.crit .n{color:#9aa69c;font-weight:900}
+.crit .n{color:var(--sub);font-weight:900}
 .share{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
-.share a,.share button{font-size:14px;font-weight:900;border:2.5px solid var(--dark);border-radius:12px;padding:9px 16px;text-decoration:none;box-shadow:0 3px 0 var(--dark);background:#fff}
-.share .pri{background:var(--accent);color:#fff}
-.share .x{background:#111;color:#fff}
+.share a,.share button{font-size:14px;font-weight:900;border:1px solid var(--line);border-radius:12px;padding:10px 16px;text-decoration:none;background:var(--panel2)}
+.share .pri{background:linear-gradient(#ff5a63,#e3262f);border-color:transparent;color:#fff}
+.share .x{background:#000;color:#fff}
 .note{font-size:11.5px;color:var(--sub);text-align:center;margin-top:12px}
 .help table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13.5px}
-.help td{border-bottom:1px solid var(--line);padding:5px 4px;vertical-align:top}
+.help td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
 .help td:first-child{white-space:nowrap;font-weight:900;width:1%;padding-right:12px}
-.help kbd{font-family:inherit;font-size:11px;font-weight:900;border:1.5px solid var(--sub);border-radius:4px;padding:0 5px}
-#mnote{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--accent);color:#fff;text-align:center;font-weight:800;font-size:13px;padding:6px;z-index:20}
-@media (max-width:900px){#mnote{display:block}body{overflow:auto}#main{flex-direction:column;align-items:center}#stageWrap{width:calc(100vw - 24px)}#side{width:100%;max-width:640px;max-height:none}}
+.help kbd{font-family:inherit;font-size:11px;font-weight:900;border:1px solid var(--sub);border-radius:4px;padding:0 5px}
+#mnote{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--accent);color:#fff;text-align:center;font-weight:800;font-size:12px;padding:4px;z-index:20}
+/* 狭い画面：HUDを縮める */
+@media (max-width:1180px){.brand,#stageLabel{display:none}.mbar,.jbar{width:60px}}
+@media (max-width:980px){.logo{display:none}.res small,.mbar,.jbar{display:none}.res{padding:4px 10px 4px 6px}.seg button{min-width:30px}.ib{min-width:34px;padding:0 7px}#quest{width:230px}.tool{width:78px;height:72px}.tool small{display:none}#bTest{width:150px;font-size:15px}#camHint{display:none}#voice{display:none}}
+@media (max-width:760px){.logo{display:none}.res>i{display:none}.mbar,.jbar{display:none}.ib.txt{display:none}#quest{top:auto;bottom:178px;width:220px}#quest:not(.min) .kvs{display:none}#mnote{display:block}#bTest{bottom:auto;top:72px;width:auto;padding:8px 14px}#bTest small{display:none}}
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9601375144116186"
      crossorigin="anonymous"></script>
 </head>
 <body>
-<div id="app">
-  <header id="top">
-    <a class="brand" href="https://red-freegames.github.io/">RED FREE GAMES</a>
-    <h1>渋滞<span>ほどき</span></h1>
-    <div id="stageLabel"></div>
-    <button class="hbtn" id="bStages">ステージ選択</button>
-    <button class="hbtn" id="bHelp">遊び方</button>
-    <a class="hbtn" href="https://red-freegames.github.io/" style="text-decoration:none">🎮 他のゲーム</a>
-  </header>
-  <div id="main">
-    <div id="stageWrap">
-      <canvas id="cv"></canvas>
-      <div id="tipc"></div>
-      <div id="toast"></div>
-      <div id="testHud"><div><small>ラッシュアワー</small><span class="clk" id="clk">7:00</span></div><div><small id="hudJam">渋滞度 0%</small><div class="pb"><i id="pb"></i></div></div><button id="bSkip">結果へ ⏭</button></div>
-      <div id="voice"></div>
-      <div id="ov"></div>
-    </div>
-    <aside id="side">
-      <div class="box goal"><h3>目標</h3><div id="goalText"></div></div>
-      <div class="box money"><h3>工事予算<small id="usedText"></small></h3><div class="v" id="moneyText">-</div><div class="bar"><i id="moneyBar"></i></div></div>
-      <div class="box"><h3>工事 <small>右ドラッグでも撤去</small></h3>
-        <div class="tools">
-          <button class="tool on" data-tool="road"><kbd>1</kbd><b>🛣️ 道路</b><small>ドラッグで線を引く<br>川は橋・線路は跨線橋に</small></button>
-          <button class="tool" data-tool="widen"><kbd>2</kbd><b>↔️ 拡幅</b><small>2車線に広げる<br>1,500万円/マス</small></button>
-          <button class="tool" data-tool="fly"><kbd>3</kbd><b>🌉 立体化</b><small>交差点→立体交差<br>踏切→跨線橋</small></button>
-          <button class="tool" data-tool="remove"><kbd>4</kbd><b>🚧 撤去</b><small>自分の工事は全額返金<br>元の道は500万円</small></button>
-        </div>
-        <div id="hoverInfo" style="margin-top:8px"></div>
-      </div>
-      <div class="box"><h3>いまの交通<small id="modeText">試運転中</small></h3>
-        <div class="jam"><span class="v" id="jamV">0%</span><span class="lbl" id="jamL">渋滞度</span></div>
-        <canvas id="spark" width="600" height="92"></canvas>
-        <div class="kvs"><span>走行中<b id="kCars">0</b></span><span>止まっている<b id="kStop">0</b></span><span>入れない車<b id="kBack">0</b></span><span>渋滞の長さ<b id="kLen">0km</b></span></div>
-        <div id="warn"></div>
-      </div>
-      <div class="box">
-        <button class="big" id="bTest">▶ 本番テスト<small>ラッシュの2時間で判定（Enter）</small></button>
-        <div class="row">
-          <button class="sbtn" id="bPause">⏸ 一時停止</button>
-          <button class="sbtn" id="bSpeed">速度 ×1</button>
-          <button class="sbtn" id="bHeat">🔥 混雑表示</button>
-        </div>
-        <div class="row">
-          <button class="sbtn" id="bUndo">↶ 元に戻す</button>
-          <button class="sbtn" id="bReset">⟲ 最初の状態へ</button>
-        </div>
-      </div>
-    </aside>
+<canvas id="cv"></canvas>
+<header id="topbar" class="hud">
+  <div class="tb-left"><a class="brand" href="https://red-freegames.github.io/">RED FREE GAMES</a><div class="logo">渋滞<span>ほどき</span></div><div id="stageLabel"></div></div>
+  <div class="tb-res">
+    <div class="res" id="resMoney"><i>💰</i><div><small id="usedText">工事予算</small><b id="moneyText">-</b></div><div class="mbar"><i id="moneyBar"></i></div></div>
+    <div class="res"><i>🚗</i><div><small id="jamL">渋滞度</small><b id="jamV">0%</b></div><div class="jbar"><i id="jamBar"></i><em id="jamTarget"></em></div></div>
+    <div class="res"><i>🕖</i><div><small id="modeText">試運転中</small><b id="clk">--:--</b></div></div>
   </div>
-  <div id="mnote">このゲームはPC（マウス操作）向けです。大きな画面で遊ぶのがおすすめ！</div>
+  <div class="tb-right">
+    <div class="seg" id="speedSeg"><button id="bPause" title="一時停止（Space）">❚❚</button><button data-sp="1" title="等速">▶</button><button data-sp="2" title="2倍速">▶▶</button><button data-sp="4" title="4倍速（F で切替）">▶▶▶</button></div>
+    <button class="ib" id="bHeat" title="混雑表示（H）">🔥</button>
+    <button class="ib" id="bUndo" title="元に戻す（Ctrl+Z）">↶</button>
+    <button class="ib" id="bReset" title="最初の状態へ">⟲</button>
+    <button class="ib txt" id="bStages">案件一覧</button>
+    <button class="ib" id="bHelp" title="遊び方">？</button>
+  </div>
+</header>
+<aside id="quest" class="hud">
+  <h3>🎯 目標<button id="qToggle" title="たたむ">−</button></h3>
+  <div id="qBody">
+    <div id="goalText"></div>
+    <canvas id="spark" width="520" height="104"></canvas>
+    <div class="kvs"><span>走行中<b id="kCars">0</b></span><span>止まっている<b id="kStop">0</b></span><span>入れない車<b id="kBack">0</b></span><span>渋滞の長さ<b id="kLen">0km</b></span></div>
+    <div id="warn"></div>
+  </div>
+</aside>
+<div id="voice"></div>
+<div id="dock">
+  <div id="hoverInfo" class="hud"></div>
+  <div id="toolbar" class="hud">
+    <button class="tool on" data-tool="road"><kbd>1</kbd><span class="ic">🛣️</span><b>道路</b><small>2,000万円〜/マス</small></button>
+    <button class="tool" data-tool="widen"><kbd>2</kbd><span class="ic">↔️</span><b>拡幅</b><small>1,500万円/マス</small></button>
+    <button class="tool" data-tool="fly"><kbd>3</kbd><span class="ic">🌉</span><b>立体化</b><small>8,000万円〜</small></button>
+    <button class="tool" data-tool="remove"><kbd>4</kbd><span class="ic">🚧</span><b>撤去</b><small>自作は全額返金</small></button>
+  </div>
 </div>
+<div id="camHint" class="hud">ホイール：ズーム　右ドラッグ／WASD：移動<br><button id="bFit">⤢ 全体を表示</button></div>
+<button id="bTest">▶ 本番テスト<small>ラッシュの2時間で判定（Enter）</small></button>
+<div id="testHud" class="hud"><div><small>ラッシュアワー</small><span class="clk" id="tclk">7:00</span></div><div><small id="hudJam">渋滞度 0%</small><div class="pb"><i id="pb"></i></div></div><button id="bSkip">結果へ ⏭</button></div>
+<div id="tipc"></div>
+<div id="toast"></div>
+<div id="ov"></div>
+<div id="mnote">このゲームはPC（マウス操作）向けです</div>
 <script>
 /* ===== 渋滞ほどき：ロジック（DOMに触らない。Node でも動く） ===== */
 const W = 30, H = 20, N = W * H;
@@ -812,11 +819,39 @@ globalThis.__JH__ = { W, H, N, DX, DY, OPP, idx, nb, dirTo, pop4, STAGES, COST, 
 /* ===== 渋滞ほどき：画面と操作 ===== */
 const J = globalThis.__JH__;
 const $ = id => document.getElementById(id);
-const TS = 32, SC = 2;                       // 1マス32px、内部解像度2倍
+const TS = 32, SC = 3;                       // 1マス32px、下絵は3倍の解像度で持つ（ズームしても粗くならない）
 const GAME_URL = 'https://red-freegames.github.io/jutai-hodoki/';
 const cv = $('cv'), ctx = cv.getContext('2d');
-cv.width = W * TS * SC; cv.height = H * TS * SC;
-const mkCanvas = () => { const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height; return c; };
+const mkCanvas = () => { const c = document.createElement('canvas'); c.width = W * TS * SC; c.height = H * TS * SC; return c; };
+/* カメラ：地図(ワールド座標 px)を画面に写す倍率と位置。HUDに隠れない範囲へ最初に収める */
+const cam = { z: 1, x: 0, y: 0, dpr: 1, fitZ: 1 };
+function viewArea() {
+  const vw = innerWidth, vh = innerHeight;
+  const left = vw > 980 && !$('quest').classList.contains('min') ? 296 : 16;
+  const bottom = vw > 760 ? 150 : 200;
+  return { x: left, y: 78, w: Math.max(200, vw - left - 16), h: Math.max(160, vh - 78 - bottom) };
+}
+function fitCam() {
+  const a = viewArea(), z = Math.min(a.w / (W * TS), a.h / (H * TS));
+  cam.z = cam.fitZ = z; cam.x = a.x + (a.w - W * TS * z) / 2; cam.y = a.y + (a.h - H * TS * z) / 2;
+}
+function clampCam() {
+  const mw = W * TS * cam.z, mh = H * TS * cam.z;
+  cam.x = Math.min(innerWidth * 0.6, Math.max(innerWidth * 0.4 - mw, cam.x));
+  cam.y = Math.min(innerHeight * 0.6, Math.max(innerHeight * 0.4 - mh, cam.y));
+}
+function zoomAt(sx, sy, f) {
+  const wx = (sx - cam.x) / cam.z, wy = (sy - cam.y) / cam.z;
+  const z = Math.min(Math.max(cam.fitZ * 3.5, 3), Math.max(cam.fitZ * 0.7, cam.z * f));
+  cam.z = z; cam.x = sx - wx * z; cam.y = sy - wy * z; clampCam();
+}
+function resize() {
+  if (!ui.qUser) { const q = $('quest'); q.classList.toggle('min', innerWidth <= 980); $('qToggle').textContent = q.classList.contains('min') ? '+' : '−'; }
+  cam.dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(innerWidth * cam.dpr); cv.height = Math.round(innerHeight * cam.dpr);
+  fitCam();
+}
+const setWorld = () => ctx.setTransform(cam.dpr * cam.z, 0, 0, cam.dpr * cam.z, cam.dpr * cam.x, cam.dpr * cam.y);
 const ground = mkCanvas(), deck = mkCanvas();
 const gx = ground.getContext('2d'), dx = deck.getContext('2d');
 const DT = 1 / 30;
@@ -843,7 +878,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 1800); }
 function hash(i, k = 0) { let h = (i * 374761393 + k * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
 const remaining = () => ui.st.budget - ui.used;
-const jamColor = j => j < 0.2 ? '#139254' : j < 0.45 ? '#c77800' : '#d7263d';
+const jamColor = j => j < 0.2 ? '#3ddc8a' : j < 0.45 ? '#ffb020' : '#ff5a67';
 const clockStr = (st, t) => { const m = st.clock[0] * 60 + st.clock[1] + Math.floor(t); return `${Math.floor(m / 60) % 24}:${String(m % 60).padStart(2, '0')}`; };
 
 /* ---------- 地形と道路の下絵（道路網が変わったときだけ描き直す） ---------- */
@@ -1087,8 +1122,11 @@ function render() {
   if (!ui.net) return;
   if (ui.cacheVer !== ui.net.ver) drawNet();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(ground, 0, 0);
-  ctx.setTransform(SC, 0, 0, SC, 0, 0);
+  ctx.fillStyle = '#0f1a20'; ctx.fillRect(0, 0, cv.width, cv.height);
+  setWorld();
+  ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(6, 10, W * TS, H * TS);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(ground, 0, 0, W * TS, H * TS);
   const S = ui.sim, net = ui.net, now = performance.now() / 1000;
   // 水面のきらめき
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
@@ -1117,7 +1155,7 @@ function render() {
     drawTrains();
     drawGates();
   }
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(deck, 0, 0); ctx.setTransform(SC, 0, 0, SC, 0, 0);
+  ctx.drawImage(deck, 0, 0, W * TS, H * TS);
   for (const [c, ps] of up) drawCar(c, ps);
   if (S) drawPortLabels();
   // 工事の演出
@@ -1208,8 +1246,7 @@ function resetNet() {
 
 /* ---------- マウス ---------- */
 function tileAt(e) {
-  const r = cv.getBoundingClientRect();
-  const x = Math.floor((e.clientX - r.left) / r.width * W), y = Math.floor((e.clientY - r.top) / r.height * H);
+  const x = Math.floor((e.clientX - cam.x) / cam.z / TS), y = Math.floor((e.clientY - cam.y) / cam.z / TS);
   return x >= 0 && y >= 0 && x < W && y < H ? idx(x, y) : -1;
 }
 function extendPath(path, to) {
@@ -1239,18 +1276,26 @@ function applyAt(i) {
 }
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('pointerdown', e => {
-  if (ui.phase !== 'build') return;
+  if (e.button === 1 || e.button === 2) {   // 右／中ドラッグで視点移動
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    ui.pan = { sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y, moved: false, btn: e.button }; cv.classList.add('pan');
+    return;
+  }
+  if (ui.phase !== 'build' || e.button !== 0) return;
   const i = tileAt(e); if (i < 0) return;
   cv.setPointerCapture(e.pointerId);
-  const tool = e.button === 2 ? 'remove' : ui.tool;
-  if (e.button === 2 && ui.drag) { ui.drag = null; return; }
+  const tool = ui.tool;
   if (tool === 'road') ui.drag = { tool, path: [i] };
   else { pushUndo(); ui.drag = { tool, done: new Set(), changed: false }; applyAt(i); }
 });
 cv.addEventListener('pointermove', e => {
+  if (ui.pan) {
+    const dx2 = e.clientX - ui.pan.sx, dy2 = e.clientY - ui.pan.sy;
+    if (Math.abs(dx2) + Math.abs(dy2) > 4) ui.pan.moved = true;
+    cam.x = ui.pan.cx + dx2; cam.y = ui.pan.cy + dy2; clampCam();
+  }
   const i = tileAt(e);
-  const r = $('stageWrap').getBoundingClientRect();
-  ui.mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+  ui.mouse = { x: e.clientX, y: e.clientY };
   if (i !== ui.hover) { ui.hover = i; updateHover(); }
   placeTip();
   if (!ui.drag || i < 0) return;
@@ -1279,7 +1324,12 @@ function endDrag() {
   if (plan.cost > 0) voice(pick(VOICE.build));
   refreshSide();
 }
-window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointerup', () => {
+  if (ui.pan) { const p = ui.pan; ui.pan = null; cv.classList.remove('pan'); if (!p.moved && p.btn === 2 && ui.drag) { ui.drag = null; toast('工事の計画を取り消しました'); } return; }
+  endDrag();
+});
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+window.addEventListener('resize', resize);
 function placeTip() {
   const t = $('tipc');
   if (!ui.mouse || ui.phase !== 'build' || ui.hover < 0) { t.style.display = 'none'; return; }
@@ -1291,21 +1341,25 @@ function placeTip() {
   } else { const c = toolCost(ui.tool, ui.hover); msg = c.ok ? (c.cost ? (c.cost < 0 ? '+' + yen(-c.cost) : yen(c.cost)) : c.msg) : c.msg; ng = !c.ok || c.cost > remaining(); }
   t.textContent = msg; t.classList.toggle('ng', ng);
   t.style.display = 'block';
-  const wr = $('stageWrap').getBoundingClientRect(), tw = t.offsetWidth + 20, th = t.offsetHeight + 20;
-  t.style.left = Math.min(ui.mouse.x, wr.width - tw) + 'px'; t.style.top = Math.min(ui.mouse.y, wr.height - th) + 'px';
+  const tw = t.offsetWidth + 24, th = t.offsetHeight + 24;
+  t.style.left = Math.min(ui.mouse.x, innerWidth - tw) + 'px'; t.style.top = Math.min(ui.mouse.y, innerHeight - th) + 'px';
 }
 function updateHover() {
   const el = $('hoverInfo');
   if (!ui.net) return;
-  if (ui.hover < 0) { el.innerHTML = ui.phase === 'build' ? '左ドラッグで工事、右ドラッグで撤去。<br>マスにカーソルを合わせると費用が出ます。' : 'テスト中は工事できません。'; return; }
+  if (ui.hover < 0) { el.innerHTML = ui.phase === 'test' ? '本番テスト中は工事できません' : '左ドラッグで工事　右ドラッグで視点移動　ホイールでズーム'; return; }
   const c = toolCost(ui.tool, ui.hover);
-  el.innerHTML = `<b>${esc(TILE_NAME(ui.hover))}</b><br>${c.ok ? esc(c.msg) : `<span class="ng">${esc(c.msg)}</span>`}`;
+  el.innerHTML = `<b>${esc(TILE_NAME(ui.hover))}</b>　${c.ok ? esc(c.msg) : `<span class="ng">${esc(c.msg)}</span>`}`;
 }
 window.addEventListener('keydown', e => {
   if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
   if (ui.phase === 'title' || $('ov').classList.contains('on')) { if (e.key === 'Escape' && ui.ovClose) ui.ovClose(); return; }
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); undo(); return; }
+  const PAN = { w: [0, 1], arrowup: [0, 1], s: [0, -1], arrowdown: [0, -1], a: [1, 0], arrowleft: [1, 0], d: [-1, 0], arrowright: [-1, 0] };
+  if (PAN[k] && !e.ctrlKey && !e.metaKey) { e.preventDefault(); cam.x += PAN[k][0] * 80; cam.y += PAN[k][1] * 80; clampCam(); return; }
+  if (k === '0' || k === 'home') { fitCam(); return; }
+  if (k === '+' || k === '=' || k === '-') { zoomAt(innerWidth / 2, innerHeight / 2, k === '-' ? 0.8 : 1.25); return; }
   if (k === '1') setTool('road'); else if (k === '2') setTool('widen'); else if (k === '3') setTool('fly'); else if (k === '4') setTool('remove');
   else if (k === ' ') { e.preventDefault(); togglePause(); }
   else if (k === 'h') toggleHeat();
@@ -1321,7 +1375,8 @@ function refreshSide() {
   $('moneyText').textContent = yen(rem);
   $('moneyText').style.color = rem < st.budget * 0.15 ? 'var(--ng)' : '';
   $('moneyBar').style.width = Math.max(0, rem / st.budget * 100) + '%';
-  $('usedText').textContent = `使用 ${yen(ui.used)} / ${yen(st.budget)}`;
+  $('usedText').textContent = `工事予算（使用 ${yen(ui.used)}）`;
+  $('resMoney').title = `予算 ${yen(st.budget)} のうち ${yen(ui.used)} 使用`;
   $('bUndo').disabled = !ui.undo.length;
   updateHover();
 }
@@ -1331,7 +1386,9 @@ function refreshStats() {
   ui.lastJam = j;
   $('jamV').textContent = Math.round(j * 100) + '%';
   $('jamV').style.color = jamColor(j);
-  $('jamL').textContent = j < 0.2 ? '渋滞度：スイスイ' : j < 0.45 ? '渋滞度：混雑' : j < 0.75 ? '渋滞度：大渋滞' : '渋滞度：地獄';
+  $('jamL').textContent = (j < 0.2 ? '渋滞度・スイスイ' : j < 0.45 ? '渋滞度・混雑' : j < 0.75 ? '渋滞度・大渋滞' : '渋滞度・地獄') + `（目標${ui.st.target}%）`;
+  $('jamBar').style.width = Math.min(100, j * 100) + '%'; $('jamBar').style.background = jamColor(j);
+  $('jamTarget').style.left = ui.st.target + '%';
   $('kCars').textContent = S.now.cars + '台';
   $('kStop').textContent = S.now.stopped + '台';
   $('kBack').textContent = S.now.backlog + '台';
@@ -1345,15 +1402,15 @@ function refreshStats() {
 function drawSpark() {
   const c = $('spark'), g = c.getContext('2d'), w = c.width, h = c.height;
   g.clearRect(0, 0, w, h);
-  g.fillStyle = '#f2f5ef'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(0, 0, w, h);
   const ty = h - ui.st.target / 100 * h;
-  g.strokeStyle = '#d7263d'; g.setLineDash([8, 6]); g.lineWidth = 2; g.beginPath(); g.moveTo(0, ty); g.lineTo(w, ty); g.stroke(); g.setLineDash([]);
-  g.fillStyle = '#d7263d'; g.font = 'bold 18px sans-serif'; g.fillText(`目標 ${ui.st.target}%`, 6, ty - 5);
+  g.strokeStyle = '#ff5a67'; g.setLineDash([8, 6]); g.lineWidth = 2; g.beginPath(); g.moveTo(0, ty); g.lineTo(w, ty); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#ff9aa3'; g.font = 'bold 18px sans-serif'; g.fillText(`目標 ${ui.st.target}%`, 6, ty - 5);
   const H2 = ui.hist; if (H2.length < 2) return;
   const n = 120;
   g.beginPath();
   H2.slice(-n).forEach((v, k, a) => { const x = (k + n - a.length) / (n - 1) * w, y = h - v * h; k ? g.lineTo(x, y) : g.moveTo(x, y); });
-  g.strokeStyle = '#253229'; g.lineWidth = 3; g.stroke();
+  g.strokeStyle = '#2fd0b5'; g.lineWidth = 3; g.stroke();
 }
 
 /* ---------- 市民の声 ---------- */
@@ -1397,10 +1454,10 @@ function loadStage(si) {
   ui.si = si; ui.st = J.STAGES[si];
   ui.net = J.makeNet(ui.st); ui.used = 0; ui.undo = [];
   ui.phase = 'build'; ui.cacheVer = -1; ui.drag = null; ui.result = null;
-  ui.speed = 1; $('bSpeed').textContent = '速度 ×1';
-  newPreview();
+  ui.speed = 1; ui.paused = false; syncSpeed();
+  newPreview(); fitCam();
   $('stageLabel').textContent = `STAGE ${si + 1}　${ui.st.name}`;
-  $('goalText').innerHTML = `本番テストで <span class="tg">渋滞度 ${ui.st.target}% 以下</span><br><small style="color:var(--sub);font-size:11.5px">${esc(ui.st.tip)}</small>`;
+  $('goalText').innerHTML = `本番テストで <span class="tg">渋滞度 ${ui.st.target}% 以下</span><small>${esc(ui.st.tip)}</small>`;
   $('voice').innerHTML = '';
   $('modeText').textContent = '試運転中';
   refreshSide();
@@ -1414,7 +1471,7 @@ function startTest() {
   ui.sim = J.createSim(ui.st, J.cloneNet(ui.net), { mode: 'test', seed: 777 });
   ui.sim.net.ver = ui.net.ver;      // 描画キャッシュをそのまま使う
   ui.hist = []; ui.histT = 0; ui.gv = 0;
-  ui.speed = 2; $('bSpeed').textContent = '速度 ×2'; ui.paused = false; $('bPause').classList.remove('on'); $('bPause').textContent = '⏸ 一時停止';
+  ui.speed = 2; ui.paused = false; syncSpeed();
   $('testHud').classList.add('on');
   $('modeText').textContent = '本番テスト中';
   $('bTest').disabled = true; $('bTest').style.opacity = .5;
@@ -1439,12 +1496,16 @@ function finishTest(skip) {
 function backToBuild() {
   closeOv();
   ui.phase = 'build';
-  ui.speed = 1; $('bSpeed').textContent = '速度 ×1';
-  $('modeText').textContent = '試運転中';
+  ui.speed = 1; ui.paused = false; syncSpeed();
   newPreview(); refreshSide();
 }
-function togglePause() { ui.paused = !ui.paused; $('bPause').classList.toggle('on', ui.paused); $('bPause').textContent = ui.paused ? '▶ 再開' : '⏸ 一時停止'; }
-function cycleSpeed() { ui.speed = ui.speed === 1 ? 2 : ui.speed === 2 ? 4 : 1; $('bSpeed').textContent = `速度 ×${ui.speed}`; }
+function syncSpeed() {
+  document.querySelectorAll('#speedSeg [data-sp]').forEach(b => b.classList.toggle('on', !ui.paused && +b.dataset.sp === ui.speed));
+  $('bPause').classList.toggle('on', ui.paused);
+}
+function togglePause() { ui.paused = !ui.paused; syncSpeed(); }
+function setSpeed(n) { ui.speed = n; ui.paused = false; syncSpeed(); }
+function cycleSpeed() { setSpeed(ui.speed === 1 ? 2 : ui.speed === 2 ? 4 : 1); }
 function toggleHeat() { ui.heat = !ui.heat; $('bHeat').classList.toggle('on', ui.heat); }
 
 let lastT = performance.now();
@@ -1462,10 +1523,12 @@ function frame(now) {
     if (ui.sim.lastGone && ui.sim.m.giveup > (ui.gv || 0)) { ui.gv = ui.sim.m.giveup; if (Math.random() < 0.5) voice(pick(VOICE.giveup)); }
   }
   if (ui.phase === 'test' && ui.sim) {
-    $('clk').textContent = clockStr(ui.st, ui.sim.t);
+    $('tclk').textContent = $('clk').textContent = clockStr(ui.st, ui.sim.t);
     $('pb').style.width = Math.min(100, ui.sim.t / J.TEST_LEN * 100) + '%';
     $('hudJam').textContent = `渋滞度 ${Math.round((ui.sim.now ? ui.sim.now.jam : 0) * 100)}%`;
   }
+  if (ui.phase === 'build') { $('clk').textContent = ui.paused ? '一時停止' : '試運転中'; $('modeText').textContent = '工事中'; }
+  else if (ui.phase === 'test') $('modeText').textContent = 'ラッシュ本番';
   if (ui.phase !== 'title') tickVoice(rdt);
   render();
   if (Math.floor(now / 250) !== frame.q) { frame.q = Math.floor(now / 250); refreshStats(); }
@@ -1522,7 +1585,8 @@ function showHelp(back) {
     <p>渋滞している街の道路を、<b>予算の範囲内</b>で工事して、本番テストの<b>渋滞度を目標以下</b>にするゲームです。車はそれぞれ行き先（車の色）に向かって、空いている道を自分で探して走ります。</p>
     <table>
       <tr><td>左ドラッグ</td><td>選んだ工事をする。道路はドラッグで線を引き、離すと着工</td></tr>
-      <tr><td>右ドラッグ</td><td>撤去（自分で作ったものは全額返金）</td></tr>
+      <tr><td>右ドラッグ／<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>視点を動かす（右クリックで引きかけの道を取り消し）</td></tr>
+      <tr><td>ホイール／<kbd>0</kbd></td><td>ズーム／全体を表示</td></tr>
       <tr><td><kbd>1</kbd>〜<kbd>4</kbd></td><td>道路／拡幅／立体化／撤去 を選ぶ</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>元に戻す</td></tr>
       <tr><td><kbd>Space</kbd> <kbd>F</kbd> <kbd>H</kbd></td><td>一時停止／速度切替／混雑表示</td></tr>
@@ -1575,7 +1639,9 @@ function showResult() {
 document.querySelectorAll('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
 $('bTest').onclick = startTest;
 $('bPause').onclick = togglePause;
-$('bSpeed').onclick = cycleSpeed;
+document.querySelectorAll('#speedSeg [data-sp]').forEach(b => b.onclick = () => setSpeed(+b.dataset.sp));
+$('bFit').onclick = fitCam;
+$('qToggle').onclick = () => { ui.qUser = true; const q = $('quest'); q.classList.toggle('min'); $('qToggle').textContent = q.classList.contains('min') ? '+' : '−'; fitCam(); };
 $('bHeat').onclick = toggleHeat;
 $('bUndo').onclick = undo;
 $('bReset').onclick = resetNet;
@@ -1583,10 +1649,12 @@ $('bSkip').onclick = () => { if (ui.phase === 'test') finishTest(true); };
 $('bStages').onclick = () => { if (ui.phase === 'test') return toast('本番テスト中です'); showStages(); };
 $('bHelp').onclick = () => showHelp(ui.phase === 'title' ? showTitle : null);
 
+resize();
+syncSpeed();
 showTitle();
 refreshSide();
 requestAnimationFrame(frame);
-globalThis.__JH_UI__ = { ui, closeOv, loadStage, startTest, finishTest, backToBuild, setTool, endDrag, extendPath, render, showStages };
+globalThis.__JH_UI__ = { ui, cam, fitCam, closeOv, loadStage, startTest, finishTest, backToBuild, setTool, endDrag, extendPath, render, showStages };
 </script>
 </body>
 </html>

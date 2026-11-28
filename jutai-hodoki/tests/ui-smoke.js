@@ -20,8 +20,8 @@ const out = process.argv[2];
   await p.click('#goBuild'); await p.waitForTimeout(4000);
   await shot(p, 'build');
   // 道路を引く (15,14)->(29,14)
-  const box = await p.locator('#cv').boundingBox();
-  const at = (x, y) => [box.x + (x + 0.5) / 30 * box.width, box.y + (y + 0.5) / 20 * box.height];
+  const cam = await p.evaluate(() => ({ ...__JH_UI__.cam }));
+  const at = (x, y) => [cam.x + (x + 0.5) * 32 * cam.z, cam.y + (y + 0.5) * 32 * cam.z];
   await p.mouse.move(...at(15, 14)); await p.mouse.down(); await p.mouse.move(...at(22, 14), { steps: 8 }); await p.mouse.move(...at(29, 14), { steps: 8 });
   await shot(p, 'drag');
   await p.mouse.up(); await p.waitForTimeout(3000);
