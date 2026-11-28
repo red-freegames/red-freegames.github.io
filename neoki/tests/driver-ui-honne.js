@@ -26,7 +26,7 @@
     ck('end line shown', document.getElementById('endLine').style.display === 'block');
     ck('honne saved to zukan', !!JSON.parse(localStorage.getItem('nk_endings_v1') || '{}').honne);
     ck('honne line collected in honne zukan', !!JSON.parse(localStorage.getItem('nk_honne_v1') || '{}')[S.st.qs[S.st.qi].q]);
-    ck('honne zukan shows 1 / 74 with the line', document.getElementById('zukan').innerHTML.includes('本音図鑑（1 / 74）') && document.getElementById('zukan').innerHTML.includes('「' + fatal + '」'));
+    ck('honne zukan shows 1 / 165 with the line', document.getElementById('zukan').innerHTML.includes('本音図鑑（1 / 165）') && document.getElementById('zukan').innerHTML.includes('「' + fatal + '」'));
     ck('title shown', !!S.title, S.title);
     ck('result headline says fail', document.getElementById('endResult').className === 'lose' && document.getElementById('endResult').innerHTML.includes('本音が出た'), document.getElementById('endResult').innerHTML);
     NK.shareX();
